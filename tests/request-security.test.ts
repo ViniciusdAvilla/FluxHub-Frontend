@@ -33,3 +33,40 @@ test("rejeita origem externa", () => {
   });
   assert.equal(isTrustedRequestOrigin(request), false);
 });
+
+test("aceita origem pública quando Next.js vê endereço interno atrás do proxy", () => {
+  const request = new Request("http://127.0.0.1:3000/api/explorer", {
+    method: "POST",
+    headers: {
+      origin: "https://painel.exemplo.com",
+      host: "127.0.0.1:3000",
+      "x-forwarded-host": "painel.exemplo.com",
+      "x-forwarded-proto": "https",
+    },
+  });
+  assert.equal(isTrustedRequestOrigin(request), true);
+});
+
+test("rejeita domínio externo mesmo se a requisição atravessar um proxy", () => {
+  const request = new Request("http://127.0.0.1:3000/api/explorer", {
+    method: "POST",
+    headers: {
+      origin: "https://site-malicioso.example",
+      "x-forwarded-host": "painel.exemplo.com",
+      "x-forwarded-proto": "https",
+      "sec-fetch-site": "cross-site",
+    },
+  });
+  assert.equal(isTrustedRequestOrigin(request), false);
+});
+
+test("reconhece same-origin informado pelo navegador atrás de um proxy", () => {
+  const request = new Request("http://127.0.0.1:3000/api/explorer", {
+    method: "POST",
+    headers: {
+      origin: "https://painel.exemplo.com",
+      "sec-fetch-site": "same-origin",
+    },
+  });
+  assert.equal(isTrustedRequestOrigin(request), true);
+});
