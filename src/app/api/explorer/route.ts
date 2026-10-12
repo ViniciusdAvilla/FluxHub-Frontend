@@ -1,11 +1,12 @@
 import { executeReadEndpoint } from "@/lib/backend";
+import { isTrustedRequestOrigin } from "@/lib/request-security";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   const origin = request.headers.get("origin");
-  if (!origin || origin !== new URL(request.url).origin)
+  if (!origin || !isTrustedRequestOrigin(request))
     return Response.json({ error: "Origem não autorizada." }, { status: 403 });
   if (!request.headers.get("content-type")?.startsWith("application/json"))
     return Response.json({ error: "Formato inválido." }, { status: 415 });
