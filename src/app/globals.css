@@ -524,3 +524,5 @@ main { padding-top: 26px; }
   .login-card { padding: 26px 20px; }
 }
 @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; background: #eaf0f4; } }
+
+.finance-track { flex: 1 1 0; min-width: 0; }
