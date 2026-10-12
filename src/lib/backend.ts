@@ -3,6 +3,7 @@ import { applyProductBrands, normalizeProducts } from "./analytics";
 import { readFinance } from "./database";
 import { parseOpenApi } from "./openapi";
 import { resolveBackendUrl } from "./backend-url";
+import { backendAuthHeaders } from "./backend-auth";
 import type { BackendSchema, Snapshot } from "./types";
 
 function backendBase() {
@@ -16,9 +17,7 @@ async function requestAbsolute(url: URL) {
   const base = backendBase();
   if (url.origin !== base.origin)
     throw new Error("Destino de consulta não autorizado.");
-  const headers: Record<string, string> = { Accept: "application/json" };
-  if (process.env.BACKEND_TOKEN)
-    headers.Authorization = `Bearer ${process.env.BACKEND_TOKEN}`;
+  const headers = backendAuthHeaders(process.env.BACKEND_TOKEN);
   const response = await fetch(url, {
     headers,
     cache: "no-store",
