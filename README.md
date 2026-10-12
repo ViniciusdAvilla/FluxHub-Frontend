@@ -164,7 +164,18 @@ MELI_ACCESS_TOKEN=
 MARKET_CACHE_MINUTES=360
 ```
 
-- `BACKEND_URL`: endereço do middleware.
+- `BACKEND_URL`: endereço acessível **a partir do servidor Next.js**, e não necessariamente do navegador. Se o FastAPI estiver publicado sob um prefixo de proxy, inclua esse prefixo na URL. O frontend preserva esse caminho ao consultar `openapi.json` e os endpoints de produtos, pedidos etc.
+
+Exemplo para o Swagger informado (ajuste a URL conforme a rede do seu servidor):
+
+```dotenv
+BACKEND_URL=http://187.77.230.250/backend-api
+```
+
+Com essa configuração, a Central consulta `http://187.77.230.250/backend-api/openapi.json` e as rotas retornadas pelo contrato sob `/backend-api/api/v1/...`. **Não use o endereço `/docs` nem o fragmento `#/Products/...` em `BACKEND_URL`.** Se frontend e backend rodam na mesma máquina e a API atende diretamente na porta 8000, mantenha `http://127.0.0.1:8000`. Depois de mudar a variável no ambiente de produção, reinicie/reimplante o Next.js.
+
+A Central de Dados (`POST /api/explorer`) usa a mesma verificação de origem confiável que o Raio-X, reconhecendo cabeçalhos de proxy reverso. Continua rejeitando origens externas e requisições sem cabeçalho `Origin`.
+
 - `PRODUCTS_PATH`: opcional; força a rota de produtos se a descoberta automática não for suficiente.
 - `PRODUCTS_BY_BRANDS_PATH`: opcional; força a rota `by-brands` usada para enriquecer o fabricante dos produtos.
 - `BACKEND_TOKEN`: opcional; enviado somente pelo servidor Next.js.
