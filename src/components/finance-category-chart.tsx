@@ -23,8 +23,8 @@ export default function FinanceCategoryChart({ rows }: { rows: ProductRow[] }) {
           <div key={category} className="finance-chart-row">
             <div className="finance-chart-label" title={category}>{category}</div>
             <div className="finance-chart-tracks">
-              <div className="finance-bar-line"><span className="finance-bar revenue" style={{ width: `${(data.revenue / max) * 100}%` }} /><strong>{money(data.revenue)}</strong></div>
-              <div className="finance-bar-line"><span className={`finance-bar ${data.profit < 0 ? "loss" : "profit"}`} style={{ width: `${(Math.abs(data.profit) / max) * 100}%` }} /><strong>{data.profitItems ? money(data.profit) : "Sem custos"}</strong></div>
+              <div className="finance-bar-line"><div className="finance-track"><span className="finance-bar revenue" style={{ width: `${(data.revenue / max) * 100}%` }} /></div><strong>{money(data.revenue)}</strong></div>
+              <div className="finance-bar-line"><div className="finance-track"><span className={`finance-bar ${data.profit < 0 ? "loss" : "profit"}`} style={{ width: `${(Math.abs(data.profit) / max) * 100}%` }} /></div><strong>{data.profitItems ? money(data.profit) : "Sem custos"}</strong></div>
             </div>
           </div>
         ))}
