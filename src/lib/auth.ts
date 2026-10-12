@@ -35,6 +35,24 @@ export function isValidSession(token: string | undefined): boolean {
   return expected.length === provided.length && timingSafeEqual(expected, provided);
 }
 
+/**
+ * Diagnóstico usado somente no servidor. Não retorna segredos.
+ * Nunca trate autenticação sem configuração como senha errada.
+ */
+export function authConfigurationIssue(): "AUTH_PASSWORD_HASH" | "AUTH_SESSION_SECRET" | null {
+  const hash = process.env.AUTH_PASSWORD_HASH;
+  const segments = hash?.split(":") ?? [];
+  if (
+    segments.length !== 3 ||
+    segments[0] !== "scrypt" ||
+    !/^[0-9a-f]{32}$/i.test(segments[1] ?? "") ||
+    !/^[0-9a-f]{128}$/i.test(segments[2] ?? "")
+  ) return "AUTH_PASSWORD_HASH";
+
+  if (!signingSecret()) return "AUTH_SESSION_SECRET";
+  return null;
+}
+
 export async function validCredentials(email: string, password: string): Promise<boolean> {
   const hash = process.env.AUTH_PASSWORD_HASH;
   const expectedEmail = (process.env.AUTH_EMAIL || "FluxHub@gmail.com").trim().toLowerCase();
