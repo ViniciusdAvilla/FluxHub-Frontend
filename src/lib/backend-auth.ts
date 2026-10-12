@@ -18,3 +18,17 @@ export function backendAuthHeaders(token: string | undefined): Record<string, st
     Authorization: `Bearer ${token}`,
   };
 }
+
+/**
+ * Nunca envie um bearer token pela rede pública em HTTP.
+ * HTTP é permitido apenas para FastAPI local no próprio servidor Next.js.
+ */
+export function assertSecureBackendTransport(url: URL): void {
+  const hostname = url.hostname.toLowerCase();
+  const isLoopback = hostname === "127.0.0.1" || hostname === "localhost" ||
+    hostname === "[::1]" || hostname === "::1";
+  if (url.protocol === "https:" || (url.protocol === "http:" && isLoopback)) return;
+  throw new Error(
+    "BACKEND_URL inseguro: use HTTPS ou http://127.0.0.1 para a comunicação privada com o FastAPI.",
+  );
+}
