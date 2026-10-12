@@ -51,6 +51,8 @@ import type {
   Tone,
 } from "@/lib/types";
 import { CategoryChart, ManufacturerChart, RevenueChart } from "./charts";
+import AppSidebar from "./app-sidebar";
+import FinanceCategoryChart from "./finance-category-chart";
 import RaioXPanel from "./raio-x-panel";
 
 const FinanceDialog = dynamic(() => import("./finance-dialog"), { ssr: false });
@@ -67,25 +69,6 @@ export type View =
   | "abc"
   | "orders"
   | "data";
-
-const navigation: Array<{
-  view: View;
-  href: string;
-  label: string;
-  icon: typeof Gauge;
-}> = [
-  { view: "overview", href: "/", label: "Visão geral", icon: Gauge },
-  { view: "products", href: "/produtos", label: "Produtos", icon: Package },
-  { view: "raiox", href: "/raio-x", label: "Raio-X de anúncios", icon: ScanSearch },
-  { view: "inventory", href: "/estoque", label: "Estoque", icon: Boxes },
-  { view: "finance", href: "/financeiro", label: "Financeiro", icon: BadgeDollarSign },
-  { view: "manufacturers", href: "/fabricantes", label: "Fabricantes", icon: Factory },
-  { view: "pricing", href: "/precificacao", label: "Precificação", icon: Calculator },
-  { view: "replenishment", href: "/reposicao", label: "Compras e reposição", icon: ShoppingCart },
-  { view: "abc", href: "/curva-abc", label: "Curva ABC", icon: ChartNoAxesCombined },
-  { view: "orders", href: "/pedidos", label: "Pedidos", icon: ClipboardList },
-  { view: "data", href: "/dados", label: "Central de dados", icon: Database },
-];
 
 const titles: Record<View, { eyebrow: string; title: string; text: string }> = {
   overview: {
@@ -539,31 +522,12 @@ export default function PlatformPage({ initial, view }: { initial: Snapshot; vie
   return (
     <div className="app-shell">
       {menuOpen && <button className="menu-backdrop" onClick={() => setMenuOpen(false)} aria-label="Fechar menu" />}
-      <aside className={`sidebar ${menuOpen ? "open" : ""}`}>
-        <div className="brand-block">
-          <div className="brand-mark"><Activity size={20} /></div>
-          <div><strong>AutoGestão</strong><small>Mercado Livre</small></div>
-          <button className="icon-button mobile-close" onClick={() => setMenuOpen(false)} aria-label="Fechar menu"><X size={18} /></button>
-        </div>
-        <nav className="sidebar-nav">
-          <span className="nav-section">GESTÃO</span>
-          {navigation.map(({ view: itemView, href, label, icon: Icon }) => (
-            <Link key={itemView} href={href} className={view === itemView ? "active" : ""} onClick={() => setMenuOpen(false)}>
-              <Icon size={18} /><span>{label}</span>{view === itemView && <ChevronRight size={14} />}
-            </Link>
-          ))}
-        </nav>
-        <div className="sidebar-foot">
-          <div className={`connection ${snapshot.updatedAt ? "online" : "offline"}`}>
-            <i /><div><strong>{snapshot.updatedAt ? "Operação conectada" : "Sem atualização"}</strong><span>{snapshot.schema.endpoints.length} consultas mapeadas</span></div>
-          </div>
-        </div>
-      </aside>
+      <AppSidebar view={view} open={menuOpen} onClose={() => setMenuOpen(false)} connected={Boolean(snapshot.updatedAt)} endpointCount={snapshot.schema.endpoints.length} />
 
       <div className="workspace">
         <header className="topbar">
           <button className="icon-button menu-toggle" onClick={() => setMenuOpen(true)} aria-label="Abrir menu"><Menu size={20} /></button>
-          <div className="breadcrumb"><span>Mercado Livre</span><ChevronRight size={13} /><strong>{current.title}</strong></div>
+          <div className="breadcrumb"><span>FluxHub</span><ChevronRight size={13} /><strong>{current.title}</strong></div>
           <div className="topbar-actions">
             <span className="schema-version">Operação automotiva · visão gerencial</span>
             <button className="button" onClick={refresh} disabled={busy}><RefreshCw className={busy ? "spin" : ""} size={16} />Atualizar</button>
@@ -646,6 +610,9 @@ export default function PlatformPage({ initial, view }: { initial: Snapshot; vie
                 <Metric label="Margem" value={percent(summary.margin)} note="Sobre produtos com custos" icon={Gauge} tone={marginTone(summary.margin)} />
                 <Metric label="Cobertura de custos" value={summary.productCount ? percent((summary.covered / summary.productCount) * 100) : "—"} note={`${summary.productCount - summary.covered} sem custo cadastrado`} icon={Database} tone={summary.covered === summary.productCount && summary.productCount > 0 ? "good" : "warning"} />
               </div>
+              <Section title="Receita e lucro por categoria" subtitle="Comparativo dos resultados disponíveis no catálogo filtrado.">
+                <FinanceCategoryChart rows={filtered} />
+              </Section>
               <Section title="Resultado por produto" subtitle="Vermelho = prejuízo, amarelo = margem abaixo de 15%, verde = margem a partir de 15%." action={<button className="button primary" onClick={() => setEditProduct(null)}><Pencil size={15} /> Cadastrar custos</button>}>
                 <ProductTable rows={[...filtered].sort((a, b) => (a.margin ?? Infinity) - (b.margin ?? Infinity))} onEdit={setEditProduct} onInspect={setInspected} />
               </Section>
