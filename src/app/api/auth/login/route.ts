@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSession, SESSION_COOKIE, SESSION_MAX_AGE, validCredentials } from "@/lib/auth";
+import { authConfigurationIssue, createSession, SESSION_COOKIE, SESSION_MAX_AGE, validCredentials } from "@/lib/auth";
 import { isTrustedRequestOrigin } from "@/lib/request-security";
 
 export const runtime = "nodejs";
@@ -13,6 +13,15 @@ export async function POST(request: NextRequest) {
   if (!request.headers.get("content-type")?.startsWith("application/json")) {
     return NextResponse.json({ error: "Formato inválido." }, { status: 415 });
   }
+  const configurationIssue = authConfigurationIssue();
+  if (configurationIssue) {
+    console.error(`[auth] A variável ${configurationIssue} não está configurada corretamente no Next.js.`);
+    return NextResponse.json(
+      { error: "Login indisponível: autenticação não configurada no servidor." },
+      { status: 503, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
   const ip = (request.headers.get("x-forwarded-for")?.split(",")[0] ?? "unknown").trim().slice(0, 100);
   const now = Date.now();
   if (failures.size > 5000) failures.clear();

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { randomBytes, scryptSync } from "node:crypto";
-import { createSession, isValidSession, SESSION_MAX_AGE, validCredentials } from "../src/lib/auth";
+import { authConfigurationIssue, createSession, isValidSession, SESSION_MAX_AGE, validCredentials } from "../src/lib/auth";
 
 test("nega sessões ausentes, adulteradas ou com segredo diferente", () => {
   process.env.AUTH_SESSION_SECRET = "a".repeat(64);
@@ -37,4 +37,18 @@ test("valida hash scrypt sem armazenar senha no projeto", async () => {
   assert.equal(await validCredentials("fluxhub@gmail.com", "senha-errada"), false);
   delete process.env.AUTH_PASSWORD_HASH;
   assert.equal(await validCredentials("fluxhub@gmail.com", "senha-de-teste-nao-e-credencial"), false);
+});
+
+test("identifica hash ausente e segredo de sessão não configurado", () => {
+  delete process.env.AUTH_PASSWORD_HASH;
+  delete process.env.AUTH_SESSION_SECRET;
+  assert.equal(authConfigurationIssue(), "AUTH_PASSWORD_HASH");
+  process.env.AUTH_PASSWORD_HASH = "scrypt:invalido";
+  assert.equal(authConfigurationIssue(), "AUTH_PASSWORD_HASH");
+  process.env.AUTH_PASSWORD_HASH = "scrypt:" + "a".repeat(32) + ":" + "b".repeat(128);
+  assert.equal(authConfigurationIssue(), "AUTH_SESSION_SECRET");
+  process.env.AUTH_SESSION_SECRET = "x".repeat(64);
+  assert.equal(authConfigurationIssue(), null);
+  delete process.env.AUTH_PASSWORD_HASH;
+  delete process.env.AUTH_SESSION_SECRET;
 });
