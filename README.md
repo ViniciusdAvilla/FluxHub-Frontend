@@ -178,7 +178,23 @@ A Central de Dados (`POST /api/explorer`) usa a mesma verificação de origem co
 
 - `PRODUCTS_PATH`: opcional; força a rota de produtos se a descoberta automática não for suficiente.
 - `PRODUCTS_BY_BRANDS_PATH`: opcional; força a rota `by-brands` usada para enriquecer o fabricante dos produtos.
-- `BACKEND_TOKEN`: opcional; enviado somente pelo servidor Next.js.
+- `BACKEND_TOKEN`: **obrigatório** para acesso ao FastAPI protegido, configurado somente no processo Next.js. Deve ser idêntico ao `BACKEND_TOKEN` do backend. Não use `NEXT_PUBLIC_BACKEND_TOKEN`.
+
+### Proteção da API e do Swagger
+
+O FastAPI agora exige `Authorization: Bearer <BACKEND_TOKEN>` inclusive para `/openapi.json` e `/docs`. O único endpoint sem autenticação é `GET /api/v1/health`, que informa apenas o status operacional. O navegador **não recebe o token**: o Next.js adiciona esse cabeçalho nas solicitações do servidor.
+
+Crie um token aleatório em um terminal seguro:
+
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(48))"
+```
+
+Configure o mesmo valor nos dois ambientes, ambos com o nome `BACKEND_TOKEN`. Não compartilhe com `AUTH_SESSION_SECRET`, a senha do login ou `AUTH_PASSWORD_HASH`. Recomenda-se conexão interna entre Next.js e FastAPI. Se a API estiver publicada em IP público, adote TLS/HTTPS e restrinja por firewall/Nginx para impedir que o token transite sem criptografia. Sem esse token, as consultas ao backend **falharão intencionalmente**.
+
+**Ordem de deploy:** primeiro configure `BACKEND_TOKEN` nos ambientes de frontend e backend; depois publique a revisão do frontend que envia esse token e, por último, a revisão do FastAPI que valida o cabeçalho. Se o backend for implantado primeiro, o painel ficará sem dados até a configuração do frontend. Após o deploy, teste `/dados`, `/financeiro` e `/produtos`.
+
+O Swagger público deixa de funcionar diretamente no navegador porque não recebe o token Bearer; isso é **intencional**. Para consultar o contrato com autorização, use um cliente API (curl/Postman) com o token, sem expô-lo no navegador ou no frontend público.
 - `FINANCE_DB_PATH`: arquivo SQLite usado para custos.
 - `SERPAPI_KEY`: habilita pesquisa no Google Shopping para Shopee e outros e-commerces.
 - `MELI_ACCESS_TOKEN`: habilita comparação direta com anúncios do Mercado Livre.
