@@ -251,3 +251,36 @@ MARKET_CACHE_MINUTES=360
 ```
 
 Se estiver usando proxy, Nginx, Vercel ou outro domínio, a rota também reconhece os cabeçalhos `Host`, `X-Forwarded-Host` e `X-Forwarded-Proto`.
+
+
+## Acesso restrito e apresentação do painel
+
+O FluxHub exibe uma tela única de login em `/login`, **sem cadastro público**. Após o login, todas as páginas e as rotas `/api/*` precisam de uma sessão assinada no servidor. A sessão dura até 12 horas, fica em cookie `HttpOnly` e é encerrada pelo botão **Sair da conta** no menu lateral.
+
+### Preparar credenciais no ambiente
+
+O projeto **não inclui senha, hash da senha nem segredo de assinatura no GitHub**. Na máquina onde você configura o deployment, execute:
+
+```bash
+node scripts/hash-password.mjs
+```
+
+Digite a senha escolhida no terminal (sem eco de caracteres). O comando exibirá as duas variáveis geradas. Coloque-as em seu `.env.local` ou nos segredos do servidor:
+
+```dotenv
+AUTH_EMAIL=FluxHub@gmail.com
+AUTH_PASSWORD_HASH=scrypt:<salt>:<hash>
+AUTH_SESSION_SECRET=<chave-aleatoria-gerada>
+```
+
+Use os **valores reais gerados**, não os marcadores entre `<>`. Nunca publique essas variáveis no repositório nem em logs públicos. Configure as mesmas variáveis em todas as réplicas do Next.js; caso contrário as sessões serão rejeitadas durante o balanceamento. Depois de alterar as variáveis, reinicie o processo/deploy.
+
+**HTTPS obrigatório para uso real:** o endereço fornecido `http://187.77.230.250` ainda usa HTTP. Antes de utilizar o login com uma senha real, configure um domínio e certificado TLS/HTTPS no proxy reverso. Em HTTP, credenciais e sessões podem ser interceptadas na rede. O cookie tem atributo Secure automaticamente quando a requisição chega por HTTPS (incluindo `X-Forwarded-Proto: https`). Também restrinja `/api/auth/login` por IP no Nginx/proxy para proteger contra tentativas distribuídas; a limitação em memória da rota é complementar e não substitui uma camada persistente.
+
+Se `AUTH_PASSWORD_HASH` ou `AUTH_SESSION_SECRET` estiver ausente, nenhum login é aprovado. Isso evita ativação involuntária com uma senha embutida no frontend.
+
+### Carregamento e Financeiro
+
+A antiga tela central de loading foi substituída por um **esqueleto da interface** com a navegação lateral e a barra superior presentes. O conteúdo é substituído por métricas e tabelas reais quando o servidor conclui a leitura. Não há valores fictícios no esqueleto.
+
+Em `/financeiro`, um gráfico de barras compara **receita e lucro estimados por categoria** com base no filtro aplicado. Exibe receita apenas quando existem preços e vendas, e lucro somente para itens com custos cadastrados. Esse gráfico não representa evolução diária ou mensal, porque a API atual não fornece uma série histórica para isso.
