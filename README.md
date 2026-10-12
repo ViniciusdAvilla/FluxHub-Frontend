@@ -166,13 +166,17 @@ MARKET_CACHE_MINUTES=360
 
 - `BACKEND_URL`: endereço acessível **a partir do servidor Next.js**, e não necessariamente do navegador. Se o FastAPI estiver publicado sob um prefixo de proxy, inclua esse prefixo na URL. O frontend preserva esse caminho ao consultar `openapi.json` e os endpoints de produtos, pedidos etc.
 
-Exemplo para o Swagger informado (ajuste a URL conforme a rede do seu servidor):
+Configuração segura: se frontend e FastAPI rodam na mesma máquina, conecte diretamente ao FastAPI via loopback. Se estiverem em máquinas distintas, configure TLS em um domínio e use HTTPS:
 
 ```dotenv
-BACKEND_URL=http://187.77.230.250/backend-api
+# Mesma máquina:
+BACKEND_URL=http://127.0.0.1:8000
+
+# Em servidores separados com HTTPS configurado:
+# BACKEND_URL=https://api.seudominio.com.br/backend-api
 ```
 
-Com essa configuração, a Central consulta `http://187.77.230.250/backend-api/openapi.json` e as rotas retornadas pelo contrato sob `/backend-api/api/v1/...`. **Não use o endereço `/docs` nem o fragmento `#/Products/...` em `BACKEND_URL`.** Se frontend e backend rodam na mesma máquina e a API atende diretamente na porta 8000, mantenha `http://127.0.0.1:8000`. Depois de mudar a variável no ambiente de produção, reinicie/reimplante o Next.js.
+**Não use `http://187.77.230.250/backend-api` com token real:** o Next.js bloqueará essa configuração por ser HTTP público. Para manter `/backend-api`, publique o proxy com HTTPS e o prefixo correspondente. **Não use `/docs` nem o fragmento `#/Products/...` em `BACKEND_URL`.** Depois de alterar as variáveis de produção, reinicie/reimplante o Next.js.
 
 A Central de Dados (`POST /api/explorer`) usa a mesma verificação de origem confiável que o Raio-X, reconhecendo cabeçalhos de proxy reverso. Continua rejeitando origens externas e requisições sem cabeçalho `Origin`.
 
@@ -190,7 +194,7 @@ Crie um token aleatório em um terminal seguro:
 python -c "import secrets; print(secrets.token_urlsafe(48))"
 ```
 
-Configure o mesmo valor nos dois ambientes, ambos com o nome `BACKEND_TOKEN`. Não compartilhe com `AUTH_SESSION_SECRET`, a senha do login ou `AUTH_PASSWORD_HASH`. Recomenda-se conexão interna entre Next.js e FastAPI. Se a API estiver publicada em IP público, adote TLS/HTTPS e restrinja por firewall/Nginx para impedir que o token transite sem criptografia. Sem esse token, as consultas ao backend **falharão intencionalmente**.
+Configure o mesmo valor nos dois ambientes, ambos com o nome `BACKEND_TOKEN`. Não compartilhe com `AUTH_SESSION_SECRET`, a senha do login ou `AUTH_PASSWORD_HASH`. Recomenda-se conexão interna entre Next.js e FastAPI. Se a API estiver publicada em IP público, use TLS/HTTPS e restrinja por firewall/Nginx. O código recusa enviar o Bearer token para URL HTTP que não seja localhost/loopback. Sem esse token, as consultas ao backend **falharão intencionalmente**.
 
 **Ordem de deploy:** primeiro configure `BACKEND_TOKEN` nos ambientes de frontend e backend; depois publique a revisão do frontend que envia esse token e, por último, a revisão do FastAPI que valida o cabeçalho. Se o backend for implantado primeiro, o painel ficará sem dados até a configuração do frontend. Após o deploy, teste `/dados`, `/financeiro` e `/produtos`.
 
