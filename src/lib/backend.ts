@@ -2,6 +2,7 @@ import "server-only";
 import { applyProductBrands, normalizeProducts } from "./analytics";
 import { readFinance } from "./database";
 import { parseOpenApi } from "./openapi";
+import { resolveBackendUrl } from "./backend-url";
 import type { BackendSchema, Snapshot } from "./types";
 
 function backendBase() {
@@ -40,9 +41,7 @@ async function requestAbsolute(url: URL) {
 
 export async function backendRequest(path: string, query?: URLSearchParams) {
   if (!path.startsWith("/")) throw new Error("Caminho inválido.");
-  const base = backendBase();
-  const url = new URL(path, base);
-  if (query) url.search = query.toString();
+  const url = resolveBackendUrl(backendBase(), path, query);
   return requestAbsolute(url);
 }
 
