@@ -2,6 +2,11 @@ name: FluxHub Android APK
 
 on:
   workflow_dispatch:
+    inputs:
+      frontend_url:
+        description: 'URL do frontend Next.js (HTTPS), pré-gravada no APK para abrir sem configuração'
+        required: false
+        type: string
   push:
     paths:
       - "android-webview/**"
@@ -38,6 +43,8 @@ jobs:
       - name: Testar regras de URL
         run: bash android-webview/test-url-policy.sh
       - name: Compilar APK de teste
+        env:
+          FLUXHUB_URL: ${{ github.event.inputs.frontend_url || vars.FLUXHUB_URL || '' }}
         run: gradle --project-dir android-webview :app:assembleDebug --no-daemon
       - name: Disponibilizar APK
         uses: actions/upload-artifact@v4

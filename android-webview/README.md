@@ -2,7 +2,7 @@
 
 Aplicativo Android nativo em Java, sem dependências extras de UI, para acessar o FluxHub (Next.js 16 / React 19) hospedado no computador ou servidor.
 
-**O APK não incorpora o backend Next.js, FastAPI ou SQLite.** Esses serviços precisam estar executando fora do telefone. No primeiro acesso, toque em **Configurar servidor** e informe a URL principal do frontend Next.js.
+**O APK não incorpora o backend Next.js, FastAPI ou SQLite.** Esses serviços precisam estar executando fora do telefone. O aplicativo abre automaticamente a URL principal pré-gravada na compilação. Não tem tela de configuração no Android. Se FLUXHUB_URL não foi informada, usa o endereço salvo por versões antigas; em instalação nova sem URL exibirá uma mensagem explicativa.
 
 ## Endereços possíveis
 
@@ -50,3 +50,14 @@ Abra somente a pasta android-webview. Use Java/JDK 17, SDK 36, Gradle 8.13 e And
 Para testar regras de URL localmente sem Android SDK:
 
     bash android-webview/test-url-policy.sh
+
+
+## APK sem tela de configuração
+
+Configure uma URL real e acessível do Next.js (não a URL da API Python) durante a compilação:
+
+- Via GitHub Actions: abra `FluxHub Android APK` > `Run workflow` e preencha `frontend_url` com a URL `https://seu-dominio.com`.
+- Alternativa: configure a variável de repositório `FLUXHUB_URL` nas configurações do GitHub, e a CI usará essa URL.
+- Via terminal: `FLUXHUB_URL=https://seu-dominio.com gradle --project-dir android-webview :app:assembleDebug`.
+
+A tela "Servidor" foi removida. O sistema Next.js com backend Python permanece necessário. A primeira instalação só funciona se a URL do frontend tiver sido incluída no build. O arquivo gerado por CI é debug e pode exigir desinstalar versões debug anteriores, pois a chave de assinatura da CI pode ser diferente.
