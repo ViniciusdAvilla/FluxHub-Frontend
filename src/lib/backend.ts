@@ -3,13 +3,14 @@ import { applyProductBrands, normalizeProducts } from "./analytics";
 import { readFinance } from "./database";
 import { parseOpenApi } from "./openapi";
 import { resolveBackendUrl } from "./backend-url";
-import { backendAuthHeaders } from "./backend-auth";
+import { assertSecureBackendTransport, backendAuthHeaders } from "./backend-auth";
 import type { BackendSchema, Snapshot } from "./types";
 
 function backendBase() {
   const base = new URL(process.env.BACKEND_URL || "http://127.0.0.1:8000");
   if (!/^https?:$/.test(base.protocol))
     throw new Error("Endereço do serviço inválido.");
+  assertSecureBackendTransport(base);
   return base;
 }
 
