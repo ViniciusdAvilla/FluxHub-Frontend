@@ -39,14 +39,13 @@ Se as portas ou aplicações forem outras, edite `deploy/nginx-myfluxhub.tech.co
 Após revisar outras configurações Nginx para o mesmo hostname:
 
 ```bash
-sudo cp /etc/nginx/sites-available/default /etc/nginx/sites-available/default.bak
 sudo cp deploy/nginx-myfluxhub.tech.conf /etc/nginx/sites-available/myfluxhub.tech
 sudo ln -s /etc/nginx/sites-available/myfluxhub.tech /etc/nginx/sites-enabled/myfluxhub.tech
 sudo nginx -t
 sudo systemctl reload nginx
 ```
 
-**Não execute o `ln -s` se o link já existir.** Se o bloco default em `sites-enabled` disputar `myfluxhub.tech`, resolva a duplicação antes de continuar. Se Nginx ou o site estiver sendo administrado por um painel, faça essa edição pelo sistema responsável, para não sobrescrever alterações.
+**Não execute o `ln -s` se o link já existir.** Se o bloco padrão em `sites-enabled` disputar `myfluxhub.tech`, resolva a duplicação antes de continuar. Se Nginx ou o site estiver sendo administrado por um painel, faça essa edição pelo sistema responsável, para não sobrescrever alterações.
 
 No firewall da VPS e no firewall do provedor, libere **TCP 80/443**. Não abra 3000/8000 para a Internet; faça os serviços ouvirem em `127.0.0.1` se não estiverem em containers.
 
@@ -88,8 +87,8 @@ Reinicie o processo Next.js depois de configurar o ambiente para que as variáve
 ```bash
 curl -I https://myfluxhub.tech/login
 curl -I https://myfluxhub.tech/financeiro
-curl -I https://myfluxhub.tech/backend-api/api/v1/health
-curl -I https://myfluxhub.tech/backend-api/api/v1/products/
+curl -i https://myfluxhub.tech/backend-api/api/v1/health
+curl -i https://myfluxhub.tech/backend-api/api/v1/products/
 ```
 
 Resultados esperados: `/login` retorna 200, `/financeiro` redireciona para o login se não houver sessão, `/api/v1/health` retorna 200 e a rota de produtos retorna 401 sem Bearer se o PR do backend protegido estiver implantado. Os códigos reais dependem do status dos serviços.
