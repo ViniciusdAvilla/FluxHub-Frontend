@@ -36,6 +36,7 @@ export async function POST(request: NextRequest) {
     const body = JSON.parse(raw) as Record<string, unknown>;
     const email = typeof body?.email === "string" ? body.email : "";
     const password = typeof body?.password === "string" ? body.password : "";
+    const remember = body?.remember === true;
     const allowed = await validCredentials(email, password);
     if (!allowed) {
       const recent = failure && failure.until > now ? failure.count : 0;
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
     const https = request.nextUrl.protocol === "https:" || request.headers.get("x-forwarded-proto")?.split(",")[0] === "https";
     response.cookies.set(SESSION_COOKIE, session, {
-      httpOnly: true, secure: https, sameSite: "lax", path: "/", maxAge: SESSION_MAX_AGE,
+      httpOnly: true, secure: https, sameSite: "lax", path: "/", ...(remember ? { maxAge: SESSION_MAX_AGE } : {}),
     });
     return response;
   } catch (error) {

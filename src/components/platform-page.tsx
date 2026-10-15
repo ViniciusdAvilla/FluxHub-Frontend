@@ -72,9 +72,9 @@ export type View =
 
 const titles: Record<View, { eyebrow: string; title: string; text: string }> = {
   overview: {
-    eyebrow: "VISÃO GERENCIAL",
-    title: "Indicadores gerais",
-    text: "Venda, margem, estoque e catálogo em uma leitura única.",
+    eyebrow: "PAINEL DE CONTROLE",
+    title: "Dashboard",
+    text: "Acesse os resultados e os indicadores da sua operação em um só lugar.",
   },
   products: {
     eyebrow: "CATÁLOGO",
@@ -154,7 +154,7 @@ function Metric({
     <article className="metric-card">
       <div className="metric-top">
         <span>{label}</span>
-        <Icon size={18} />
+        <span className="metric-icon"><Icon size={19} /></span>
       </div>
       <strong className={`metric-value text-${tone}`}>{value}</strong>
       <small>{note}</small>
@@ -556,14 +556,15 @@ export default function PlatformPage({ initial, view }: { initial: Snapshot; vie
 
           {view === "overview" && (
             <>
-              <div className="metric-grid four">
+              <div className="metric-grid five">
                 <Metric label="Receita estimada" value={money(summary.revenue)} note={`${summary.revenueCount}/${summary.productCount} produtos com base de cálculo`} icon={Coins} />
                 <Metric label="Lucro estimado" value={money(summary.profit)} note={`${summary.covered}/${summary.productCount} produtos com custos`} icon={BadgeDollarSign} tone={marginTone(summary.margin)} />
                 <Metric label="Margem estimada" value={percent(summary.margin)} note={summary.losses ? `${summary.losses} produto(s) no prejuízo` : "Sem prejuízo entre itens calculados"} icon={Gauge} tone={marginTone(summary.margin)} />
                 <Metric label="Unidades vendidas" value={number(summary.sales)} note="Volume informado para 30 dias" icon={ShoppingCart} />
+                <Metric label="Produtos no catálogo" value={number(summary.productCount)} note="Itens disponíveis na operação" icon={Package} />
               </div>
               <div className="chart-layout">
-                <Section title="Receita estimada por categoria" subtitle="Clique em uma barra para filtrar o painel."><RevenueChart categories={summary.categories} onSelect={setCategory} /></Section>
+                <Section title="Resumo de vendas por categoria" subtitle="Receita estimada por categoria. Selecione uma barra para filtrar."><RevenueChart categories={summary.categories} onSelect={setCategory} /></Section>
                 <Section title="Fabricante com mais lucro" subtitle="Resultado dos produtos com custos cadastrados, agrupados pelo fabricante recebido do catálogo."><ManufacturerChart manufacturers={summary.manufacturers} onSelect={setManufacturer} /></Section>
                 <Section title="Produtos por categoria" subtitle="Distribuição do catálogo filtrado."><CategoryChart categories={summary.categories} onSelect={setCategory} /></Section>
               </div>
