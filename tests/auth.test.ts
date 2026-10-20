@@ -10,7 +10,9 @@ test("sessão cifrada contém JWT validado previamente pelo backend", () => {
   assert.equal(readSession(session)?.email, "client@example.com");
   assert.equal(readSession(session)?.accessToken, token);
   assert.equal(session.includes(token), false);
-  assert.equal(isValidSession(session.slice(0, -1) + "Z"), false);
+  const parts = session.split(".");
+  const tampered = parts[0].replace(/^./, parts[0][0] === "A" ? "B" : "A") + "." + parts[1] + "." + parts[2];
+  assert.equal(isValidSession(tampered), false);
   process.env.AUTH_SESSION_SECRET = "b".repeat(64);
   assert.equal(isValidSession(session), false);
 });
