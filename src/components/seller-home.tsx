@@ -70,7 +70,7 @@ export default function SellerHome({report}:{report:SellerReport}){
         <div className="fh-info-row"><span>Rentabilidade Ads</span><strong>{ads?.profit_complete?"Calculada":"Dados incompletos"}</strong></div>
         <div className="fh-info-row"><span>Sincronização</span><strong>Por página de até 50 itens</strong></div>
         <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:14}}>
-          {accounts.length===1&&<SyncAction accountId={accounts[0].account_id}/>}
+          {accounts.length===1&&accountId===null&&<SyncAction accountId={accounts[0].account_id}/>}
           {accountId&&<SyncAction accountId={accountId}/>}
           <Link href="/integracoes" className="fh-info-action">Gerenciar integração <ArrowRight size={15}/></Link>
         </div>

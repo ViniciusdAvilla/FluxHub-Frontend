@@ -107,3 +107,26 @@
 @media(max-width:1260px){.fh-split-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.fh-kpis{grid-template-columns:repeat(4,minmax(0,1fr));}.fh-hero-grid{grid-template-columns:minmax(0,1.5fr) minmax(260px,1fr)}}
 @media(max-width:880px){.fh-sidebar{transform:translateX(-105%);transition:transform .2s;}.fh-sidebar.fh-open{transform:translateX(0)}.fh-overlay{display:block;position:fixed;inset:0;background:rgba(20,34,68,.35);border:0;z-index:48;}.fh-content{margin:0}.fh-mobile-toggle,.fh-mobile-close{display:inline-flex;background:transparent;border:0;color:#61749c}.fh-mobile-close{margin-left:auto}.fh-heading span,.fh-heading>svg{display:none}.fh-topbar{padding:0 16px}.fh-main{padding:18px 13px}.fh-hero-grid{grid-template-columns:1fr}.fh-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}.fh-alert-row{grid-template-columns:repeat(2,minmax(0,1fr));}}
 @media(max-width:530px){.fh-heading h1{font-size:18px}.fh-split-grid{grid-template-columns:1fr}.fh-kpi{padding:13px;min-height:123px}.fh-kpi-value{font-size:19px}.fh-chart-key{font-size:10px}.fh-card{padding:14px}.fh-filters{justify-content:flex-start}.fh-top-actions{gap:5px}.fh-top-icon{display:none}.fh-admin-grid{grid-template-columns:1fr}}
+
+/* Match the remaining legacy operational pages to the new clean visual language. */
+:root { --bg:#f5f7fc; --surface:#fff; --surface-2:#f9fbff; --line:#e7ecf5; --text:#17234b; --muted:#7b88a2; --primary:#347dff; --primary-soft:#eaf2ff; --shadow:0 6px 22px rgba(34,57,105,.045); }
+.sidebar {background:#fff;color:#17234b;border-right:1px solid #ebeff7;}
+.brand-block {border-bottom:1px solid #edf1f8;}
+.brand-block strong {color:#17234b;}
+.brand-block small,.brand-subtitle {color:#8995ad;}
+.nav-section {color:#9aa6ba;}
+.sidebar-nav a {color:#66738e;border-radius:11px;}
+.sidebar-nav a:hover {background:#f2f6ff;color:#377afa;}
+.sidebar-nav a.active {background:#eaf2ff;color:#2673f6;}
+.sidebar-nav a.active svg:first-child {color:#3d7df7;}
+.sidebar-foot {border-top-color:#ecf0f8;}
+.connection {background:#f3f7ff;}
+.connection strong{color:#3e527e;}
+.connection span {color:#94a0b4;}
+.logout-button {color:#61718f;}
+.topbar {background:#fff;border-color:#edf1f8;}
+.panel,.metric-card {border-radius:14px;border-color:#e9edf5;box-shadow:0 6px 21px rgba(32,60,112,.03);}
+.button.primary {background:#347dff;border-color:#347dff;}
+.page-heading h1 b {color:#347dff;}
+.fh-spinning svg,.fh-spinning {animation:fh-spin 1s linear infinite;}
+@keyframes fh-spin {to{transform:rotate(360deg);}}

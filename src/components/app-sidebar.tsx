@@ -3,7 +3,7 @@
 import Link from "next/link";
 import {
   BadgeDollarSign, Boxes, Calculator, ChartNoAxesCombined, ChevronRight,
-  ClipboardList, Database, Factory, Gauge, LogOut, Package, ScanSearch,
+  ClipboardList, Database, Factory, Gauge, LogOut, Link2, Package, ScanSearch,
   ShoppingCart, X,
 } from "lucide-react";
 import type { View } from "./platform-page";
@@ -46,6 +46,7 @@ export default function AppSidebar({
             <Icon size={18} /><span>{label}</span>{view === itemView && <ChevronRight size={14} />}
           </Link>
         ))}
+        <Link href="/integracoes" onClick={onClose}><Link2 size={18}/><span>Integrações</span></Link>
       </nav>
       <div className="sidebar-foot">
         {endpointCount !== undefined && (
