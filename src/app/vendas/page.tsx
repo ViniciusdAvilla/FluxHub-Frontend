@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Wallet, ShoppingCart, Ban, BadgeDollarSign } from "lucide-react";
 import ModernShell from "@/components/modern-shell";
+import SyncAction from "@/components/sync-action";
 import { PerformanceChart, DailyBars, DonutStats } from "@/components/modern-charts";
 import { getSellerReport } from "@/lib/seller-data";
 import { money,number,percent } from "@/lib/analytics";
@@ -13,6 +14,13 @@ export default async function SalesPage(){
  const statuses=new Map<string,number>();
  for(const o of r.orders)statuses.set(o.status,(statuses.get(o.status)||0)+1);
  return <ModernShell title="Vendas" eyebrow="Pedidos e receita" isAdmin={Boolean(r.user?.is_admin)}>
+  {r.accounts.length>0&&<div className="fh-notice">
+    <strong>Contas Mercado Livre conectadas:</strong> atualizar dados oficiais de anúncios e pedidos.
+    <div className="fh-inline-actions" style={{marginTop:10}}>
+      {r.accounts.map(a=><SyncAction key={a.account_id} accountId={a.account_id}
+        auto={!r.sources.some(s=>s.account_key===`ml:${a.account_id}`&&Boolean(s.last_synced_at))}/>)}
+    </div>
+  </div>}
   <div className="fh-notice">Os valores abaixo representam pedidos persistidos durante as sincronizações. Não são valores líquidos recebidos no Mercado Pago nem histórico completo garantido.</div>
   <div className="fh-kpis">
    <article className="fh-kpi blue"><div className="fh-kpi-top"><Wallet className="fh-kpi-icon"/> Valor bruto</div><strong className="fh-kpi-value">{money(revenue)}</strong></article>

@@ -18,10 +18,10 @@ export default async function Integrations(){
  return <ModernShell title="Integrações" eyebrow="Conectar marketplaces" isAdmin={Boolean(user?.is_admin)}>
    <div className="fh-notice"><ShieldCheck size={15} style={{verticalAlign:"middle",marginRight:5}}/>As contas são autorizadas nas páginas oficiais do Mercado Livre e Mercado Pago. Tokens nunca são expostos no navegador.</div>
    <div className="fh-hero-grid">
-     <section className="fh-card"><div className="fh-card-head"><div><h2>Mercado Livre</h2><p>Conecte um vendedor para consultar anúncios, visitas e pedidos</p></div><span className={`fh-pill ${ml?.length?"":"offline"}`}>{ml?.length?"Conectado":"Não conectado"}</span></div>
+     <section className="fh-card"><div className="fh-card-head"><div><h2>Mercado Livre</h2><p>Após conectar, os anúncios e pedidos começam a ser sincronizados automaticamente</p></div><span className={`fh-pill ${ml?.length?"":"offline"}`}>{ml?.length?"Conectado":"Não conectado"}</span></div>
        <ConnectMarketplace provider="mercado-livre"/>
        <hr className="fh-separator"/>
-       {(ml||[]).map(a=><div key={a.account_id} className="fh-info-row"><div><strong style={{display:"block"}}>{a.nickname||"Conta Mercado Livre"}</strong><span>Seller ID: {a.account_id}</span></div><SyncAction accountId={a.account_id}/></div>)}
+       {(ml||[]).map(a=><div key={a.account_id} className="fh-info-row"><div><strong style={{display:"block"}}>{a.nickname||"Conta Mercado Livre"}</strong><span>Seller ID: {a.account_id}</span></div><SyncAction accountId={a.account_id} auto={sources!==null&&!sources.some(s=>s.provider==="mercado_livre"&&s.account_key===`ml:${a.account_id}`&&Boolean(s.last_synced_at))}/></div>)}
        {ml!==null&&!ml.length&&<div className="fh-empty"><Link2 size={24}/>Nenhum vendedor Mercado Livre associado.</div>}
        {ml===null&&<div className="fh-notice error">Não foi possível consultar as contas. Verifique o backend.</div>}
      </section>

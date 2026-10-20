@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import {
   Activity,
   BadgeDollarSign,
@@ -52,6 +52,7 @@ import type {
 } from "@/lib/types";
 import { CategoryChart, ManufacturerChart, RevenueChart } from "./charts";
 import AppSidebar from "./app-sidebar";
+import SyncAction from "./sync-action";
 import FinanceCategoryChart from "./finance-category-chart";
 import RaioXPanel from "./raio-x-panel";
 
@@ -463,8 +464,9 @@ function DataExplorer({
   );
 }
 
-export default function PlatformPage({ initial, view }: { initial: Snapshot; view: View }) {
+export default function PlatformPage({ initial, view, syncAccounts = [] }: { initial: Snapshot; view: View; syncAccounts?: { accountId: number; auto: boolean }[] }) {
   const [snapshot, setSnapshot] = useState(initial);
+  useEffect(() => { setSnapshot(initial); }, [initial]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
@@ -542,6 +544,12 @@ export default function PlatformPage({ initial, view }: { initial: Snapshot; vie
             </div>
           </div>
 
+          {syncAccounts.length > 0 && <div className="notice">
+            <strong>Mercado Livre conectado.</strong> Consulte anúncios, pedidos e estoque atualizados.
+            <div className="fh-inline-actions" style={{ marginTop: 10 }}>
+              {syncAccounts.map(account => <SyncAction key={account.accountId} accountId={account.accountId} auto={account.auto}/>)}
+            </div>
+          </div>}
           {(snapshot.error || notice) && <div className={`notice ${snapshot.error ? "warning" : "good"}`} role="status">{snapshot.error || notice}</div>}
 
           {!(["orders", "data"] as View[]).includes(view) && (

@@ -130,3 +130,26 @@
 .page-heading h1 b {color:#347dff;}
 .fh-spinning svg,.fh-spinning {animation:fh-spin 1s linear infinite;}
 @keyframes fh-spin {to{transform:rotate(360deg);}}
+
+
+/* Tema claro permanente: dashboard, navegação e formulários sem áreas pretas. */
+:root { color-scheme: light; }
+html, body { background: #f6f8fe; color: #1d3058; }
+.fh-app { color-scheme: light; background: #f6f8fe; color: #1e3158; }
+.fh-sidebar { background: #fff; border-right-color: #e7edfa; }
+.fh-content { background: #f6f8fe; }
+.fh-topbar { background: #fff; border-bottom-color: #e6ecf7; }
+.fh-card, .fh-kpi, .fh-alert { background-color: #fff; color: #22365d; }
+.fh-kpi.blue { background: linear-gradient(140deg, #eaf4ff 0%, #fff 90%); }
+.fh-kpi.green { background: linear-gradient(140deg, #e8fff4 0%, #fff 90%); }
+.fh-kpi.purple { background: linear-gradient(140deg, #f2edff 0%, #fff 90%); }
+.fh-kpi.orange { background: linear-gradient(140deg, #fff5e6 0%, #fff 90%); }
+.fh-kpi.rose { background: linear-gradient(140deg, #fff0f5 0%, #fff 90%); }
+.fh-sync-action { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 160px; }
+.fh-sync-message { font-size: 11px; line-height: 1.5; color: #647697; margin: 4px 0; max-width: 480px; }
+.fh-inline-actions { align-items: flex-start; }
+.fh-notice p { margin: 7px 0; }
+@media (max-width: 530px) {
+  .fh-sync-action { width: 100%; }
+  .fh-sync-action .fh-primary-btn { width: 100%; }
+}

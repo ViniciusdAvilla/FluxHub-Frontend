@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Boxes, Package, Tag } from "lucide-react";
 import ModernShell from "@/components/modern-shell";
+import SyncAction from "@/components/sync-action";
 import { DonutStats } from "@/components/modern-charts";
 import { getSellerReport } from "@/lib/seller-data";
 import { money,number } from "@/lib/analytics";
@@ -9,6 +10,13 @@ export default async function ListingsPage(){
  const r=await getSellerReport(30,null);
  const total=r.listing?.total_listings??null,active=r.listing?.active_listings??null;
  return <ModernShell title="Anúncios" eyebrow="Catálogo e desempenho" isAdmin={Boolean(r.user?.is_admin)}>
+  {r.accounts.length>0&&<div className="fh-notice">
+    <strong>Contas Mercado Livre conectadas:</strong> atualizar dados oficiais de anúncios e pedidos.
+    <div className="fh-inline-actions" style={{marginTop:10}}>
+      {r.accounts.map(a=><SyncAction key={a.account_id} accountId={a.account_id}
+        auto={!r.sources.some(s=>s.account_key===`ml:${a.account_id}`&&Boolean(s.last_synced_at))}/>)}
+    </div>
+  </div>}
   <div className="fh-notice">Indicadores dos anúncios capturados do Mercado Livre. O catálogo pode estar parcial até todas as páginas serem sincronizadas.</div>
   <div className="fh-kpis">
    <article className="fh-kpi blue"><div className="fh-kpi-top">Anúncios registrados</div><strong className="fh-kpi-value">{number(total)}</strong></article>

@@ -36,7 +36,8 @@ export default function SellerHome({report}:{report:SellerReport}){
   const account=accounts.find(a=>a.account_id===accountId);
   const reputation=report.profile?.seller_reputation;
   const sources=report.sources.filter(s=>s.provider==="mercado_livre");
-  const lastSync=sources.find(s=>s.account_key===`ml:${account?.account_id}`)?.last_synced_at || sources.find(s=>s.last_synced_at)?.last_synced_at;
+  const lastSync=sources.find(s=>s.account_key===`ml:${account?.account_id}`)?.last_synced_at || sources.find(s=>s.provider==="mercado_livre"&&s.last_synced_at)?.last_synced_at;
+  const pendingSync = accounts.filter(a => !sources.some(s => s.account_key === `ml:${a.account_id}` && Boolean(s.last_synced_at)));
   const topProducts=[...products].sort((a,b)=>(b.sales_30d??-1)-(a.sales_30d??-1)).slice(0,8);
   const costIndex=new Map(costs.map(c=>[c.external_id,c]));
   const ordersByStatus=new Map<string,number>();
@@ -49,6 +50,11 @@ export default function SellerHome({report}:{report:SellerReport}){
       <label className="fh-filter">Conta <select name="account" defaultValue={accountId??""} aria-label="Conta Mercado Livre"><option value="">Todas as contas</option>{accounts.map(a=><option value={a.account_id} key={a.account_id}>{a.nickname||a.account_id}</option>)}</select></label>
       <button className="fh-control" type="submit">Aplicar filtros</button>
     </form>
+    {pendingSync.length>0&&<section className="fh-notice" aria-label="Primeira sincronização">
+      <strong>Conta conectada: importando dados oficiais do Mercado Livre.</strong>
+      <p>O primeiro carregamento pode levar mais tempo. As telas serão atualizadas quando a sincronização terminar.</p>
+      <div className="fh-inline-actions">{pendingSync.map(a=><SyncAction key={a.account_id} accountId={a.account_id} auto/>)}</div>
+    </section>}
     {!hasData&&<div className="fh-notice"><strong>Nenhuma conta Mercado Livre conectada.</strong> Autorize uma conta em <Link href="/integracoes" style={{color:"#237af4",fontWeight:750}}>Integrações</Link> para receber seus dados. O painel não usa valores fictícios.</div>}
     {report.failedSources.length>0&&<div className="fh-notice error" role="status">Algumas consultas não responderam: {report.failedSources.join(", ")}. Verifique se o FastAPI está online e autenticado.</div>}
     <div className="fh-kpis">
