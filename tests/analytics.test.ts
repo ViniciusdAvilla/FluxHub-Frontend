@@ -1,9 +1,5 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { DatabaseSync } from "node:sqlite";
 import {
   applyProductBrands,
   classifyAbc,
@@ -276,25 +272,11 @@ test("resultado genérico extrai linhas para tabela e CSV", () => {
   assert.equal(displayValue(true), "Sim");
 });
 
-test("custos persistem no SQLite e edição substitui o mesmo produto", async () => {
-  const directory = mkdtempSync(join(tmpdir(), "autogestao-test-"));
-  process.env.FINANCE_DB_PATH = join(directory, "test.sqlite");
-  const { readFinance, saveFinance } = await import("../src/lib/database");
-  saveFinance(finance);
-  saveFinance({ ...finance, unitCost: 51 });
-  assert.equal(readFinance().length, 1);
-  assert.equal(Object.getPrototypeOf(readFinance()[0]), Object.prototype);
-  const disk = new DatabaseSync(process.env.FINANCE_DB_PATH);
-  assert.equal(
-    disk
-      .prepare("SELECT unitCost FROM finance WHERE productId = ?")
-      .get(finance.productId)?.unitCost,
-    51,
-  );
-  disk.close();
-  rmSync(directory, { recursive: true, force: true });
+test("valida custos sem armazenamento local SQLite", () => {
+  const valid = validateFinance({ ...finance, unitCost: 51 });
+  assert.equal(valid.productId, finance.productId);
+  assert.equal(valid.unitCost, 51);
 });
-
 
 test("normaliza exatamente os campos do backend FastAPI atual", () => {
   const [product] = normalizeProducts([
