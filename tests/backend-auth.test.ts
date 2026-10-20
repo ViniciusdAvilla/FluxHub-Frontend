@@ -8,11 +8,11 @@ test("exige segredo configurado e com tamanho mínimo", () => {
   }
 });
 
-test("adiciona Authorization Bearer apenas em requisições ao servidor FastAPI", () => {
+test("adiciona X-Backend-Token apenas em requisições ao servidor FastAPI", () => {
   const token = "a".repeat(48);
   assert.deepEqual(backendAuthHeaders(token), {
     Accept: "application/json",
-    Authorization: `Bearer ${token}`,
+    "X-Backend-Token": token,
   });
 });
 

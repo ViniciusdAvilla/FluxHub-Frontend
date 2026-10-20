@@ -15,7 +15,7 @@ export function backendAuthHeaders(token: string | undefined): Record<string, st
 
   return {
     Accept: "application/json",
-    Authorization: `Bearer ${token}`,
+    "X-Backend-Token": token,
   };
 }
 

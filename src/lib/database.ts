@@ -1,50 +1,48 @@
-import { DatabaseSync } from "node:sqlite";
-import { mkdirSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+/** Financial costs are persisted ONLY in the tenant-scoped PostgreSQL backend. */
+import "server-only";
 import type { Finance } from "./types";
+import { backendRequest, backendMutation } from "./backend";
 
-let database: DatabaseSync | undefined;
-function db() {
-  if (database) return database;
-  const path = resolve(process.env.FINANCE_DB_PATH || "./data/finance.sqlite");
-  mkdirSync(dirname(path), { recursive: true });
-  database = new DatabaseSync(path, { timeout: 5000 });
-  database.exec(`PRAGMA journal_mode=WAL;
-    CREATE TABLE IF NOT EXISTS finance (
-      productId TEXT PRIMARY KEY, supplier TEXT NOT NULL,
-      unitCost REAL NOT NULL CHECK(unitCost >= 0),
-      feePercent REAL NOT NULL CHECK(feePercent BETWEEN 0 AND 100),
-      taxPercent REAL NOT NULL CHECK(taxPercent BETWEEN 0 AND 100),
-      shippingCost REAL NOT NULL CHECK(shippingCost >= 0),
-      otherCost REAL NOT NULL CHECK(otherCost >= 0)
-    ) STRICT;`);
-  return database;
+type BackendCost = {
+  external_id: string;
+  unit_cost: number;
+  manufacturer: string | null;
+  marketplace_fee_percent: number | null;
+  tax_percent: number;
+  shipping_cost: number;
+  other_cost: number;
+};
+
+function fromBackend(row: BackendCost): Finance {
+  return {
+    productId: row.external_id,
+    supplier: row.manufacturer || "Sem fabricante",
+    unitCost: row.unit_cost,
+    feePercent: row.marketplace_fee_percent ?? 0,
+    taxPercent: row.tax_percent,
+    shippingCost: row.shipping_cost,
+    otherCost: row.other_cost,
+  };
 }
 
-export function readFinance(): Finance[] {
-  // SQLite rows have a null prototype; React server props require plain objects.
-  return db()
-    .prepare("SELECT * FROM finance")
-    .all()
-    .map((row) => ({ ...row })) as Finance[];
+export async function readFinance(): Promise<Finance[]> {
+  const rows = await backendRequest(
+    "/api/v1/analytics/product-costs",
+    new URLSearchParams({ limit: "1000", offset: "0" }),
+  ) as BackendCost[];
+  if (!Array.isArray(rows)) throw new Error("O backend não retornou custos válidos.");
+  return rows.map(fromBackend);
 }
 
-export function saveFinance(f: Finance) {
-  db()
-    .prepare(
-      `INSERT INTO finance VALUES (?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(productId) DO UPDATE SET supplier=excluded.supplier,
-    unitCost=excluded.unitCost, feePercent=excluded.feePercent,
-    taxPercent=excluded.taxPercent, shippingCost=excluded.shippingCost,
-    otherCost=excluded.otherCost`,
-    )
-    .run(
-      f.productId,
-      f.supplier,
-      f.unitCost,
-      f.feePercent,
-      f.taxPercent,
-      f.shippingCost,
-      f.otherCost,
-    );
+export async function saveFinance(finance: Finance): Promise<Finance> {
+  const id = encodeURIComponent(finance.productId);
+  await backendMutation(`/api/v1/analytics/product-costs/${id}`, "PUT", {
+    unit_cost: finance.unitCost,
+    marketplace_fee_percent: finance.feePercent,
+    manufacturer: finance.supplier,
+    tax_percent: finance.taxPercent,
+    shipping_cost: finance.shippingCost,
+    other_cost: finance.otherCost,
+  });
+  return finance;
 }

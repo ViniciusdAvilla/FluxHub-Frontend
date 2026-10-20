@@ -35,7 +35,7 @@ export async function PUT(request: Request) {
     );
   }
   try {
-    saveFinance(finance);
+    await saveFinance(finance);
     return Response.json(finance, { headers: { "Cache-Control": "no-store" } });
   } catch {
     return Response.json(

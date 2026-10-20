@@ -1,4 +1,6 @@
 import "server-only";
+import { cookies } from "next/headers";
+import { readSession, SESSION_COOKIE } from "./auth";
 import { applyProductBrands, normalizeProducts } from "./analytics";
 import { readFinance } from "./database";
 import { parseOpenApi } from "./openapi";
@@ -14,12 +16,22 @@ function backendBase() {
   return base;
 }
 
-async function requestAbsolute(url: URL) {
+async function requestAbsolute(
+  url: URL, method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE" = "GET",
+  payload?: unknown, includeUser = true,
+) {
   const base = backendBase();
   if (url.origin !== base.origin)
     throw new Error("Destino de consulta não autorizado.");
   const headers = backendAuthHeaders(process.env.BACKEND_TOKEN);
+  if (includeUser) {
+    const session = readSession((await cookies()).get(SESSION_COOKIE)?.value);
+    if (session) headers.Authorization = `Bearer ${session.accessToken}`;
+  }
+  if (payload !== undefined) headers["Content-Type"] = "application/json";
   const response = await fetch(url, {
+    method,
+    body: payload === undefined ? undefined : JSON.stringify(payload),
     headers,
     cache: "no-store",
     redirect: "error",
@@ -43,6 +55,34 @@ export async function backendRequest(path: string, query?: URLSearchParams) {
   if (!path.startsWith("/")) throw new Error("Caminho inválido.");
   const url = resolveBackendUrl(backendBase(), path, query);
   return requestAbsolute(url);
+}
+
+export async function backendMutation(
+  path: string, method: "POST" | "PUT" | "PATCH" | "DELETE", payload?: unknown,
+): Promise<unknown> {
+  if (!path.startsWith("/")) throw new Error("Caminho inválido.");
+  return requestAbsolute(resolveBackendUrl(backendBase(), path), method, payload);
+}
+
+export async function serviceLogin(email: string, password: string) {
+  const url = resolveBackendUrl(backendBase(), "/api/v1/auth/login");
+  return requestAbsolute(url, "POST", { email, password }, false) as Promise<{
+    access_token: string; token_type: string; expires_in: number;
+  }>;
+}
+
+export async function serviceIdentity(token: string) {
+  const url = resolveBackendUrl(backendBase(), "/api/v1/auth/me");
+  const headers = {
+    ...backendAuthHeaders(process.env.BACKEND_TOKEN),
+    Authorization: `Bearer ${token}`,
+  };
+  const response = await fetch(url, {
+    headers, cache: "no-store", redirect: "error",
+    signal: AbortSignal.timeout(10000),
+  });
+  if (!response.ok) throw new Error("Não foi possível validar a conta no backend.");
+  return response.json() as Promise<{ id: number; email: string; is_admin: boolean; is_active: boolean }>;
 }
 
 export async function getBackendSchema(): Promise<BackendSchema> {
@@ -143,9 +183,9 @@ export async function executeReadEndpoint(
   return backendRequest(path, query);
 }
 
-function financeSnapshot() {
+async function financeSnapshot() {
   try {
-    return readFinance();
+    return await readFinance();
   } catch (error) {
     console.error(
       "[finance]",
@@ -157,7 +197,7 @@ function financeSnapshot() {
 
 export async function getSnapshot(): Promise<Snapshot> {
   const schema = await getBackendSchema();
-  const finance = financeSnapshot();
+  const finance = await financeSnapshot();
   try {
     const baseProducts = normalizeProducts(
       await backendRequest(chooseProductsPath(schema)),
