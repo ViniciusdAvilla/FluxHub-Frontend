@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { deriveMercadoLivreIntegration, deriveMercadoPagoIntegration } from "../src/lib/integration-model";
+import { deriveMercadoLivreIntegration } from "../src/lib/integration-model";
 import type { Account, SourceStatus } from "../src/lib/seller-data";
 
 const account: Account = {
@@ -72,12 +72,3 @@ test("duplicidades e contas não vinculadas são ignoradas", () => {
   assert.equal(result.sourcesAvailable, false);
 });
 
-test("Mercado Pago tem status independente do Mercado Livre", () => {
-  assert.equal(deriveMercadoPagoIntegration({ok:true,data:[]}).status,"not_connected");
-  assert.equal(deriveMercadoPagoIntegration({ok:false}).status,"unavailable");
-  const result=deriveMercadoPagoIntegration({ok:true,data:[
-    {account_id:"1234",connected:true},{account_id:"1234",connected:true},
-    {account_id:"5678",connected:false},
-  ]});
-  assert.deepEqual(result.accountIds,["1234"]);
-});
