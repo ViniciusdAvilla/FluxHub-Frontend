@@ -25,11 +25,13 @@ export async function POST(request: Request) {
       return Response.json({ error: "Página inválida." }, { status: 422 });
 
     // A consulta múltipla /items/bulk aceita até 20 anúncios por lote.
+    const query = new URLSearchParams({
+      account_id: String(accountId),
+      limit: "20",
+      offset: String(offset),
+    });
     const result = await backendMutation(
-      `/api/v1/analytics/sync?account_id=${accountId}&limit=20&offset=${offset}`,
-      "POST",
-      undefined,
-      120000,
+      "/api/v1/analytics/sync", "POST", undefined, 120000, query,
     );
     return Response.json(result, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
