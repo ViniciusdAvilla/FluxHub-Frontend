@@ -17,8 +17,8 @@ export default async function Integrations({searchParams}:{searchParams:Promise<
   fetchSafe<MPAccount[]>("/api/v1/connectors/mercado-pago"),
   fetchSafe<SourceStatus[]>("/api/v1/connectors")]);
  return <ModernShell title="Integrações" eyebrow="Conectar marketplaces" isAdmin={Boolean(user?.is_admin)}>
-   {query.ml==="connected"&&ml?.length>0&&<div className="fh-notice success" role="status"><CheckCircle2 size={16} style={{verticalAlign:"middle",marginRight:8}}/><strong>Mercado Livre conectado com sucesso!</strong> Sua conta está vinculada e os anúncios e pedidos podem ser sincronizados.</div>}
-   {query.ml==="connected"&&!(ml?.length>0)&&<div className="fh-notice error" role="alert"><AlertCircle size={16} style={{verticalAlign:"middle",marginRight:8}}/>A autorização retornou, mas a conta ainda não aparece no backend. Verifique a conexão e entre novamente.</div>}
+   {query.ml==="connected"&&(ml?.length ?? 0)>0&&<div className="fh-notice success" role="status"><CheckCircle2 size={16} style={{verticalAlign:"middle",marginRight:8}}/><strong>Mercado Livre conectado com sucesso!</strong> Sua conta está vinculada e os anúncios e pedidos podem ser sincronizados.</div>}
+   {query.ml==="connected"&&!((ml?.length ?? 0)>0)&&<div className="fh-notice error" role="alert"><AlertCircle size={16} style={{verticalAlign:"middle",marginRight:8}}/>A autorização retornou, mas a conta ainda não aparece no backend. Verifique a conexão e entre novamente.</div>}
    {query.ml==="cancelled"&&<div className="fh-notice" role="status">A autorização do Mercado Livre foi cancelada. Sua conta não foi vinculada nesta tentativa.</div>}
    {query.ml==="error"&&<div className="fh-notice error" role="alert"><AlertCircle size={16} style={{verticalAlign:"middle",marginRight:8}}/>A conexão não foi concluída. Verifique o callback cadastrado no aplicativo Mercado Livre e tente novamente.</div>}
    <div className="fh-notice"><ShieldCheck size={15} style={{verticalAlign:"middle",marginRight:5}}/>As contas são autorizadas nas páginas oficiais do Mercado Livre e Mercado Pago. Tokens nunca são expostos no navegador.</div>
