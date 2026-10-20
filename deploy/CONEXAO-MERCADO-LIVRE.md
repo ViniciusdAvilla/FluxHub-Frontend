@@ -16,9 +16,26 @@ código Git, NEXT_PUBLIC_* ou para parâmetros de URL do frontend.
    `state` e `code` diretamente ao FastAPI pela `BACKEND_URL` privada.
 7. O FastAPI valida o `state` de uso único, troca o código, verifica o perfil
    e persiste tokens criptografados e a fonte `mercado_livre`.
-8. O Next.js encaminha o navegador para `/integracoes?ml=connected` e
-   consulta as contas reais vinculadas. A tela então inicia a primeira
-   sincronização de anúncios/pedidos e permite importar outras páginas.
+8. O Next.js encaminha o navegador para
+   `https://myfluxhub.tech/integracoes?ml=connected` e consulta as contas
+   reais vinculadas. A tela então inicia a primeira sincronização de
+   anúncios/pedidos e permite importar outras páginas.
+
+**Redirecionamento do proxy:** o Next.js pode enxergar a URL interna
+`http://localhost:3000` ou `https://localhost:3000` via Nginx. No ambiente
+de produção, o FluxHub usa o domínio HTTPS canônico `myfluxhub.tech` em
+redirecionamentos de login e OAuth, **nunca o host interno da requisição**.
+O callback público força esse domínio também quando a instância Next.js foi
+iniciada em modo de desenvolvimento. Para futuras alterações de domínio,
+ajuste `src/lib/public-app-url.ts` e atualize o cadastro do aplicativo
+Mercado Livre antes de colocar o novo domínio em produção.
+
+Se a URL exibir `ml=error&ml_reason=state`, o estado de autorização
+expirou/foi reutilizado e é necessário recomeçar pelo botão de conexão.
+`ml_reason=backend` indica autenticação/configuração ou conectividade entre
+Next.js e FastAPI; `ml_reason=exchange` indica falha ao concluir a troca do
+código ou consulta ao provedor. Os logs registram somente a categoria,
+sem `code` ou `state`. O código do backend não é alterado por essa correção.
 
 **Não é possível dispensar o consentimento da conta vendedora** usando
 somente App ID e Client Secret. Não crie valores artificiais de
