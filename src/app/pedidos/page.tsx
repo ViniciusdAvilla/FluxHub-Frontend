@@ -43,7 +43,7 @@ export default async function OrdersPage({
       <button className="fh-control" type="submit">Aplicar</button>
     </form>
     {!accounts.length && <div className="fh-notice">
-      Nenhuma conta conectada. <Link href="/integracoes" className="fh-card-link">Conectar Mercado Livre →</Link>
+      Nenhuma conta conectada. <Link href="/integracoes" className="fh-card-link">Verificar conta no backend →</Link>
     </div>}
     {pendingSync.length > 0 && <div className="fh-notice">
       <strong>Buscando os pedidos da sua conta conectada.</strong>
