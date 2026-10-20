@@ -33,7 +33,7 @@ export default function SellerHome({report}:{report:SellerReport}){
   const categories=new Map<string,number>();
   for(const p of products) categories.set(p.category||"Sem categoria",(categories.get(p.category||"Sem categoria")||0)+1);
   const sortedCategories=[...categories.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5);
-  const account=accounts.find(a=>a.account_id===accountId);
+  const account=accounts.find(a=>a.account_id===accountId);\n  const reputation=report.profile?.seller_reputation;
   const sources=report.sources.filter(s=>s.provider==="mercado_livre");
   const lastSync=sources.find(s=>s.account_key===`ml:${account?.account_id}`)?.last_synced_at || sources.find(s=>s.last_synced_at)?.last_synced_at;
   const topProducts=[...products].sort((a,b)=>(b.sales_30d??-1)-(a.sales_30d??-1)).slice(0,8);
@@ -66,7 +66,7 @@ export default function SellerHome({report}:{report:SellerReport}){
         <div className="fh-rowline" style={{marginBottom:8}}><strong style={{fontSize:13}}>{account?.nickname|| (accounts.length>1?"Múltiplas contas":accounts[0]?.nickname||"Sem conta vinculada")}</strong><span className={`fh-pill ${hasData?"":"offline"}`}>{hasData?"Conectada":"Não conectada"}</span></div>
         <div className="fh-info-row"><span>Contas conectadas</span><strong>{accounts.length}</strong></div>
         <div className="fh-info-row"><span>Última sincronização</span><strong>{lastSync?new Date(lastSync).toLocaleString("pt-BR"):"Ainda não sincronizada"}</strong></div>
-        <div className="fh-info-row"><span>Produtos no catálogo</span><strong>{number(products.length)}</strong></div>
+        <div className="fh-info-row"><span>Reputação</span><strong>{reputation?.level_id||"Não informada pela API"}</strong></div>\n        <div className="fh-info-row"><span>Nível MercadoLíder</span><strong>{reputation?.power_seller_status||"Não informado"}</strong></div>\n        <div className="fh-info-row"><span>Produtos no catálogo</span><strong>{number(products.length)}</strong></div>
         <div className="fh-info-row"><span>Rentabilidade Ads</span><strong>{ads?.profit_complete?"Calculada":"Dados incompletos"}</strong></div>
         <div className="fh-info-row"><span>Sincronização</span><strong>Por página de até 50 itens</strong></div>
         <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:14}}>
