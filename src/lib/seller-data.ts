@@ -26,8 +26,8 @@ export type SellerReport = {
   failedSources: string[];
 };
 
-async function optional<T>(path: string, query?: URLSearchParams): Promise<T | null> {
-  try { return await backendRequest(path, query) as T; } catch { return null; }
+async function optional<T>(path: string, query?: URLSearchParams, timeoutMs = 10000): Promise<T | null> {
+  try { return await backendRequest(path, query, timeoutMs) as T; } catch { return null; }
 }
 export function validDays(value: unknown): 7 | 30 | 90 {
   return value === "7" ? 7 : value === "90" ? 90 : 30;
@@ -62,7 +62,7 @@ export async function getSellerReport(days: number, requestedAccount: number | n
     optional<{data: TimelinePoint[]}>("/api/v1/analytics/timeline",timeQuery),
     profileAccount===null ? Promise.resolve(null) : optional<SellerProfile>(
       "/api/v1/connectors/mercado-livre/profile",
-      new URLSearchParams({account_id:String(profileAccount)})),
+      new URLSearchParams({account_id:String(profileAccount)}), 60000),
   ]);
   const products = Array.isArray(allProducts) ? allProducts.filter(p=>accountId === null || p.source_key === `ml:${accountId}`) : [];
   const records = Array.isArray(orders) ? orders.filter(o=>accountId === null || o.seller_id === accountId) : [];
