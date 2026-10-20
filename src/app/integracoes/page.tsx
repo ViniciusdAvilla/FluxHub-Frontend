@@ -131,7 +131,7 @@ export default async function Integrations({
                 auto={ml.sourcesAvailable && !account.lastSyncedAt}/>
               <nav className="fh-integration-links" aria-label={`Dados do vendedor ${account.accountId}`}>
                 <Link href={`/?account=${account.accountId}`}>Dashboard <ArrowRight size={14}/></Link>
-                <Link href={`/produtos?account=${account.accountId}`}>Produtos <ArrowRight size={14}/></Link>
+                <Link href="/produtos">Produtos <ArrowRight size={14}/></Link>
                 <Link href={`/pedidos?account=${account.accountId}`}>Pedidos <ArrowRight size={14}/></Link>
               </nav>
             </div>}
