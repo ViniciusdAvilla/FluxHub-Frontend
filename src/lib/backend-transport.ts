@@ -54,10 +54,10 @@ export async function backendRequest(path: string, query?: URLSearchParams) {
 }
 
 export async function backendMutation(
-  path: string, method: "POST" | "PUT" | "PATCH" | "DELETE", payload?: unknown, timeoutMs = 10000,
+  path: string, method: "POST" | "PUT" | "PATCH" | "DELETE", payload?: unknown, timeoutMs = 10000, query?: URLSearchParams,
 ): Promise<unknown> {
   if (!path.startsWith("/")) throw new Error("Caminho inválido.");
-  return requestAbsolute(resolveBackendUrl(backendBase(), path), method, payload, true, timeoutMs);
+  return requestAbsolute(resolveBackendUrl(backendBase(), path, query), method, payload, true, timeoutMs);
 }
 
 export async function serviceLogin(email: string, password: string) {
