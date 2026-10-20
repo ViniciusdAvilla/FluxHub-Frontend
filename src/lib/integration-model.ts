@@ -10,6 +10,8 @@ export type MercadoLivreAccountView = {
   sourceKey: string;
   sourceKnown: boolean;
   enabled: boolean;
+  canReactivate: boolean;
+  sourceConnected: boolean | null;
   lastSyncedAt: string | null;
 };
 
@@ -61,6 +63,8 @@ export function deriveMercadoLivreIntegration(
       sourceKey,
       sourceKnown: Boolean(source),
       enabled: source ? source.enabled && source.connected : true,
+      canReactivate: Boolean(source?.connected && !source?.enabled),
+      sourceConnected: source ? source.connected : null,
       lastSyncedAt: source?.last_synced_at || null,
     });
   }
