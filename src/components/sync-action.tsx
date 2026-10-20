@@ -24,7 +24,7 @@ export default function SyncAction({
   const autoStarted = useRef(false);
   const router = useRouter();
 
-  const run = useCallback(async () => {
+  const run = useCallback(async (firstPageOnly = false) => {
     if (inProgress.current) return;
     inProgress.current = true;
     setBusy(true);
@@ -55,13 +55,16 @@ export default function SyncAction({
           complete = true;
           break;
         }
+        // O carregamento inicial busca apenas um lote para liberar o dashboard rapidamente.
+        // O botão manual percorre as demais páginas.
+        if (firstPageOnly) break;
         if (!Number.isSafeInteger(data.next_offset) || data.next_offset <= offset || data.next_offset % 20 !== 0)
           throw new Error("O backend retornou uma página de sincronização inválida.");
         offset = data.next_offset;
       }
       setMessage(
         `${listings} anúncios e ${orders} pedidos sincronizados em ${pages} página(s).` +
-        (complete ? "" : " Limite de 1.020 itens atingido; existem mais anúncios para importar."),
+        (complete ? "" : firstPageOnly ? " Primeira página importada; use Atualizar dados para continuar." : " Limite de 1.020 itens atingido; existem mais anúncios para importar."),
       );
     } catch (error) {
       setMessage(
@@ -78,11 +81,11 @@ export default function SyncAction({
   useEffect(() => {
     if (!auto || autoStarted.current) return;
     autoStarted.current = true;
-    void run();
+    void run(true);
   }, [auto, run]);
 
   return <div className="fh-sync-action">
-    <button className="fh-primary-btn" type="button" onClick={() => void run()} disabled={busy}>
+    <button className="fh-primary-btn" type="button" onClick={() => void run(false)} disabled={busy}>
       <RefreshCw size={16} className={busy ? "fh-spinning" : ""}/>
       {busy ? "Sincronizando..." : "Atualizar dados do Mercado Livre"}
     </button>
