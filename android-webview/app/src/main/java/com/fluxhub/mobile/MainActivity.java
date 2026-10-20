@@ -1,7 +1,6 @@
 package com.fluxhub.mobile;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.DownloadManager;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
@@ -12,7 +11,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.text.InputType;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,7 +26,6 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -47,7 +44,13 @@ public class MainActivity extends Activity {
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
-        baseUrl = getPreferences(MODE_PRIVATE).getString("server_url", null);
+        String preset = BuildConfig.FLUXHUB_URL;
+        String previous = getPreferences(MODE_PRIVATE).getString("server_url", null);
+        try {
+            baseUrl = UrlPolicy.normalizeServerUrl(preset != null && !preset.isBlank() ? preset : previous);
+        } catch (IllegalArgumentException invalid) {
+            baseUrl = null;
+        }
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
@@ -59,21 +62,6 @@ public class MainActivity extends Activity {
                 return insets;
             });
         }
-
-        LinearLayout toolbar = new LinearLayout(this);
-        toolbar.setGravity(Gravity.CENTER_VERTICAL);
-        toolbar.setPadding(dp(16), 0, dp(8), 0);
-        toolbar.setBackgroundColor(Color.rgb(32,38,46));
-        root.addView(toolbar, new LinearLayout.LayoutParams(-1, dp(52)));
-        TextView title = new TextView(this);
-        title.setText("⚡ FluxHub");
-        title.setTextColor(Color.WHITE);
-        title.setTextSize(18);
-        title.setTypeface(null, 1);
-        toolbar.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
-        Button configure = button("Servidor");
-        toolbar.addView(configure);
-        configure.setOnClickListener(v -> serverDialog());
 
         progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
         progress.setMax(100);
@@ -92,8 +80,9 @@ public class MainActivity extends Activity {
         initWebView();
 
         if (baseUrl == null) {
-            notice("Bem-vindo ao FluxHub", "Configure a URL do servidor Next.js para entrar na plataforma.",
-                    "Configurar servidor", this::serverDialog);
+            notice("Servidor indisponível",
+                   "O endereço do frontend não foi definido ao gerar este APK. Compile com FLUXHUB_URL para abrir automaticamente.",
+                   "Fechar", this::finish);
         } else {
             load();
         }
@@ -192,37 +181,6 @@ public class MainActivity extends Activity {
                 Toast.makeText(this, "Erro ao baixar", Toast.LENGTH_LONG).show();
             }
         });
-    }
-
-    private void serverDialog() {
-        EditText input = new EditText(this);
-        input.setText(baseUrl == null ? "" : baseUrl);
-        input.setSingleLine(true);
-        input.setHint("https://fluxhub.seudominio.com");
-        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
-        FrameLayout frame = new FrameLayout(this);
-        frame.setPadding(dp(18), dp(8), dp(18), 0);
-        frame.addView(input);
-        AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle("Servidor FluxHub")
-                .setMessage("HTTPS para produção; HTTP somente para testes em rede local.")
-                .setView(frame)
-                .setPositiveButton("Conectar", null)
-                .setNegativeButton("Cancelar", (d, w) -> {})
-                .create();
-        dialog.setOnShowListener(v -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(b -> {
-            try {
-                baseUrl = UrlPolicy.normalizeServerUrl(input.getText().toString());
-                getPreferences(MODE_PRIVATE).edit().putString("server_url", baseUrl).apply();
-                web.stopLoading();
-                web.clearHistory();
-                dialog.dismiss();
-                load();
-            } catch (IllegalArgumentException invalid) {
-                input.setError(invalid.getMessage());
-            }
-        }));
-        dialog.show();
     }
 
     private void load() {

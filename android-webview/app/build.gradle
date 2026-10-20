@@ -10,9 +10,12 @@ android {
         applicationId 'com.fluxhub.mobile'
         minSdk 29
         targetSdk 36
-        versionCode 1
-        versionName '1.0.0'
+        versionCode 3
+        versionName '1.2.0'
+        buildConfigField 'String', 'FLUXHUB_URL', groovy.json.JsonOutput.toJson(System.getenv('FLUXHUB_URL')?.trim() ?: 'https://myfluxhub.tech/')
     }
+
+    buildFeatures { buildConfig true }
 
     buildTypes {
         release {
