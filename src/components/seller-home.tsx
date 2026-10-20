@@ -33,7 +33,8 @@ export default function SellerHome({report}:{report:SellerReport}){
   const categories=new Map<string,number>();
   for(const p of products) categories.set(p.category||"Sem categoria",(categories.get(p.category||"Sem categoria")||0)+1);
   const sortedCategories=[...categories.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5);
-  const account=accounts.find(a=>a.account_id===accountId);\n  const reputation=report.profile?.seller_reputation;
+  const account=accounts.find(a=>a.account_id===accountId);
+  const reputation=report.profile?.seller_reputation;
   const sources=report.sources.filter(s=>s.provider==="mercado_livre");
   const lastSync=sources.find(s=>s.account_key===`ml:${account?.account_id}`)?.last_synced_at || sources.find(s=>s.last_synced_at)?.last_synced_at;
   const topProducts=[...products].sort((a,b)=>(b.sales_30d??-1)-(a.sales_30d??-1)).slice(0,8);
