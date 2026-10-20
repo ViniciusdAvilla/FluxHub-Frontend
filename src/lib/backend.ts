@@ -2,48 +2,9 @@ import "server-only";
 import { applyProductBrands, normalizeProducts } from "./analytics";
 import { readFinance } from "./database";
 import { parseOpenApi } from "./openapi";
-import { resolveBackendUrl } from "./backend-url";
-import { assertSecureBackendTransport, backendAuthHeaders } from "./backend-auth";
+import { backendRequest } from "./backend-transport";
+export { backendRequest, backendMutation, serviceLogin, serviceIdentity } from "./backend-transport";
 import type { BackendSchema, Snapshot } from "./types";
-
-function backendBase() {
-  const base = new URL(process.env.BACKEND_URL || "http://127.0.0.1:8000");
-  if (!/^https?:$/.test(base.protocol))
-    throw new Error("Endereço do serviço inválido.");
-  assertSecureBackendTransport(base);
-  return base;
-}
-
-async function requestAbsolute(url: URL) {
-  const base = backendBase();
-  if (url.origin !== base.origin)
-    throw new Error("Destino de consulta não autorizado.");
-  const headers = backendAuthHeaders(process.env.BACKEND_TOKEN);
-  const response = await fetch(url, {
-    headers,
-    cache: "no-store",
-    redirect: "error",
-    signal: AbortSignal.timeout(10000),
-  });
-  const contentType = response.headers.get("content-type") ?? "";
-  const body = contentType.includes("application/json")
-    ? await response.json()
-    : await response.text();
-  if (!response.ok) {
-    const detail =
-      body && typeof body === "object" && "detail" in body
-        ? String((body as Record<string, unknown>).detail)
-        : `Falha na consulta (${response.status}).`;
-    throw new Error(detail);
-  }
-  return body;
-}
-
-export async function backendRequest(path: string, query?: URLSearchParams) {
-  if (!path.startsWith("/")) throw new Error("Caminho inválido.");
-  const url = resolveBackendUrl(backendBase(), path, query);
-  return requestAbsolute(url);
-}
 
 export async function getBackendSchema(): Promise<BackendSchema> {
   try {
@@ -143,9 +104,9 @@ export async function executeReadEndpoint(
   return backendRequest(path, query);
 }
 
-function financeSnapshot() {
+async function financeSnapshot() {
   try {
-    return readFinance();
+    return await readFinance();
   } catch (error) {
     console.error(
       "[finance]",
@@ -157,7 +118,7 @@ function financeSnapshot() {
 
 export async function getSnapshot(): Promise<Snapshot> {
   const schema = await getBackendSchema();
-  const finance = financeSnapshot();
+  const finance = await financeSnapshot();
   try {
     const baseProducts = normalizeProducts(
       await backendRequest(chooseProductsPath(schema)),

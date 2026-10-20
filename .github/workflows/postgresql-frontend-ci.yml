@@ -1,0 +1,28 @@
+name: Frontend PostgreSQL integration
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "tests/**"
+      - ".github/workflows/postgresql-frontend-ci.yml"
+      - "package.json"
+  push:
+    branches: [migration/postgresql-backend-session-20261020]
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      AUTH_SESSION_SECRET: ci-only-key-ci-only-key-ci-only-key-ci-only-key
+      BACKEND_TOKEN: ci-service-key-ci-service-key-ci-service-key-ci-key
+      BACKEND_URL: http://127.0.0.1:8000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build

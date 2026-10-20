@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { authConfigurationIssue, createSession, SESSION_COOKIE, SESSION_MAX_AGE, validCredentials } from "@/lib/auth";
+import { authConfigurationIssue, createSession, SESSION_COOKIE, SESSION_MAX_AGE } from "@/lib/auth";
+import { serviceLogin, serviceIdentity } from "@/lib/backend-transport";
 import { isTrustedRequestOrigin } from "@/lib/request-security";
 
 export const runtime = "nodejs";
@@ -37,18 +38,26 @@ export async function POST(request: NextRequest) {
     const email = typeof body?.email === "string" ? body.email : "";
     const password = typeof body?.password === "string" ? body.password : "";
     const remember = body?.remember === true;
-    const allowed = await validCredentials(email, password);
-    if (!allowed) {
+    let backendJwt;
+    let identity;
+    try {
+      backendJwt = await serviceLogin(email, password);
+      identity = await serviceIdentity(backendJwt.access_token);
+    } catch {
+
       const recent = failure && failure.until > now ? failure.count : 0;
       failures.set(ip, { count: recent + 1, until: now + WINDOW_MS });
       return NextResponse.json({ error: "E-mail ou senha incorretos." }, { status: 401 });
     }
-    const session = createSession();
+    if (!identity.is_active) return NextResponse.json(
+      { error: "Conta desativada." }, { status: 403 });
+    const session = createSession(
+      backendJwt.access_token, backendJwt.expires_in, identity.email, identity.is_admin);
     failures.delete(ip);
     const response = NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store" } });
     const https = request.nextUrl.protocol === "https:" || request.headers.get("x-forwarded-proto")?.split(",")[0] === "https";
     response.cookies.set(SESSION_COOKIE, session, {
-      httpOnly: true, secure: https, sameSite: "lax", path: "/", ...(remember ? { maxAge: SESSION_MAX_AGE } : {}),
+      httpOnly: true, secure: https, sameSite: "lax", path: "/", ...(remember ? { maxAge: Math.min(SESSION_MAX_AGE, backendJwt.expires_in) } : {}),
     });
     return response;
   } catch (error) {
