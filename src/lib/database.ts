@@ -1,7 +1,7 @@
 /** Financial costs are persisted ONLY in the tenant-scoped PostgreSQL backend. */
 import "server-only";
 import type { Finance } from "./types";
-import { backendRequest, backendMutation } from "./backend";
+import { backendRequest, backendMutation } from "./backend-transport";
 
 type BackendCost = {
   external_id: string;

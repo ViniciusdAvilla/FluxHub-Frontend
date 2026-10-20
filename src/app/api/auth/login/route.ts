@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authConfigurationIssue, createSession, SESSION_COOKIE, SESSION_MAX_AGE } from "@/lib/auth";
-import { serviceLogin, serviceIdentity } from "@/lib/backend";
+import { serviceLogin, serviceIdentity } from "@/lib/backend-transport";
 import { isTrustedRequestOrigin } from "@/lib/request-security";
 
 export const runtime = "nodejs";
