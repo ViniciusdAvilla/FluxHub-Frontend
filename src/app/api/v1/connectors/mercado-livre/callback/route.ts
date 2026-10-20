@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
   const cancelled = query.has("error");
   try {
     const result = await backendRequest(
-      "/api/v1/connectors/mercado-livre/callback", query,
+      "/api/v1/connectors/mercado-livre/callback", query, 60000,
     ) as CallbackResponse;
     if (result.connected !== true || result.provider !== "mercado_livre" ||
         !Number.isSafeInteger(result.account_id) || Number(result.account_id) <= 0) {
