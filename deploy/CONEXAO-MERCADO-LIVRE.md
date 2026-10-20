@@ -60,6 +60,35 @@ Não copie segredos para o GitHub, scripts do navegador ou `NEXT_PUBLIC_*`.
 
 ## Diagnóstico
 
+### Por que a tela pode não puxar dados?
+
+1. **Sem vendedor autorizado no banco**: `GET /api/v1/connectors/mercado-livre`
+   retorna `[]`. Ter o Client ID/Client Secret no .env **não é** ter
+   `access_token`/`refresh_token` para um vendedor. Uma autorização OAuth
+   precisa ter terminado com sucesso anteriormente.
+2. **Usuário FluxHub diferente**: a lista de contas é filtrada pelo
+   `user_id` do usuário autenticado, não pelo `client_id` do aplicativo.
+   Entre na conta FluxHub que possui a conexão OAuth.
+3. **Token cadastrado, mas consulta do perfil falha**: o FastAPI chama
+   `get_valid_access_token` (podendo atualizar o token em até 20 segundos)
+   e depois chama `/users/me` (timeout HTTP configurado em 20 segundos).
+   O frontend antes interrompia a chamada em 10 segundos. Agora as leituras
+   do perfil Mercado Livre esperam até 60 segundos; outras operações rápidas
+   conservam seus limites.
+4. **Dados vazios após validar perfil**: os indicadores vêm das tabelas de
+   pedidos/anúncios sincronizadas. É preciso que exista fonte
+   `mercado_livre / ml:SELLER_ID` ativa e que `/api/v1/analytics/sync`
+   finalize pelo menos uma página com sucesso.
+5. **GitHub diferente da VPS**: o workflow do repositório apenas executa
+   TypeScript, testes e build; não publica automaticamente na Hostinger.
+   Confira se a branch `main` foi atualizada na VPS e se o processo Next.js
+   foi reiniciado com o build novo.
+
+Sem acessar o banco de produção ou os logs sanitizados, o frontend
+não consegue determinar qual desses estados está ocorrendo na Hostinger.
+
+
+
 - **Backend indisponível**: falhou o GET da lista de vendedores.
 - **Nenhum vendedor salvo**: GET retornou [] — não existe conta OAuth
   vinculada à sessão FluxHub consultada.

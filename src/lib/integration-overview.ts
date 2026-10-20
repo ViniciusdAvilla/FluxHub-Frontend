@@ -36,7 +36,7 @@ export async function getIntegrationOverview() {
     const accountId = seller.account.accountId;
     const [profile, products, orders] = await Promise.all([
       backendRequest("/api/v1/connectors/mercado-livre/profile",
-        new URLSearchParams({ account_id: String(accountId) })).catch(() => null),
+        new URLSearchParams({ account_id: String(accountId) }), 60000).catch(() => null),
       readArray<ProductRow>("/api/v1/products/"),
       (async () => {
         try {

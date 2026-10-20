@@ -47,10 +47,21 @@ async function requestAbsolute(
   return body;
 }
 
-export async function backendRequest(path: string, query?: URLSearchParams) {
+/**
+ * Consultas rápidas normalmente encerram em 10s. Endpoints que consultam
+ * serviços externos podem solicitar um limite maior explicitamente:
+ * /profile pode precisar renovar o OAuth (20s) e consultar /users/me (20-25s).
+ */
+export async function backendRequest(
+  path: string,
+  query?: URLSearchParams,
+  timeoutMs = 10000,
+) {
   if (!path.startsWith("/")) throw new Error("Caminho inválido.");
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1000 || timeoutMs > 120000)
+    throw new Error("Tempo limite inválido.");
   const url = resolveBackendUrl(backendBase(), path, query);
-  return requestAbsolute(url);
+  return requestAbsolute(url, "GET", undefined, true, timeoutMs);
 }
 
 export async function backendMutation(
