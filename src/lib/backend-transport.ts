@@ -14,7 +14,7 @@ function backendBase() {
 
 async function requestAbsolute(
   url: URL, method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE" = "GET",
-  payload?: unknown, includeUser = true,
+  payload?: unknown, includeUser = true, timeoutMs = 10000,
 ) {
   const base = backendBase();
   if (url.origin !== base.origin)
@@ -31,7 +31,7 @@ async function requestAbsolute(
     headers,
     cache: "no-store",
     redirect: "error",
-    signal: AbortSignal.timeout(10000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   const contentType = response.headers.get("content-type") ?? "";
   const body = contentType.includes("application/json")
@@ -54,10 +54,10 @@ export async function backendRequest(path: string, query?: URLSearchParams) {
 }
 
 export async function backendMutation(
-  path: string, method: "POST" | "PUT" | "PATCH" | "DELETE", payload?: unknown,
+  path: string, method: "POST" | "PUT" | "PATCH" | "DELETE", payload?: unknown, timeoutMs = 10000,
 ): Promise<unknown> {
   if (!path.startsWith("/")) throw new Error("Caminho inválido.");
-  return requestAbsolute(resolveBackendUrl(backendBase(), path), method, payload);
+  return requestAbsolute(resolveBackendUrl(backendBase(), path), method, payload, true, timeoutMs);
 }
 
 export async function serviceLogin(email: string, password: string) {
