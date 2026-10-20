@@ -15,7 +15,7 @@ function finish(status: "connected" | "error" | "cancelled", reason?: ErrorReaso
   // A URL final jamais contém state, code, access_token ou refresh_token.
   const params = new URLSearchParams({ ml: status });
   if (status === "error" && reason) params.set("ml_reason", reason);
-  const url = publicAppUrl("/integracoes", params);
+  const url = publicAppUrl("/integracoes", params, "production");
   const response = NextResponse.redirect(url, { status: 303 });
   response.headers.set("Cache-Control", "no-store");
   response.headers.set("Referrer-Policy", "no-referrer");
