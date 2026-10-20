@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {
   ArrowRight, CheckCircle2, CircleAlert, Database, LockKeyhole,
-  Package, ShoppingBag, ShoppingCart, ShieldCheck, RefreshCw,
+  ShoppingBag, ShieldCheck, RefreshCw,
 } from "lucide-react";
 import ModernShell from "@/components/modern-shell";
 import SyncAction from "@/components/sync-action";
