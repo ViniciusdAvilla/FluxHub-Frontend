@@ -47,7 +47,7 @@ export default function SellerHome({report}:{report:SellerReport}){
     <form className="fh-filters" action="/" method="get">
       <label className="fh-filter"><CalendarDays size={15}/> Período <select name="days" defaultValue={String(days)} aria-label="Período"><option value="7">Últimos 7 dias</option><option value="30">Últimos 30 dias</option><option value="90">Últimos 90 dias</option></select></label>
       <label className="fh-filter">Mercado Livre</label>
-      <label className="fh-filter">Conta <select name="account" defaultValue={accountId??""} aria-label="Conta Mercado Livre"><option value="">Todas as contas</option>{accounts.map(a=><option value={a.account_id} key={a.account_id}>{a.nickname||a.account_id}</option>)}</select></label>
+      {accounts.length > 1 && <label className="fh-filter">Conta <select name="account" defaultValue={accountId??""} aria-label="Conta Mercado Livre"><option value="">Todas as contas</option>{accounts.map(a=><option value={a.account_id} key={a.account_id}>{a.nickname||a.account_id}</option>)}</select></label>}
       <button className="fh-control" type="submit">Aplicar filtros</button>
     </form>
     {pendingSync.length>0&&<section className="fh-notice" aria-label="Primeira sincronização">
@@ -55,7 +55,7 @@ export default function SellerHome({report}:{report:SellerReport}){
       <p>O primeiro carregamento pode levar mais tempo. As telas serão atualizadas quando a sincronização terminar.</p>
       <div className="fh-inline-actions">{pendingSync.map(a=><SyncAction key={a.account_id} accountId={a.account_id} auto/>)}</div>
     </section>}
-    {!hasData&&<div className="fh-notice"><strong>Nenhuma conta Mercado Livre conectada.</strong> Autorize uma conta em <Link href="/integracoes" style={{color:"#237af4",fontWeight:750}}>Integrações</Link> para receber seus dados. O painel não usa valores fictícios.</div>}
+    {!hasData&&<div className="fh-notice"><strong>Nenhuma conta Mercado Livre conectada.</strong> Consulte o status da conta salva no backend em <Link href="/integracoes" style={{color:"#237af4",fontWeight:750}}>Mercado Livre</Link>. O Client ID e o Client Secret não substituem tokens de vendedor. O painel não usa valores fictícios.</div>}
     {report.failedSources.length>0&&<div className="fh-notice error" role="status">Algumas consultas não responderam: {report.failedSources.join(", ")}. Verifique se o FastAPI está online e autenticado.</div>}
     <div className="fh-kpis">
       <Stat color="blue" icon={ShoppingCart} title="Pedidos · valor bruto" value={money(revenue)} help="Não cancelados, páginas sincronizadas"/>
@@ -75,11 +75,11 @@ export default function SellerHome({report}:{report:SellerReport}){
         <div className="fh-info-row"><span>Última sincronização</span><strong>{lastSync?new Date(lastSync).toLocaleString("pt-BR"):"Ainda não sincronizada"}</strong></div>
         <div className="fh-info-row"><span>Reputação</span><strong>{reputation?.level_id||"Não informada pela API"}</strong></div>\n        <div className="fh-info-row"><span>Nível MercadoLíder</span><strong>{reputation?.power_seller_status||"Não informado"}</strong></div>\n        <div className="fh-info-row"><span>Produtos no catálogo</span><strong>{number(products.length)}</strong></div>
         <div className="fh-info-row"><span>Rentabilidade Ads</span><strong>{ads?.profit_complete?"Calculada":"Dados incompletos"}</strong></div>
-        <div className="fh-info-row"><span>Sincronização</span><strong>Por página de até 50 itens</strong></div>
+        <div className="fh-info-row"><span>Sincronização</span><strong>Por página de até 20 itens</strong></div>
         <div style={{display:"flex",flexDirection:"column",gap:8,marginTop:14}}>
           {accounts.length===1&&accountId===null&&<SyncAction accountId={accounts[0].account_id}/>}
           {accountId&&<SyncAction accountId={accountId}/>}
-          <Link href="/integracoes" className="fh-info-action">Gerenciar integração <ArrowRight size={15}/></Link>
+          <Link href="/integracoes" className="fh-info-action">Ver dados do Mercado Livre <ArrowRight size={15}/></Link>
         </div>
       </Box>
     </div>

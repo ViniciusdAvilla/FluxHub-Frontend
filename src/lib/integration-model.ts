@@ -22,15 +22,6 @@ export type MercadoLivreIntegration = {
   orphanSources: number;
 };
 
-export type MercadoPagoIntegration = {
-  status: ConnectionStatus;
-  accountIds: string[];
-};
-
-export type MercadoPagoConnection = {
-  account_id: string | number;
-  connected: boolean;
-};
 
 /**
  * Apenas o GET autenticado de contas vinculadas comprova a existência
@@ -77,12 +68,3 @@ export function deriveMercadoLivreIntegration(
   };
 }
 
-export function deriveMercadoPagoIntegration(
-  response: BackendResult<MercadoPagoConnection[]>,
-): MercadoPagoIntegration {
-  if (!response.ok) return { status: "unavailable", accountIds: [] };
-  const accountIds = [...new Set(response.data
-    .filter(a => a.connected === true && /^\d{1,20}$/.test(String(a.account_id)))
-    .map(a => String(a.account_id)))];
-  return { status: accountIds.length ? "connected" : "not_connected", accountIds };
-}

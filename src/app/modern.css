@@ -208,3 +208,10 @@ html, body { background: #f6f8fe; color: #1d3058; }
 .fh-integration-main .fh-notice svg,.fh-integrations-layout+.fh-notice svg { vertical-align:middle; margin-right:8px; }
 @media(max-width:1080px){.fh-integrations-layout{grid-template-columns:1fr;}.fh-integration-aside{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));}}
 @media(max-width:650px){.fh-integration-intro{padding:18px;gap:11px;}.fh-integration-intro h2{font-size:18px;}.fh-integration-intro-icon{width:39px;height:39px;flex-basis:39px;}.fh-integration-aside{grid-template-columns:1fr;}.fh-integration-details{grid-template-columns:1fr;gap:8px;}.fh-integration-account{padding:14px;}.fh-integration-account-actions .fh-sync-action,.fh-integration-links{width:100%;}.fh-integration-links a{flex:1;justify-content:center;}}
+
+/* Fonte única Mercado Livre: consulta do FastAPI sem autorização pelo browser. */
+.fh-ml-details{grid-template-columns:repeat(2,minmax(0,1fr));}
+.fh-ml-backend-only{margin-top:17px;}
+.fh-ml-backend-only .fh-integration-security{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
+@media(max-width:800px){.fh-ml-backend-only .fh-integration-security{grid-template-columns:1fr;gap:2px;}}
+@media(max-width:530px){.fh-ml-details{grid-template-columns:1fr;}}

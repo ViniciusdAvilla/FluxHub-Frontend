@@ -29,7 +29,7 @@ export default async function ListingsPage(){
    <section className="fh-card"><div className="fh-card-head"><h2>Dados sincronizados</h2></div>
     <div className="fh-info-row"><span>Catálogo total disponível</span><strong>{number(r.products.length)}</strong></div>
     <div className="fh-info-row"><span>Anúncios sem estoque</span><strong>{number(r.products.filter(p=>p.stock_qty===0).length)}</strong></div>
-    <div className="fh-info-row"><span>Integrações ML</span><strong>{number(r.accounts.length)}</strong></div>
+    <div className="fh-info-row"><span>Contas Mercado Livre no backend</span><strong>{number(r.accounts.length)}</strong></div>
     <Link href="/integracoes" className="fh-info-action" style={{marginTop:15}}>Sincronizar anúncios →</Link>
    </section>
   </div>

@@ -1,97 +1,83 @@
-# Conectar uma conta Mercado Livre ao FluxHub
+# Mercado Livre como fonte única do FluxHub
 
-O frontend não usa Client Secret, access token nem refresh token do Mercado Livre.
-Eles pertencem exclusivamente ao backend FastAPI. Nunca copie segredos para o
-código Git, NEXT_PUBLIC_* ou para parâmetros de URL do frontend.
+O frontend **não cadastra nem autoriza** aplicativos ou vendedores Mercado Livre.
+A fonte de dados é o FastAPI do repositório FluxHub-Backend, com os tokens
+OAuth do vendedor armazenados de maneira criptografada no PostgreSQL.
 
-## Fluxo de autorização
+## O que foi simplificado
 
-1. O vendedor entra em `https://myfluxhub.tech/integracoes` autenticado no FluxHub.
-2. Clica **Autorizar minha conta Mercado Livre**.
-3. O Next.js chama o backend autenticado em `GET /api/v1/connectors/mercado-livre/authorize`.
-4. O FastAPI emite um `state` exclusivo e redireciona para a página de consentimento oficial do Mercado Livre.
-5. Após o vendedor aceitar, o Mercado Livre volta para o callback configurado:
-   `https://myfluxhub.tech/api/v1/connectors/mercado-livre/callback`.
-6. **Esse callback é uma rota Next.js**, não o backend público. Ela encaminha
-   `state` e `code` diretamente ao FastAPI pela `BACKEND_URL` privada.
-7. O FastAPI valida o `state` de uso único, troca o código, verifica o perfil
-   e persiste tokens criptografados e a fonte `mercado_livre`.
-8. O Next.js encaminha o navegador para
-   `https://myfluxhub.tech/integracoes?ml=connected` e consulta as contas
-   reais vinculadas. A tela então inicia a primeira sincronização de
-   anúncios/pedidos e permite importar outras páginas.
+- A rota `/integracoes` permanece por compatibilidade, mas exibe apenas
+  a conta Mercado Livre retornada pelo backend; sua navegação mostra
+  **Mercado Livre**, não um catálogo de integrações.
+- Foram removidos da interface e das rotas Next.js os botões e endpoints que
+  iniciavam autorização pelo navegador e os controles de múltiplos provedores.
+- O Next.js não precisa receber `MERCADO_LIVRE_CLIENT_ID`,
+  `MERCADO_LIVRE_CLIENT_SECRET` ou `MERCADO_LIVRE_REDIRECT_URI`.
+- A tela chama `GET /api/v1/connectors/mercado-livre` com a sessão
+  FluxHub para encontrar a conta autorizada já armazenada no backend.
+- Se houver uma única conta, valida acesso por
+  `GET /api/v1/connectors/mercado-livre/profile?account_id=...`.
+  O backend renova seu token usando o refresh token salvo, se necessário.
+- Exibe os produtos e pedidos **já persistidos** no FastAPI/PostgreSQL por
+  `GET /api/v1/products/` e `GET /api/v1/orders/?account_id=...`.
+  A contagem de pedidos é limitada à consulta dos 100 mais recentes.
+- Se a fonte estiver ativa e validada, permite sincronizar por
+  `POST /api/v1/analytics/sync` via `POST /api/platform/sync` do Next.js.
+  Dashboard, Pedidos e Produtos continuam usando o backend real.
 
-**Redirecionamento do proxy:** o Next.js pode enxergar a URL interna
-`http://localhost:3000` ou `https://localhost:3000` via Nginx. No ambiente
-de produção, o FluxHub usa o domínio HTTPS canônico `myfluxhub.tech` em
-redirecionamentos de login e OAuth, **nunca o host interno da requisição**.
-O callback público força esse domínio também quando a instância Next.js foi
-iniciada em modo de desenvolvimento. Para futuras alterações de domínio,
-ajuste `src/lib/public-app-url.ts` e atualize o cadastro do aplicativo
-Mercado Livre antes de colocar o novo domínio em produção.
+## O que NÃO é possível sem token de vendedor
 
-Se a URL exibir `ml=error&ml_reason=state`, o estado de autorização
-expirou/foi reutilizado e é necessário recomeçar pelo botão de conexão.
-`ml_reason=backend` indica autenticação/configuração ou conectividade entre
-Next.js e FastAPI; `ml_reason=exchange` indica falha ao concluir a troca do
-código ou consulta ao provedor. Os logs registram somente a categoria,
-sem `code` ou `state`. O código do backend não é alterado por essa correção.
+Os três dados de aplicativo (Client ID, Client Secret e Redirect URI)
+**não identificam uma conta vendedora** e não concedem permissão para ler
+pedidos ou anúncios privados. É preciso existir no banco uma conta OAuth
+de vendedor autorizada com access token e refresh token válidos.
+Se ainda não houver autorização ou se ela tiver sido revogada, será
+necessária **uma única autorização do vendedor fora do frontend** para
+estabelecer/reestabelecer esses tokens. O frontend não tenta contornar
+a autorização do provedor e não mostra dados fictícios.
 
-**Não é possível dispensar o consentimento da conta vendedora** usando
-somente App ID e Client Secret. Não crie valores artificiais de
-`access_token`, `refresh_token` ou `state`.
+## Configuração privada do servidor
 
-## Configuração em produção (Hostinger, Next.js e FastAPI na mesma VPS)
-
-No **processo Next.js** (arquivo privado `.env.local` ou variáveis do systemd):
+No processo Next.js, mantenha:
 
 ```dotenv
 BACKEND_URL=http://127.0.0.1:8000
-BACKEND_TOKEN=<mesmo-valor-privado-configurado-no-fastapi>
-AUTH_SESSION_SECRET=<segredo-de-sessao-existente>
+BACKEND_TOKEN=<valor-privado-idêntico-ao-do-FastAPI>
+AUTH_SESSION_SECRET=<segredo-existente-do-Next.js>
 ```
 
-No **processo FastAPI** (arquivo privado `.env` ou variáveis do systemd):
+No FastAPI ficam as credenciais do aplicativo e o callback:
 
 ```dotenv
-FRONTEND_URL=https://myfluxhub.tech
 MERCADO_LIVRE_REDIRECT_URI=https://myfluxhub.tech/api/v1/connectors/mercado-livre/callback
+FRONTEND_URL=https://myfluxhub.tech
 ```
 
-As chaves `MERCADO_LIVRE_CLIENT_ID` e `MERCADO_LIVRE_CLIENT_SECRET`
-ficam somente no FastAPI, já configuradas fora do repositório.
+O callback Next.js `/api/v1/connectors/mercado-livre/callback`
+permanece implementado **somente por compatibilidade com a URL já registrada**.
+O frontend não oferece mais um botão para iniciar o fluxo.
+Não copie segredos para o GitHub, scripts do navegador ou `NEXT_PUBLIC_*`.
 
-O callback registrado no painel de aplicativos do Mercado Livre deve ser
-**idêntico, caractere por caractere**, ao `MERCADO_LIVRE_REDIRECT_URI`
-do FastAPI. Use `https://`, sem barras invertidas.
+## Diagnóstico
 
-O Nginx deve manter as rotas distintas:
-- `/api/v1/connectors/mercado-livre/callback` -> Next.js (`127.0.0.1:3000`).
-- `/backend-api/api/v1/...` -> FastAPI (`127.0.0.1:8000`).
-- O Next.js acessa o FastAPI diretamente em `BACKEND_URL`, sem expor o token ao navegador.
+- **Backend indisponível**: falhou o GET da lista de vendedores.
+- **Nenhum vendedor salvo**: GET retornou [] — não existe conta OAuth
+  vinculada à sessão FluxHub consultada.
+- **Vários vendedores salvos**: a tela recusa escolher um arbitrariamente.
+  Deixe apenas a conta pretendida autorizada para a empresa no FastAPI.
+- **Vendedor salvo, perfil indisponível**: o GET de lista retornou uma
+  conta, mas a leitura de `/profile` falhou; pode ser token expirado/
+  revogado ou problema momentâneo no Mercado Livre. Isso não é
+  resolvido colocando o Client Secret no frontend.
+- **Produtos e pedidos vazios**: a conta pode existir, mas o banco
+  pode não ter sido sincronizado. Confira a fonte e a rotina de sync.
 
-Após atualizar a branch `main` na VPS, reinstale dependências se necessário,
-execute `npm run build` e reinicie o serviço Next.js. Preserve arquivos de
-segredo existentes; não substitua por `.env.example` e não envie as chaves ao GitHub.
+Para publicar na Hostinger, atualize o checkout da branch `main`,
+execute `npm ci`, `npm run build` e reinicie o serviço Next.js.
+Preserve os arquivos de ambiente privados do servidor.
 
-## Conferência sem expor credenciais
-
-- `https://myfluxhub.tech/login`: login do FluxHub.
-- `https://myfluxhub.tech/backend-api/api/v1/health`: saúde do FastAPI.
-- `https://myfluxhub.tech/integracoes`: contas vinculadas e botão OAuth.
-
-O `GET` de callback sem `state` e `code` não vincula contas.
-O teste real exige entrar no FluxHub e **aprovar o acesso no Mercado Livre**.
-
-## Credenciais divulgadas acidentalmente
-
-Se segredos do `.env` foram colados em conversa, log, issue ou ambiente público,
-trate-os como expostos. Gire os segredos em ambientes privados:
-- Troque a senha do PostgreSQL e atualize `DATABASE_URL` em conjunto.
-- Regenere o Client Secret no portal do Mercado Livre e atualize o FastAPI
-  antes de reautorizar as contas.
-- Gire `BACKEND_TOKEN` em ambos os processos na mesma janela de manutenção.
-- Gire `JWT_SECRET_KEY` sabendo que as sessões emitidas deixarão de ser válidas.
-- **Não altere `TOKEN_ENCRYPTION_KEY` diretamente**: ela decifra tokens
-  OAuth já armazenados. Faça uma migração segura dos tokens ou revincule as
-  contas antes de aposentar a chave antiga, evitando perda de acesso.
+**Segurança:** qualquer Client Secret divulgado em mensagem, issue ou
+repositório deve ser substituído no painel do Mercado Livre e no FastAPI
+em uma janela controlada. Alterar o Client Secret pode afetar tokens
+existentes; confirme as exigências do provedor. Não gire
+`TOKEN_ENCRYPTION_KEY` sem migração dos tokens criptografados.

@@ -16,7 +16,7 @@ const sellerLinks = [
   { href: "/produtos", label: "Produtos", icon: Package },
   { href: "/pedidos", label: "Pedidos", icon: Boxes },
   { href: "/financeiro", label: "Financeiro", icon: BadgeDollarSign },
-  { href: "/integracoes", label: "Integrações", icon: Link2 },
+  { href: "/integracoes", label: "Mercado Livre", icon: Link2 },
   { href: "/dados", label: "Central de dados", icon: Database },
 ];
 const adminLinks = [
@@ -72,7 +72,7 @@ export default function ModernShell({
         <button className="fh-mobile-toggle" onClick={() => setMobileOpen(true)} aria-label="Abrir menu"><Menu size={23}/></button>
         <div className="fh-heading"><h1>{title}</h1><span>Início</span><ChevronRight size={14}/><span>{eyebrow || title}</span></div>
         <div className="fh-top-actions">{action}
-          <Link href="/integracoes" title="Integrações" aria-label="Integrações" className="fh-top-icon"><Bell size={18}/></Link>
+          <Link href="/integracoes" title="Mercado Livre" aria-label="Mercado Livre" className="fh-top-icon"><Bell size={18}/></Link>
           <Link href={isAdmin ? "/admin" : "/integracoes"} className="fh-avatar" title="Minha conta"><Users size={16}/></Link>
         </div>
       </header>
