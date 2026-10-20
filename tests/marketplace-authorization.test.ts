@@ -7,7 +7,7 @@ const state = "AbCd_12345678901234567890tokenXY";
 function link(host = "auth.mercadolivre.com.br", redirect = callback) {
   const url = new URL(`https://${host}/authorization`);
   url.searchParams.set("response_type","code");
-  url.searchParams.set("client_id","5625649550325980");
+  url.searchParams.set("client_id","1234567890123456");
   url.searchParams.set("state",state);
   url.searchParams.set("redirect_uri",redirect);
   return url.toString();
