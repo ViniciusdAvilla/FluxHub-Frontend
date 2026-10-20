@@ -8,7 +8,8 @@ export type SellerOrder = { external_id: string; seller_id: number | null; statu
 export type SellerProduct = { id: number; external_id: string; title: string; brand: string; category: string; promotional_price: number | null; stock_qty: number | null; sales_30d: number | null; rating: number | null; source_key: string | null };
 export type TimelinePoint = { date: string; orders: number; cancelled_orders: number; gross_non_cancelled: number; visits: number | null };
 export type SourceStatus = { provider: string; account_key: string; connected: boolean; enabled: boolean; display_name: string; last_synced_at: string | null };
-export type SellerProfile = { id: number; nickname?: string; seller_reputation?: { level_id?: string; power_seller_status?: string }; registration_date?: string; country_id?: string; status?: { site_status?: string } };\nexport type SellerReport = {
+export type SellerProfile = { id: number; nickname?: string; seller_reputation?: { level_id?: string; power_seller_status?: string }; registration_date?: string; country_id?: string; status?: { site_status?: string } };
+export type SellerReport = {
   user: SellerIdentity | null;
   accounts: Account[];
   profile: SellerProfile | null;
