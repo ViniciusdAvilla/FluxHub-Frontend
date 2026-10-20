@@ -1,15 +1,19 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { isValidSession, SESSION_COOKIE } from "@/lib/auth";
+import { publicAppUrl } from "@/lib/public-app-url";
 
 export function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const signedIn = isValidSession(request.cookies.get(SESSION_COOKIE)?.value);
 
   if (pathname === "/login") {
-    return signedIn ? NextResponse.redirect(new URL("/", request.url)) : NextResponse.next();
+    return signedIn ? NextResponse.redirect(publicAppUrl("/")) : NextResponse.next();
   }
-  if (pathname === "/api/auth/login" || pathname === "/api/auth/logout") {
+  if (pathname === "/api/auth/login" || pathname === "/api/auth/logout" ||
+      pathname === "/api/v1/connectors/mercado-livre/callback") {
+    // Callback OAuth validado pelo state de uso único no FastAPI, não pelo cookie.
+    // Mesmo se a sessão expirou durante o consentimento, o callback pode finalizar.
     return NextResponse.next();
   }
   if (signedIn) return NextResponse.next();
@@ -20,7 +24,7 @@ export function proxy(request: NextRequest) {
       headers: { "Cache-Control": "no-store" },
     });
   }
-  const login = new URL("/login", request.url);
+  const login = publicAppUrl("/login");
   return NextResponse.redirect(login);
 }
 
