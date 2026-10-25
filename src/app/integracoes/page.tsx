@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowRight, CheckCircle2, CircleAlert, Database, LockKeyhole,
   ShoppingBag, ShieldCheck, RefreshCw, Layers3,
@@ -60,6 +61,41 @@ export default async function IntegracoesPage({
         ? " Verifique se o FastAPI e o token de serviço estão configurados."
         : " Confira o aplicativo no Mercado Livre e tente novamente."}
     </div>}
+
+
+    <section className="fh-card fh-integrations-guide" aria-labelledby="fh-guide-heading">
+      <div className="fh-card-head">
+        <div>
+          <h2 id="fh-guide-heading">Primeiros passos para conectar o Mercado Livre</h2>
+          <p>O cliente autoriza sua loja uma única vez, sem informar senhas ou criar aplicativos.</p>
+        </div>
+      </div>
+      <ol className="fh-guide-steps fh-guide-short">
+        <li><strong>Entre no FluxHub</strong><span>Use o e-mail e a senha cadastrados pelo Administrador Master.</span></li>
+        <li><strong>Clique em Conectar Mercado Livre</strong><span>O botão abre a página oficial de autorização do Mercado Livre.</span></li>
+        <li><strong>Autorize como titular ou administrador da loja</strong><span>Confirme as permissões e volte automaticamente para esta página.</span></li>
+        <li><strong>Confira a conta e sincronize</strong><span>Quando aparecer como vinculada, os pedidos e anúncios poderão ser importados.</span></li>
+      </ol>
+      {data.isAdmin && <details className="fh-setup-details">
+        <summary>Sou o responsável pelo FluxHub: configurar o primeiro aplicativo no DevCenter</summary>
+        <div className="fh-setup-details-body">
+          <p><strong>Esta parte é feita apenas uma vez pelo dono da plataforma.</strong> Cada novo cliente depois só segue os quatro passos acima.</p>
+          <ol className="fh-guide-steps">
+            <li><strong>Abra o DevCenter</strong><span><a href="https://developers.mercadolivre.com.br/devcenter" target="_blank" rel="noopener noreferrer">Ir para o DevCenter oficial do Mercado Livre ↗</a>. Faça login com a conta que será responsável pelo aplicativo.</span></li>
+            <li><strong>Abra Minhas aplicações</strong><span>Se já existe um aplicativo FluxHub, clique em Editar. Caso contrário, selecione Criar uma aplicação e preencha nome, descrição, logo e os dados solicitados.</span></li>
+            <li><strong>Configure a URL de retorno</strong><span>Em Autenticação e segurança, informe exatamente:</span>
+              <code className="fh-setup-code">https://myfluxhub.tech/api/v1/connectors/mercado-livre/callback</code>
+            </li>
+            <li><strong>Confira as permissões e o PKCE</strong><span>Habilite somente os acessos necessários para anúncios, pedidos e operações permitidas. Verifique se a opção PKCE está ligada ou desligada e mantenha a mesma configuração no backend.</span></li>
+            <li><strong>Salve e copie as credenciais</strong><span>No DevCenter, encontre Client ID e Client Secret. Eles são do aplicativo FluxHub, não de cada vendedor. Nunca compartilhe o Client Secret.</span></li>
+            <li><strong>Configure o backend na VPS</strong><span>No arquivo privado carregado pelo FastAPI, configure <code>MERCADO_LIVRE_CLIENT_ID</code>, <code>MERCADO_LIVRE_CLIENT_SECRET</code>, <code>MERCADO_LIVRE_REDIRECT_URI</code> e <code>MERCADO_LIVRE_PKCE_ENABLED</code>, depois reinicie o serviço. Não coloque essas credenciais no frontend.</span></li>
+            <li><strong>Teste como o primeiro vendedor</strong><span>Faça login no FluxHub, clique em Conectar Mercado Livre, autorize a conta vendedora e confirme que aparece como vinculada. Se falhar, verifique os logs do backend sem divulgar códigos ou tokens.</span></li>
+          </ol>
+          <p className="fh-setup-note">A URL de callback acima é para autorização OAuth. Se o DevCenter solicitar notificações/webhooks, esse recurso exige outra URL com endpoint próprio; não reutilize o callback.</p>
+          <a href="https://developers.mercadolivre.com.br/pt_br/realizacao-de-testes/crie-uma-aplicacao-no-mercado-livre" target="_blank" rel="noopener noreferrer" className="fh-info-action">Ver tutorial oficial para criar a aplicação ↗</a>
+        </div>
+      </details>}
+    </section>
 
     <section className="fh-card fh-integration-main">
       <div className="fh-card-head fh-integration-header">
@@ -152,16 +188,24 @@ export default async function IntegracoesPage({
         </div>
       </div>
       <div className="fh-marketplace-catalog">
-        {marketplaces.filter(provider => provider.id !== "mercado_livre").map(provider =>
-          <article className="fh-marketplace-provider" key={provider.id}>
-            <div className="fh-integration-brand">
-              <span className="fh-integration-provider-icon neutral"><ShoppingBag size={19}/></span>
-              <div><h3>{provider.name}</h3>
-                <p>Conector em preparação</p></div>
-            </div>
+        {marketplaces.filter(provider => provider.id !== "mercado_livre" && provider.status === "planned").map(provider => {
+          const logos: Record<string, string> = {
+            mercado_pago: "/marketplaces/mercado-pago.webp",
+            shopee: "/marketplaces/shopee.webp",
+            tiktok_shop: "/marketplaces/tiktok-shop.webp",
+          };
+          const logo = logos[provider.id];
+          return <article className="fh-marketplace-provider" key={provider.id}>
             <span className="fh-pill offline">Em breve</span>
-          </article>
-        )}
+            <div className="fh-marketplace-provider-content">
+              {logo
+                ? <div className="fh-marketplace-logo"><Image src={logo} alt={`Logo ${provider.name}`} width={144} height={132} unoptimized /></div>
+                : <span className="fh-integration-provider-icon neutral"><ShoppingBag size={34}/></span>}
+              <h3>{provider.name}</h3>
+              <p>Conector em preparação</p>
+            </div>
+          </article>;
+        })}
       </div>
     </section>
 
