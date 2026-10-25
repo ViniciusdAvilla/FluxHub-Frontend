@@ -299,6 +299,22 @@ Use os **valores reais gerados**, não os marcadores entre `<>`. Nunca publique 
 
 Se `AUTH_PASSWORD_HASH` ou `AUTH_SESSION_SECRET` estiver ausente, nenhum login é aprovado. Isso evita ativação involuntária com uma senha embutida no frontend.
 
+### Se o login rejeitar a senha
+
+O login só compara a senha com `AUTH_PASSWORD_HASH` **lido pelo processo Next.js que está rodando**. Gerar o hash no terminal não altera automaticamente a configuração do servidor ou do container. Antes, a ausência dessa variável apresentava o erro enganoso “E-mail ou senha incorretos”. Agora, o servidor informa “Login indisponível: autenticação não configurada no servidor” (HTTP 503), sem mostrar dados secretos.
+
+Para recuperar o acesso:
+
+1. No diretório do frontend, execute `node scripts/hash-password.mjs`. Digite a senha desejada e confirme. A ferramenta aceita também colar texto completo, inclusive caracteres especiais. Use uma senha nova, pois a anterior foi compartilhada.
+2. Copie o `AUTH_PASSWORD_HASH` completo, o `AUTH_SESSION_SECRET` e `AUTH_EMAIL` para o `.env.local` **do Next.js no servidor real**, ou para as variáveis secretas do serviço/container que executa o frontend. Não coloque no `.env` do FastAPI; este possui credenciais separadas.
+3. Para verificar o ambiente em uma sessão de terminal segura, execute `node --env-file=.env.local scripts/check-auth.mjs` (se usa `.env.local`) ou `node scripts/check-auth.mjs` (se as variáveis são injetadas diretamente pelo processo). O programa pede a senha sem ecoar, verifica o hash e mostra o resultado sem revelar credenciais.
+4. **Reinicie/reimplante o processo Next.js de produção.** Se há mais de uma réplica, configure o mesmo hash e o mesmo segredo em todas elas. Uma verificação local correta não prova que o processo publicado recebeu os valores.
+5. Teste novamente o login, sem tentar repetidamente em caso de falha. O endpoint limita várias tentativas durante um período de quinze minutos.
+
+Se `check-auth.mjs` disser que as variáveis estão ausentes, configure-as no mesmo ambiente do Next.js. Se disser que a senha não corresponde, gere outro hash digitando e confirmando a senha pretendida. Se disser OK mas o site ainda rejeitar, revise a publicação, reinicialização, réplicas e a variável `AUTH_EMAIL`.
+
+**Segurança:** não copie senhas nem hash no GitHub, não compartilhe os valores em tickets e use HTTPS antes de autenticar num site público.
+
 ### Carregamento e Financeiro
 
 A antiga tela central de loading foi substituída por um **esqueleto da interface** com a navegação lateral e a barra superior presentes. O conteúdo é substituído por métricas e tabelas reais quando o servidor conclui a leitura. Não há valores fictícios no esqueleto.

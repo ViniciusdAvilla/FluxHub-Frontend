@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import {
-  Activity, BadgeDollarSign, Boxes, Calculator, ChartNoAxesCombined, ChevronRight,
-  ClipboardList, Database, Factory, Gauge, LogOut, Package, ScanSearch,
-  ShoppingCart, X,
+  BadgeDollarSign, Boxes, Calculator, ChartNoAxesCombined, ChevronRight,
+  ClipboardList, Database, Factory, Gauge, LogOut, Link2, Package, ScanSearch,
+  ShoppingCart, X, MessagesSquare,
 } from "lucide-react";
 import type { View } from "./platform-page";
+import FluxHubLogo from "./fluxhub-logo";
 
 export const navigation: Array<{ view: View; href: string; label: string; icon: typeof Gauge }> = [
-  { view: "overview", href: "/", label: "Visão geral", icon: Gauge },
+  { view: "overview", href: "/", label: "Dashboard", icon: Gauge },
   { view: "products", href: "/produtos", label: "Produtos", icon: Package },
   { view: "raiox", href: "/raio-x", label: "Raio-X de anúncios", icon: ScanSearch },
   { view: "inventory", href: "/estoque", label: "Estoque", icon: Boxes },
@@ -34,8 +35,8 @@ export default function AppSidebar({
   return (
     <aside className={`sidebar ${open ? "open" : ""}`}>
       <div className="brand-block">
-        <div className="brand-mark"><Activity size={19} /></div>
-        <div><strong>FluxHub</strong><small>Gestão inteligente</small></div>
+        <FluxHubLogo className="sidebar-logo" />
+        <small className="brand-subtitle">Gestão inteligente</small>
         {onClose && <button type="button" className="icon-button mobile-close" onClick={onClose} aria-label="Fechar menu"><X size={18} /></button>}
       </div>
       <nav className="sidebar-nav" aria-label="Navegação principal">
@@ -45,6 +46,8 @@ export default function AppSidebar({
             <Icon size={18} /><span>{label}</span>{view === itemView && <ChevronRight size={14} />}
           </Link>
         ))}
+        <Link href="/mensagens" onClick={onClose}><MessagesSquare size={18}/><span>Atendimento</span></Link>
+        <Link href="/integracoes" onClick={onClose}><Link2 size={18}/><span>Integrações</span></Link>
       </nav>
       <div className="sidebar-foot">
         {endpointCount !== undefined && (

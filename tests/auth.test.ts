@@ -1,40 +1,33 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { randomBytes, scryptSync } from "node:crypto";
-import { createSession, isValidSession, SESSION_MAX_AGE, validCredentials } from "../src/lib/auth";
+import { createSession, readSession, isValidSession, authConfigurationIssue } from "../src/lib/auth";
 
-test("nega sessões ausentes, adulteradas ou com segredo diferente", () => {
+test("sessão cifrada contém JWT validado previamente pelo backend", () => {
   process.env.AUTH_SESSION_SECRET = "a".repeat(64);
-  assert.equal(isValidSession(undefined), false);
-  const session = createSession();
+  const token = "test.jwt.payload.signature";
+  const session = createSession(token, 3000, "CLIENT@EXAMPLE.COM", false);
   assert.equal(isValidSession(session), true);
-  assert.equal(isValidSession(session.slice(0, -1) + (session.endsWith("a") ? "b" : "a")), false);
+  assert.equal(readSession(session)?.email, "client@example.com");
+  assert.equal(readSession(session)?.accessToken, token);
+  assert.equal(session.includes(token), false);
+  const parts = session.split(".");
+  const tampered = parts[0].replace(/^./, parts[0][0] === "A" ? "B" : "A") + "." + parts[1] + "." + parts[2];
+  assert.equal(isValidSession(tampered), false);
   process.env.AUTH_SESSION_SECRET = "b".repeat(64);
   assert.equal(isValidSession(session), false);
 });
 
-test("nega sessões expiradas e além do prazo máximo", () => {
+test("nega sessão expirada e ausência de segredo", () => {
   process.env.AUTH_SESSION_SECRET = "c".repeat(64);
-  const originalNow = Date.now;
+  const savedNow = Date.now;
   try {
-    const base = originalNow();
-    Date.now = () => base;
-    const session = createSession();
-    Date.now = () => base + (SESSION_MAX_AGE + 1) * 1000;
+    const baseline = savedNow();
+    Date.now = () => baseline;
+    const session = createSession("test.jwt.payload.signature", 60, "x@y.z", true);
+    Date.now = () => baseline + 61_000;
     assert.equal(isValidSession(session), false);
-  } finally {
-    Date.now = originalNow;
-  }
-});
-
-test("valida hash scrypt sem armazenar senha no projeto", async () => {
-  process.env.AUTH_EMAIL = "FluxHub@gmail.com";
-  const salt = randomBytes(16);
-  const hash = scryptSync("senha-de-teste-nao-e-credencial", salt, 64).toString("hex");
-  process.env.AUTH_PASSWORD_HASH = `scrypt:${salt.toString("hex")}:${hash}`;
-  assert.equal(await validCredentials("fluxhub@gmail.com", "senha-de-teste-nao-e-credencial"), true);
-  assert.equal(await validCredentials("outra@example.com", "senha-de-teste-nao-e-credencial"), false);
-  assert.equal(await validCredentials("fluxhub@gmail.com", "senha-errada"), false);
-  delete process.env.AUTH_PASSWORD_HASH;
-  assert.equal(await validCredentials("fluxhub@gmail.com", "senha-de-teste-nao-e-credencial"), false);
+  } finally { Date.now = savedNow; }
+  delete process.env.AUTH_SESSION_SECRET;
+  assert.equal(authConfigurationIssue(), "AUTH_SESSION_SECRET");
+  assert.equal(isValidSession(undefined), false);
 });

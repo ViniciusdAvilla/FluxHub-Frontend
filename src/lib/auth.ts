@@ -1,47 +1,77 @@
-import { createHmac, randomBytes, scrypt as rawScrypt, timingSafeEqual } from "node:crypto";
-import { promisify } from "node:util";
+/** FluxHub session: encrypted server-validated backend JWT, never a local user DB. */
+import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 
 export const SESSION_COOKIE = "fluxhub_session";
 export const SESSION_MAX_AGE = 12 * 60 * 60;
-const scrypt = promisify(rawScrypt);
 
-function signingSecret(): string | null {
+type Session = {
+  accessToken: string;
+  expires: number;
+  email: string;
+  isAdmin: boolean;
+};
+
+function key(): Buffer {
   const secret = process.env.AUTH_SESSION_SECRET;
-  return secret && secret.length >= 32 ? secret : null;
+  if (!secret || secret.length < 32) {
+    throw new Error("AUTH_SESSION_SECRET deve conter pelo menos 32 caracteres.");
+  }
+  return createHash("sha256").update(secret).digest();
 }
 
-function sign(message: string, secret: string) {
-  return createHmac("sha256", secret).update(message).digest("base64url");
+export function authConfigurationIssue(): "AUTH_SESSION_SECRET" | null {
+  try { key(); return null; } catch { return "AUTH_SESSION_SECRET"; }
 }
 
-export function createSession(): string {
-  const secret = signingSecret();
-  if (!secret) throw new Error("Autenticação não configurada.");
-  const expires = Date.now() + SESSION_MAX_AGE * 1000;
-  const payload = `v1.${expires}.${randomBytes(16).toString("base64url")}`;
-  return `${payload}.${sign(payload, secret)}`;
+export function createSession(
+  accessToken: string, expiresIn: number, email: string, isAdmin: boolean,
+): string {
+  if (typeof accessToken !== "string" || accessToken.length < 20 || accessToken.length > 2500) {
+    throw new Error("JWT do backend inválido.");
+  }
+  if (!Number.isSafeInteger(expiresIn) || expiresIn < 1 || expiresIn > SESSION_MAX_AGE) {
+    throw new Error("Validade do JWT inválida.");
+  }
+  const data: Session = {
+    accessToken,
+    expires: Date.now() + expiresIn * 1000,
+    email: email.slice(0, 320).trim().toLowerCase(),
+    isAdmin: Boolean(isAdmin),
+  };
+  const nonce = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", key(), nonce);
+  const encoded = Buffer.concat([
+    cipher.update(JSON.stringify(data), "utf8"), cipher.final(),
+  ]);
+  return [nonce.toString("base64url"),
+          encoded.toString("base64url"),
+          cipher.getAuthTag().toString("base64url")].join(".");
 }
 
-export function isValidSession(token: string | undefined): boolean {
-  const secret = signingSecret();
-  if (!secret || !token || token.length > 512) return false;
-  const parts = token.split(".");
-  if (parts.length !== 4 || parts[0] !== "v1" || !/^\d{13}$/.test(parts[1]) || !/^[\w-]{20,40}$/.test(parts[2]) || !/^[\w-]{43}$/.test(parts[3])) return false;
-  const expires = Number(parts[1]);
-  const now = Date.now();
-  if (!Number.isSafeInteger(expires) || expires <= now || expires > now + SESSION_MAX_AGE * 1000) return false;
-  const expected = Buffer.from(sign(parts.slice(0, 3).join("."), secret), "base64url");
-  const provided = Buffer.from(parts[3], "base64url");
-  return expected.length === provided.length && timingSafeEqual(expected, provided);
+export function readSession(value: string | undefined): Session | null {
+  if (!value || value.length > 3900) return null;
+  const parts = value.split(".");
+  if (parts.length !== 3) return null;
+  try {
+    const iv = Buffer.from(parts[0], "base64url");
+    const body = Buffer.from(parts[1], "base64url");
+    const tag = Buffer.from(parts[2], "base64url");
+    if (iv.length !== 12 || tag.length !== 16) return null;
+    const decipher = createDecipheriv("aes-256-gcm", key(), iv);
+    decipher.setAuthTag(tag);
+    const data = JSON.parse(Buffer.concat([decipher.update(body), decipher.final()])
+      .toString("utf8")) as Session;
+    if (!data || !Number.isFinite(data.expires) ||
+        data.expires <= Date.now() ||
+        data.expires > Date.now() + SESSION_MAX_AGE * 1000 ||
+        typeof data.accessToken !== "string" ||
+        data.accessToken.length < 20 ||
+        typeof data.email !== "string" ||
+        typeof data.isAdmin !== "boolean") return null;
+    return data;
+  } catch { return null; }
 }
 
-export async function validCredentials(email: string, password: string): Promise<boolean> {
-  const hash = process.env.AUTH_PASSWORD_HASH;
-  const expectedEmail = (process.env.AUTH_EMAIL || "FluxHub@gmail.com").trim().toLowerCase();
-  if (!hash || password.length > 256 || !password || !email) return false;
-  const [algorithm, saltHex, hashHex] = hash.split(":");
-  if (algorithm !== "scrypt" || !/^[0-9a-f]{32}$/i.test(saltHex ?? "") || !/^[0-9a-f]{128}$/i.test(hashHex ?? "")) return false;
-  const calculated = (await scrypt(password, Buffer.from(saltHex, "hex"), 64)) as Buffer;
-  const expected = Buffer.from(hashHex, "hex");
-  return timingSafeEqual(calculated, expected) && email.trim().toLowerCase() === expectedEmail;
+export function isValidSession(value: string | undefined): boolean {
+  return Boolean(readSession(value));
 }

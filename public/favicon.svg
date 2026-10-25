@@ -1,1 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><rect width="40" height="40" rx="11" fill="#191d24"/><path d="m9 29 9-19h4l9 19h-5l-2-5H16l-2 5Zm9-10h4l-2-5Z" fill="#fff"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+<defs><linearGradient id="blue" x1=".18" y1="0" x2=".81" y2="1"><stop stop-color="#2aebf6"/><stop offset=".45" stop-color="#07adf1"/><stop offset="1" stop-color="#0354e8"/></linearGradient></defs>
+<rect width="128" height="128" rx="27" fill="#04101f"/>
+<rect x="2" y="2" width="124" height="124" rx="26" fill="none" stroke="#2765ba" stroke-width="2"/>
+<path d="M27 103V53C27 33 42 23 61 23H103" fill="none" stroke="url(#blue)" stroke-width="17" stroke-linecap="round"/>
+<path d="M27 73c13-11 24-23 43-23h24" fill="none" stroke="url(#blue)" stroke-width="15" stroke-linecap="round"/>
+<path d="M27 103V78c6-9 21-15 37-15h25" fill="none" stroke="url(#blue)" stroke-width="13" stroke-linecap="round"/>
+<circle cx="105" cy="23" r="8" fill="#0fc5ff"/>
+<circle cx="96" cy="50" r="7.5" fill="#13b6ff"/>
+<circle cx="91" cy="63" r="7" fill="#0e99f4"/>
+</svg>

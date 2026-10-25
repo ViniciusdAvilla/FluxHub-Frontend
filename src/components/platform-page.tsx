@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import {
   Activity,
   BadgeDollarSign,
@@ -51,7 +51,14 @@ import type {
   Tone,
 } from "@/lib/types";
 import { CategoryChart, ManufacturerChart, RevenueChart } from "./charts";
-import AppSidebar from "./app-sidebar";
+import ModernShell from "./modern-shell";
+import RankedBarChart from "./ranked-bar-chart";
+import { DonutStats } from "./modern-charts";
+import {
+  abcRevenue, costCoverage, groupedInsights, pricingGaps,
+  stockDistribution, topReplenishment,
+} from "@/lib/insight-series";
+import SyncAction from "./sync-action";
 import FinanceCategoryChart from "./finance-category-chart";
 import RaioXPanel from "./raio-x-panel";
 
@@ -72,9 +79,9 @@ export type View =
 
 const titles: Record<View, { eyebrow: string; title: string; text: string }> = {
   overview: {
-    eyebrow: "VISÃO GERENCIAL",
-    title: "Indicadores gerais",
-    text: "Venda, margem, estoque e catálogo em uma leitura única.",
+    eyebrow: "PAINEL DE CONTROLE",
+    title: "Dashboard",
+    text: "Acesse os resultados e os indicadores da sua operação em um só lugar.",
   },
   products: {
     eyebrow: "CATÁLOGO",
@@ -154,7 +161,7 @@ function Metric({
     <article className="metric-card">
       <div className="metric-top">
         <span>{label}</span>
-        <Icon size={18} />
+        <span className="metric-icon"><Icon size={19} /></span>
       </div>
       <strong className={`metric-value text-${tone}`}>{value}</strong>
       <small>{note}</small>
@@ -463,9 +470,9 @@ function DataExplorer({
   );
 }
 
-export default function PlatformPage({ initial, view }: { initial: Snapshot; view: View }) {
+export default function PlatformPage({ initial, view, syncAccounts = [], isAdmin = false }: { initial: Snapshot; view: View; syncAccounts?: { accountId: number; auto: boolean }[]; isAdmin?: boolean }) {
   const [snapshot, setSnapshot] = useState(initial);
-  const [menuOpen, setMenuOpen] = useState(false);
+  useEffect(() => { setSnapshot(initial); }, [initial]);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [query, setQuery] = useState("");
@@ -520,28 +527,25 @@ export default function PlatformPage({ initial, view }: { initial: Snapshot; vie
   const orderEndpoints = snapshot.schema.endpoints.filter((endpoint) => /order|pedido|sale|venda/i.test(`${endpoint.path} ${endpoint.tag} ${endpoint.summary}`));
 
   return (
-    <div className="app-shell">
-      {menuOpen && <button className="menu-backdrop" onClick={() => setMenuOpen(false)} aria-label="Fechar menu" />}
-      <AppSidebar view={view} open={menuOpen} onClose={() => setMenuOpen(false)} connected={Boolean(snapshot.updatedAt)} endpointCount={snapshot.schema.endpoints.length} />
-
-      <div className="workspace">
-        <header className="topbar">
-          <button className="icon-button menu-toggle" onClick={() => setMenuOpen(true)} aria-label="Abrir menu"><Menu size={20} /></button>
-          <div className="breadcrumb"><span>FluxHub</span><ChevronRight size={13} /><strong>{current.title}</strong></div>
-          <div className="topbar-actions">
-            <span className="schema-version">Operação automotiva · visão gerencial</span>
-            <button className="button" onClick={refresh} disabled={busy}><RefreshCw className={busy ? "spin" : ""} size={16} />Atualizar</button>
+    <>
+      <ModernShell title={current.title} eyebrow={current.eyebrow}
+        isAdmin={isAdmin}
+        action={<button className="fh-control fh-module-refresh" type="button" onClick={refresh} disabled={busy}>
+          <RefreshCw className={busy ? "spin" : ""} size={16} />
+          {busy ? "Atualizando..." : "Atualizar dados"}
+        </button>}>
+        <div className="fh-legacy-module">
+          <div className="fh-module-intro">
+            <p>{current.text}</p>
+            {snapshot.updatedAt && <span><CircleCheck size={14}/> Consulta em {new Date(snapshot.updatedAt).toLocaleTimeString("pt-BR", {hour:"2-digit",minute:"2-digit"})}</span>}
           </div>
-        </header>
 
-        <main>
-          <div className="page-heading">
-            <div><span className="eyebrow">{current.eyebrow}</span><h1>{current.title}<b>.</b></h1><p>{current.text}</p></div>
-            <div className="heading-pills">
-              {snapshot.updatedAt && <span><CircleCheck size={15} /> Atualizado {new Date(snapshot.updatedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>}
+          {syncAccounts.length > 0 && <div className="notice">
+            <strong>Mercado Livre conectado.</strong> Consulte anúncios, pedidos e estoque atualizados.
+            <div className="fh-inline-actions" style={{ marginTop: 10 }}>
+              {syncAccounts.map(account => <SyncAction key={account.accountId} accountId={account.accountId} auto={account.auto}/>)}
             </div>
-          </div>
-
+          </div>}
           {(snapshot.error || notice) && <div className={`notice ${snapshot.error ? "warning" : "good"}`} role="status">{snapshot.error || notice}</div>}
 
           {!(["orders", "data"] as View[]).includes(view) && (
@@ -556,14 +560,15 @@ export default function PlatformPage({ initial, view }: { initial: Snapshot; vie
 
           {view === "overview" && (
             <>
-              <div className="metric-grid four">
+              <div className="metric-grid five">
                 <Metric label="Receita estimada" value={money(summary.revenue)} note={`${summary.revenueCount}/${summary.productCount} produtos com base de cálculo`} icon={Coins} />
                 <Metric label="Lucro estimado" value={money(summary.profit)} note={`${summary.covered}/${summary.productCount} produtos com custos`} icon={BadgeDollarSign} tone={marginTone(summary.margin)} />
                 <Metric label="Margem estimada" value={percent(summary.margin)} note={summary.losses ? `${summary.losses} produto(s) no prejuízo` : "Sem prejuízo entre itens calculados"} icon={Gauge} tone={marginTone(summary.margin)} />
                 <Metric label="Unidades vendidas" value={number(summary.sales)} note="Volume informado para 30 dias" icon={ShoppingCart} />
+                <Metric label="Produtos no catálogo" value={number(summary.productCount)} note="Itens disponíveis na operação" icon={Package} />
               </div>
               <div className="chart-layout">
-                <Section title="Receita estimada por categoria" subtitle="Clique em uma barra para filtrar o painel."><RevenueChart categories={summary.categories} onSelect={setCategory} /></Section>
+                <Section title="Resumo de vendas por categoria" subtitle="Receita estimada por categoria. Selecione uma barra para filtrar."><RevenueChart categories={summary.categories} onSelect={setCategory} /></Section>
                 <Section title="Fabricante com mais lucro" subtitle="Resultado dos produtos com custos cadastrados, agrupados pelo fabricante recebido do catálogo."><ManufacturerChart manufacturers={summary.manufacturers} onSelect={setManufacturer} /></Section>
                 <Section title="Produtos por categoria" subtitle="Distribuição do catálogo filtrado."><CategoryChart categories={summary.categories} onSelect={setCategory} /></Section>
               </div>
@@ -579,13 +584,33 @@ export default function PlatformPage({ initial, view }: { initial: Snapshot; vie
           )}
 
           {view === "products" && (
-            <Section title={`${filtered.length} produtos`} subtitle="Clique no nome para abrir a ficha completa." action={<button className="button primary" onClick={() => setEditProduct(null)}><Pencil size={15} /> Cadastrar custos</button>}>
+            <>
+              <div className="fh-insight-grid">
+                <Section title="Produtos por fabricante" subtitle="Quantidade de produtos por fabricante do catálogo filtrado.">
+                  <RankedBarChart values={groupedInsights(filtered, "brand", "count")} />
+                </Section>
+                <Section title="Saúde do estoque" subtitle="Classificação dos produtos carregados.">
+                  <DonutStats items={stockDistribution(filtered)} label="produtos"/>
+                </Section>
+              </div>
+              <Section title={`${filtered.length} produtos`} subtitle="Clique no nome para abrir a ficha completa." action={<button className="button primary" onClick={() => setEditProduct(null)}><Pencil size={15} /> Cadastrar custos</button>}>
               {filtered.length ? <ProductTable rows={filtered} onEdit={setEditProduct} onInspect={setInspected} /> : <Empty title="Nenhum produto encontrado" text="Ajuste os filtros para visualizar o catálogo." />}
-            </Section>
+              </Section>
+            </>
           )}
 
           {view === "raiox" && (
-            <RaioXPanel products={filtered} />
+            <>
+              <div className="fh-insight-grid">
+                <Section title="Produtos por categoria" subtitle="Quantidade de itens da operação para análise.">
+                  <RankedBarChart values={groupedInsights(filtered, "category", "count")}/>
+                </Section>
+                <Section title="Produtos por fabricante" subtitle="Distribuição do catálogo carregado.">
+                  <RankedBarChart values={groupedInsights(filtered, "brand", "count")}/>
+                </Section>
+              </div>
+              <RaioXPanel products={filtered}/>
+            </>
           )}
 
           {view === "inventory" && (
@@ -595,6 +620,14 @@ export default function PlatformPage({ initial, view }: { initial: Snapshot; vie
                 <Metric label="Sem estoque" value={number(summary.critical)} note="Ação prioritária" icon={CircleAlert} tone={summary.critical ? "bad" : "good"} />
                 <Metric label="Atenção" value={number(summary.warning)} note="Baixa cobertura ou sem giro" icon={Gauge} tone={summary.warning ? "warning" : "good"} />
                 <Metric label="Saudável" value={number(summary.healthy)} note="Cobertura de pelo menos 7 dias" icon={CircleCheck} tone="good" />
+              </div>
+              <div className="fh-insight-grid">
+                <Section title="Situação do estoque" subtitle="Distribuição dos produtos por situação calculada.">
+                  <DonutStats items={stockDistribution(filtered)} label="produtos"/>
+                </Section>
+                <Section title="Estoque por fabricante" subtitle="Soma de unidades com saldo informado.">
+                  <RankedBarChart values={groupedInsights(filtered, "brand", "stock")}/>
+                </Section>
               </div>
               <Section title="Controle de estoque" subtitle="Cobertura calculada a partir das vendas informadas nos últimos 30 dias.">
                 <div className="table-wrap"><table><thead><tr><th>Produto</th><th>Saldo</th><th>Vendas 30d</th><th>Cobertura</th><th>Situação</th></tr></thead><tbody>{filtered.map((row) => <tr key={row.id}><td><strong>{row.title}</strong><small className="cell-sub">{row.id}</small></td><td>{number(row.stock)}</td><td>{number(row.sales)}</td><td>{row.stockDays === null ? "—" : `${Math.round(row.stockDays)} dias`}</td><td><Status tone={row.stockTone}>{row.stockLabel}</Status></td></tr>)}</tbody></table></div>
@@ -609,6 +642,14 @@ export default function PlatformPage({ initial, view }: { initial: Snapshot; vie
                 <Metric label="Lucro estimado" value={money(summary.profit)} note={`${summary.covered} produtos calculados`} icon={BadgeDollarSign} tone={marginTone(summary.margin)} />
                 <Metric label="Margem" value={percent(summary.margin)} note="Sobre produtos com custos" icon={Gauge} tone={marginTone(summary.margin)} />
                 <Metric label="Cobertura de custos" value={summary.productCount ? percent((summary.covered / summary.productCount) * 100) : "—"} note={`${summary.productCount - summary.covered} sem custo cadastrado`} icon={Database} tone={summary.covered === summary.productCount && summary.productCount > 0 ? "good" : "warning"} />
+              </div>
+              <div className="fh-insight-grid">
+                <Section title="Lucro por fabricante" subtitle="Apenas produtos com dados suficientes para calcular o lucro.">
+                  <RankedBarChart values={groupedInsights(filtered, "brand", "profit")} unit="money"/>
+                </Section>
+                <Section title="Cobertura de custos" subtitle="Produtos com custo cadastrado em comparação aos demais.">
+                  <DonutStats items={costCoverage(filtered)} label="produtos"/>
+                </Section>
               </div>
               <Section title="Receita e lucro por categoria" subtitle="Comparativo dos resultados disponíveis no catálogo filtrado.">
                 <FinanceCategoryChart rows={filtered} />
@@ -627,6 +668,14 @@ export default function PlatformPage({ initial, view }: { initial: Snapshot; vie
                 <Metric label="Melhor lucro" value={money(summary.manufacturers[0]?.profit ?? null)} note={summary.manufacturers[0]?.name ?? "Sem resultado"} icon={BadgeDollarSign} tone={marginTone(summary.manufacturers[0]?.margin ?? null)} />
                 <Metric label="Custo de compra estimado" value={money(summary.manufacturers.length ? summary.manufacturers.reduce((sum, item) => sum + item.purchaseCost, 0) : null)} note="Custos cadastrados × unidades vendidas" icon={ShoppingCart} />
               </div>
+              <div className="fh-insight-grid">
+                <Section title="Receita estimada por fabricante" subtitle="Calculada onde existem preços e vendas disponíveis.">
+                  <RankedBarChart values={groupedInsights(filtered, "brand", "revenue")} unit="money"/>
+                </Section>
+                <Section title="Lucro estimado por fabricante" subtitle="Considera apenas produtos com custos suficientes.">
+                  <RankedBarChart values={groupedInsights(filtered, "brand", "profit")} unit="money"/>
+                </Section>
+              </div>
               <Section title="Performance por fabricante" subtitle="Ordenado pelo lucro estimado; o fabricante vem de brand/manufacturer e é enriquecido pela rota by-brands quando disponível.">
                 {summary.manufacturers.length ? <div className="table-wrap"><table><thead><tr><th>Fabricante</th><th>Produtos</th><th>Vendidos</th><th>Custo de compra</th><th>Lucro</th><th>Margem</th></tr></thead><tbody>{summary.manufacturers.map((item) => <tr key={item.name}><td><strong>{item.name}</strong></td><td>{number(item.count)}</td><td>{number(item.sales)}</td><td>{money(item.purchaseCost)}</td><td className={`text-${marginTone(item.margin)}`}>{money(item.profit)}</td><td><Status tone={marginTone(item.margin)}>{percent(item.margin)}</Status></td></tr>)}</tbody></table></div> : <Empty title="Sem performance por fabricante" text="Os fabricantes já podem ser filtrados, mas é necessário cadastrar custos para calcular lucro e margem." />}
               </Section>
@@ -636,6 +685,14 @@ export default function PlatformPage({ initial, view }: { initial: Snapshot; vie
           {view === "pricing" && (
             <>
               <div className="tool-control"><div><span className="eyebrow">META DE MARGEM</span><strong>{desiredMargin}%</strong><p>Preço mínimo estimado para alcançar a margem desejada.</p></div><input aria-label="Margem desejada" type="range" min="1" max="50" value={desiredMargin} onChange={(event) => setDesiredMargin(Number(event.target.value))} /></div>
+              <div className="fh-insight-grid">
+                <Section title="Maiores ajustes de preço" subtitle="Diferença positiva até a margem desejada. Somente produtos com custos cadastrados.">
+                  <RankedBarChart values={pricingGaps(filtered, desiredMargin, (row, margin) => idealPrice(row.finance, margin))} unit="money" empty="Nenhum preço precisa de ajuste calculável com os dados atuais."/>
+                </Section>
+                <Section title="Preços por categoria" subtitle="Receita estimada, quando houver preço e volume de vendas.">
+                  <RankedBarChart values={groupedInsights(filtered, "category", "revenue")} unit="money"/>
+                </Section>
+              </div>
               <Section title="Simulador de preço" subtitle="Considera custo, comissão, imposto, frete e outras despesas cadastradas.">
                 <div className="table-wrap"><table><thead><tr><th>Produto</th><th>Preço atual</th><th>Margem atual</th><th>Preço para meta</th><th>Diferença</th><th>Situação</th></tr></thead><tbody>{filtered.map((row) => { const target = idealPrice(row.finance, desiredMargin); const diff = target !== null && row.price !== null ? target - row.price : null; const projection = projectedAtPrice(row.finance, row.price); return <tr key={row.id}><td><strong>{row.title}</strong><small className="cell-sub">{row.brand !== "Sem marca" ? row.brand : "Sem fabricante"}</small></td><td>{money(row.price)}</td><td className={`text-${marginTone(projection.margin)}`}>{percent(projection.margin)}</td><td><strong>{money(target)}</strong></td><td className={diff !== null && diff > 0 ? "text-warning" : "text-good"}>{diff === null ? "—" : `${diff > 0 ? "+" : ""}${money(diff)}`}</td><td>{target === null || row.price === null ? <Status tone="neutral">Sem base</Status> : row.price >= target ? <Status tone="good">Meta atendida</Status> : <Status tone="warning">Revisar preço</Status>}</td></tr>; })}</tbody></table></div>
               </Section>
@@ -645,6 +702,14 @@ export default function PlatformPage({ initial, view }: { initial: Snapshot; vie
           {view === "replenishment" && (
             <>
               <div className="tool-control"><div><span className="eyebrow">COBERTURA ALVO</span><strong>{coverageDays} dias</strong><p>Quantidade sugerida para recompor o estoque até a cobertura definida.</p></div><input aria-label="Cobertura alvo" type="range" min="7" max="90" step="1" value={coverageDays} onChange={(event) => setCoverageDays(Number(event.target.value))} /></div>
+              <div className="fh-insight-grid">
+                <Section title="Itens prioritários para reposição" subtitle="Quantidade sugerida com base na meta de cobertura e vendas de 30 dias.">
+                  <RankedBarChart values={topReplenishment(filtered, coverageDays)} empty="Sem necessidade de reposição calculável para os dados e período selecionados."/>
+                </Section>
+                <Section title="Saldo atual por fabricante" subtitle="Unidades de estoque informado por fabricante.">
+                  <RankedBarChart values={groupedInsights(filtered, "brand", "stock")}/>
+                </Section>
+              </div>
               <Section title="Plano de compras" subtitle="A sugestão usa somente saldo e venda de 30 dias já disponíveis.">
                 <div className="table-wrap"><table><thead><tr><th>Produto</th><th>Fabricante</th><th>Saldo</th><th>Venda/dia</th><th>Estoque alvo</th><th>Comprar</th><th>Investimento</th></tr></thead><tbody>{filtered.map((row) => { const plan = replenishment(row, coverageDays); const investment = plan.quantity !== null && row.finance ? plan.quantity * row.finance.unitCost : null; return <tr key={row.id}><td><strong>{row.title}</strong><small className="cell-sub">{row.id}</small></td><td>{row.brand !== "Sem marca" ? row.brand : "—"}</td><td>{number(row.stock)}</td><td>{plan.dailySales === null ? "—" : plan.dailySales.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}</td><td>{number(plan.targetStock)}</td><td>{plan.quantity === null ? "—" : <strong>{number(plan.quantity)}</strong>}</td><td>{money(investment)}</td></tr>; })}</tbody></table></div>
               </Section>
@@ -654,6 +719,14 @@ export default function PlatformPage({ initial, view }: { initial: Snapshot; vie
           {view === "abc" && (
             <>
               <div className="abc-summary"><div><span className="abc-badge a">A</span><strong>{abc.filter((row) => row.abcClass === "A").length}</strong><p>prioridade máxima de receita</p></div><div><span className="abc-badge b">B</span><strong>{abc.filter((row) => row.abcClass === "B").length}</strong><p>faixa intermediária</p></div><div><span className="abc-badge c">C</span><strong>{abc.filter((row) => row.abcClass === "C").length}</strong><p>cauda do portfólio</p></div></div>
+              <div className="fh-insight-grid">
+                <Section title="Receita estimada por classe" subtitle="Distribuição dos produtos classificados conforme a receita.">
+                  <RankedBarChart values={abcRevenue(abc)} unit="money"/>
+                </Section>
+                <Section title="Produtos por categoria" subtitle="Quantidade dos itens carregados em cada categoria.">
+                  <RankedBarChart values={groupedInsights(filtered, "category", "count")}/>
+                </Section>
+              </div>
               <Section title="Classificação ABC" subtitle="A até ~80% da receita acumulada, B até ~95% e C no restante.">
                 <div className="table-wrap"><table><thead><tr><th>Classe</th><th>Produto</th><th>Receita</th><th>Participação</th><th>Acumulado</th><th>Margem</th></tr></thead><tbody>{abc.map((row) => <tr key={row.id}><td>{row.abcClass ? <span className={`abc-badge ${row.abcClass.toLowerCase()}`}>{row.abcClass}</span> : "—"}</td><td><strong>{row.title}</strong><small className="cell-sub">{row.id}</small></td><td>{money(row.revenue)}</td><td>{percent(row.revenueShare)}</td><td>{percent(row.cumulativeShare)}</td><td className={`text-${marginTone(row.margin)}`}>{percent(row.margin)}</td></tr>)}</tbody></table></div>
               </Section>
@@ -674,6 +747,13 @@ export default function PlatformPage({ initial, view }: { initial: Snapshot; vie
                 <Metric label="Grupos" value={number(new Set(snapshot.schema.endpoints.map((endpoint) => endpoint.tag)).size)} note="Tags do contrato" icon={Layers3} />
                 <Metric label="Versão" value={snapshot.schema.version || "—"} note={snapshot.schema.title} icon={Activity} />
               </div>
+              <div className="fh-insight-grid">
+                <Section title="Consultas GET por grupo" subtitle="Rotas documentadas pelo OpenAPI, não representa consultas executadas.">
+                  <RankedBarChart values={[...new Map(snapshot.schema.endpoints.filter(endpoint => endpoint.method === "GET")
+                    .map(endpoint => [endpoint.tag, snapshot.schema.endpoints.filter(other => other.tag === endpoint.tag && other.method === "GET").length] as const))]
+                    .map(([label,value]) => ({label,value})).sort((a,b)=>b.value-a.value).slice(0,7)}/>
+                </Section>
+              </div>
               <Section title="Explorador de dados" subtitle="As rotas GET são executáveis; operações de escrita ficam apenas catalogadas para evitar alterações acidentais.">
                 <DataExplorer endpoints={snapshot.schema.endpoints} />
               </Section>
@@ -682,8 +762,8 @@ export default function PlatformPage({ initial, view }: { initial: Snapshot; vie
               </Section>
             </>
           )}
-        </main>
-      </div>
+        </div>
+      </ModernShell>
 
       {editProduct !== undefined && <FinanceDialog products={rows} selected={editProduct} onClose={() => setEditProduct(undefined)} onSaved={saved} />}
       {inspected && (
@@ -696,6 +776,6 @@ export default function PlatformPage({ initial, view }: { initial: Snapshot; vie
           </aside>
         </div>
       )}
-    </div>
+    </>
   );
 }
