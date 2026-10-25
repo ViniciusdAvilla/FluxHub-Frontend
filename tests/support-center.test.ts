@@ -32,7 +32,7 @@ test("Envio manual exige confirmação explícita e não é acionado pela IA", (
 test("Interface e proxy não recebem nem solicitam tokens diretamente", () => {
   assert.match(route, /backendRequest/);
   assert.match(route, /backendMutation/);
-  assert.match(route, /\^[0-9]/);
+  assert.ok(route.includes("^[0-9]{1,22}$"));
   assert.match(component, /loadJson/);
   assert.match(component, /can_reply/);
   assert.doesNotMatch(route, /process\.env\.OPENAI_API_KEY/);
