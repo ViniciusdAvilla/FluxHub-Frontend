@@ -28,7 +28,7 @@ test("tela principal mostra Mercado Livre primeiro, sem lista longa de passos", 
   assert.ok(page.indexOf("fh-integration-header") < page.indexOf("fh-other-marketplaces"));
 });
 
-test("mockup aprovado tem 7 passos, logo no popup, progresso e botoes", () => {
+test("assistente simplificado tem seis passos, logo, progresso e botoes", () => {
   const wizard = readFileSync("src/components/mercado-livre-setup-wizard.tsx", "utf8");
   assert.match(wizard, /<dialog ref=\{dialog\}/);
   assert.match(wizard, /fh-wizard-browser-marketplace/);
@@ -51,10 +51,12 @@ test("assistente DevCenter so aparece para administrador e abre popup por etapas
   assert.match(wizard, /aria-current=\{i === step \? "step"/);
   assert.match(wizard, /https:\/\/developers\.mercadolivre\.com\.br\/devcenter/);
   assert.match(wizard, /https:\/\/myfluxhub\.tech\/api\/v1\/connectors\/mercado-livre\/callback/);
-  assert.match(wizard, /MERCADO_LIVRE_CLIENT_ID/);
-  assert.match(wizard, /MERCADO_LIVRE_CLIENT_SECRET/);
-  assert.match(wizard, /MERCADO_LIVRE_PKCE_ENABLED/);
-  assert.match(wizard, /Não peça credenciais|não pede nem armazena suas credenciais/i);
+  const etapaNames = [...wizard.matchAll(/\{ name: "([^"]+)", title: /g)].map(match => match[1]);
+  assert.deepEqual(etapaNames, ["DevCenter", "Aplicativo", "Callback", "PKCE", "Credenciais", "Teste"]);
+  assert.doesNotMatch(wizard, /name: "Backend"|Configure as credenciais privadas na VPS/);
+  assert.doesNotMatch(wizard, /<code>MERCADO_LIVRE_CLIENT_SECRET<\/code>/);
+  assert.match(page, /configure o aplicativo em seis etapas/);
+  assert.match(css, /grid-template-columns:repeat\(6,minmax\(0,1fr\)\)/);
 });
 
 test("perfil conectado usa foto e nome oficiais sem inventar avatar", () => {
