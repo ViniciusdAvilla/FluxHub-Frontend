@@ -600,7 +600,17 @@ export default function PlatformPage({ initial, view, syncAccounts = [], isAdmin
           )}
 
           {view === "raiox" && (
-            <RaioXPanel products={filtered} />
+            <>
+              <div className="fh-insight-grid">
+                <Section title="Produtos por categoria" subtitle="Quantidade de itens da operação para análise.">
+                  <RankedBarChart values={groupedInsights(filtered, "category", "count")}/>
+                </Section>
+                <Section title="Produtos por fabricante" subtitle="Distribuição do catálogo carregado.">
+                  <RankedBarChart values={groupedInsights(filtered, "brand", "count")}/>
+                </Section>
+              </div>
+              <RaioXPanel products={filtered}/>
+            </>
           )}
 
           {view === "inventory" && (
