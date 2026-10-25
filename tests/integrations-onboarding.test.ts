@@ -28,35 +28,14 @@ test("tela principal mostra Mercado Livre primeiro, sem lista longa de passos", 
   assert.ok(page.indexOf("fh-integration-header") < page.indexOf("fh-other-marketplaces"));
 });
 
-test("assistente simplificado tem seis passos, logo, progresso e botoes", () => {
-  const wizard = readFileSync("src/components/mercado-livre-setup-wizard.tsx", "utf8");
-  assert.match(wizard, /<dialog ref=\{dialog\}/);
-  assert.match(wizard, /fh-wizard-browser-marketplace/);
-  assert.match(wizard, /fh-wizard-progress/);
-  assert.match(wizard, /fh-wizard-tip/);
-  assert.match(wizard, /Próximo passo/);
-  assert.match(wizard, /Abrir DevCenter/);
-  assert.match(wizard, /mercado-livre-icon\.webp/);
-  assert.ok(existsSync("public/marketplaces/mercado-livre-icon.webp"));
-  assert.ok(statSync("public/marketplaces/mercado-livre-icon.webp").size > 1000);
-});
-test("assistente DevCenter so aparece para administrador e abre popup por etapas", () => {
-  const wizard = readFileSync("src/components/mercado-livre-setup-wizard.tsx", "utf8");
-  assert.match(page, /data\.isAdmin && <div className="fh-ml-setup-trigger"/);
-  assert.match(page, /<MercadoLivreSetupWizard\s*\/>/);
-  assert.match(wizard, /<dialog ref=\{dialog\}/);
-  assert.match(wizard, /showModal\(\)/);
-  assert.match(wizard, /current\.title/);
-  assert.match(wizard, /steps\.map/);
-  assert.match(wizard, /aria-current=\{i === step \? "step"/);
-  assert.match(wizard, /https:\/\/developers\.mercadolivre\.com\.br\/devcenter/);
-  assert.match(wizard, /https:\/\/myfluxhub\.tech\/api\/v1\/connectors\/mercado-livre\/callback/);
-  const etapaNames = [...wizard.matchAll(/\{ name: "([^"]+)", title: /g)].map(match => match[1]);
-  assert.deepEqual(etapaNames, ["DevCenter", "Aplicativo", "Callback", "PKCE", "Credenciais", "Teste"]);
-  assert.doesNotMatch(wizard, /name: "Backend"|Configure as credenciais privadas na VPS/);
-  assert.doesNotMatch(wizard, /<code>MERCADO_LIVRE_CLIENT_SECRET<\/code>/);
-  assert.match(page, /configure o aplicativo em seis etapas/);
-  assert.match(css, /grid-template-columns:repeat\(6,minmax\(0,1fr\)\)/);
+test("nenhum assistente, popup ou fluxo DevCenter aparece na página Integrações", () => {
+  assert.doesNotMatch(page, /MercadoLivreSetupWizard|fh-ml-setup-trigger|Configuração inicial da plataforma/);
+  assert.doesNotMatch(page, /configure o aplicativo em seis etapas|<dialog|fh-guide-steps/);
+  assert.equal(existsSync("src/components/mercado-livre-setup-wizard.tsx"), false);
+  assert.doesNotMatch(css, /\\.fh-wizard|\\.fh-ml-setup-trigger/);
+  assert.match(page, /MercadoLivreIdentity accountId=/);
+  assert.match(page, /<MarketplaceConnectionActions\\s*\\/>/);
+  assert.match(page, /fh-other-marketplaces/);
 });
 
 test("perfil conectado usa foto e nome oficiais sem inventar avatar", () => {
