@@ -1256,3 +1256,184 @@ html, body { background: #f6f8fe; color: #1d3058; }
   .fh-liquid-glass .fh-overview-bottom > .fh-card {padding:13px}
   .fh-liquid-glass .fh-overview-charts .fh-card:nth-child(2) > div:nth-child(2) {flex-wrap:wrap}
 }
+
+
+/* Liquid Glass v2: genuine frosted translucency, reflected edges and refracted light layers. */
+.fh-liquid-glass {
+  position:relative;
+  isolation:isolate;
+  overflow:clip;
+  background:#e9f0ff;
+  color:#162856;
+}
+.fh-liquid-glass .fh-glass-atmosphere {
+  position:fixed;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+  overflow:hidden;
+  background:
+    radial-gradient(ellipse 80% 75% at 72% -10%,rgba(250,253,255,.95),transparent 75%),
+    radial-gradient(ellipse 75% 90% at 7% 86%,rgba(183,163,255,.45),transparent 70%),
+    radial-gradient(ellipse 75% 95% at 99% 85%,rgba(124,177,254,.43),transparent 76%),
+    linear-gradient(125deg,#e1edff,#f2f5ff 47%,#dae8ff 100%);
+}
+.fh-liquid-glass .fh-glass-atmosphere::before {
+  content:"";
+  position:absolute;
+  width:75vw;
+  height:75vw;
+  left:-32vw;
+  bottom:-51vw;
+  border-radius:46%;
+  background:linear-gradient(132deg,rgba(255,255,255,.75),rgba(165,193,255,.12) 47%,rgba(242,238,255,.7) 65%,transparent 85%);
+  box-shadow:inset 0 3px 12px rgba(255,255,255,.88),0 0 65px rgba(187,175,255,.24);
+  transform:rotate(-17deg);
+  filter:blur(5px);
+}
+.fh-liquid-glass .fh-glass-atmosphere::after {
+  content:"";
+  position:absolute;
+  top:-16vw;
+  right:-17vw;
+  width:53vw;
+  height:53vw;
+  border:2px solid rgba(255,255,255,.54);
+  border-radius:47%;
+  transform:rotate(21deg);
+  box-shadow:0 0 80px rgba(129,174,255,.24),inset 1px 6px 23px rgba(255,255,255,.49);
+}
+.fh-liquid-glass .fh-glass-atmosphere i {position:absolute;display:block;pointer-events:none}
+.fh-liquid-glass .fh-glass-atmosphere i:nth-child(1) {
+  top:13%;left:15%;width:45vw;height:40vw;
+  background:radial-gradient(ellipse,rgba(129,189,255,.24),transparent 68%);
+  filter:blur(20px);
+}
+.fh-liquid-glass .fh-glass-atmosphere i:nth-child(2) {
+  right:10%;top:39%;width:43vw;height:33vw;
+  background:radial-gradient(ellipse,rgba(188,169,255,.25),transparent 72%);
+  filter:blur(24px);
+}
+.fh-liquid-glass .fh-glass-atmosphere i:nth-child(3) {
+  left:-10%;top:8%;width:20vw;height:60vh;
+  transform:rotate(22deg);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.31),transparent);
+  filter:blur(14px);
+}
+.fh-liquid-glass .fh-content {position:relative;z-index:1;background:transparent}
+.fh-liquid-glass .fh-sidebar {
+  background:linear-gradient(133deg,rgba(255,255,255,.50),rgba(241,245,255,.28) 52%,rgba(255,255,255,.20)) padding-box,
+    linear-gradient(135deg,rgba(255,255,255,.98),rgba(221,233,255,.36),rgba(255,255,255,.91)) border-box;
+  border:1px solid transparent;
+  box-shadow:0 18px 50px rgba(54,90,168,.13),inset 0 1px 0 rgba(255,255,255,1),inset 1px 0 0 rgba(255,255,255,.56),inset -1px 0 0 rgba(255,255,255,.23);
+  backdrop-filter:blur(38px) saturate(180%) brightness(1.045);
+  -webkit-backdrop-filter:blur(38px) saturate(180%) brightness(1.045);
+}
+.fh-liquid-glass .fh-topbar,.fh-liquid-glass .fh-subnav {
+  background:linear-gradient(145deg,rgba(255,255,255,.40),rgba(236,243,255,.27) 65%,rgba(255,255,255,.31)) padding-box,
+    linear-gradient(115deg,rgba(255,255,255,1),rgba(216,232,255,.45),rgba(255,255,255,.89)) border-box;
+  border:1px solid transparent;
+  box-shadow:0 10px 34px rgba(48,91,177,.095),inset 0 1px 0 rgba(255,255,255,.97),inset 0 -1px 0 rgba(231,241,255,.43);
+  backdrop-filter:blur(34px) saturate(170%);
+  -webkit-backdrop-filter:blur(34px) saturate(170%);
+}
+.fh-liquid-glass .fh-subnav {border-top:0}
+.fh-liquid-glass .fh-card,
+.fh-liquid-glass .fh-kpi,
+.fh-liquid-glass .fh-alert,
+.fh-liquid-glass .fh-overview-account,
+.fh-liquid-glass .fh-legacy-module .panel,
+.fh-liquid-glass .fh-legacy-module .metric-card,
+.fh-liquid-glass .fh-legacy-module .tool-control,
+.fh-liquid-glass .fh-legacy-module .filterbar,
+.fh-liquid-glass .fh-integration-account,
+.fh-liquid-glass .fh-marketplace-provider,
+.fh-liquid-glass .fh-support-summary,
+.fh-liquid-glass .fh-support-conversation,
+.fh-liquid-glass .fh-support-threads {
+  border:1px solid transparent;
+  background:
+    linear-gradient(145deg,rgba(255,255,255,.56),rgba(250,251,255,.34) 49%,rgba(237,244,255,.40)) padding-box,
+    linear-gradient(142deg,rgba(255,255,255,1),rgba(212,231,255,.38) 45%,rgba(255,255,255,.93)) border-box;
+  box-shadow:0 8px 28px rgba(42,85,164,.085),inset 0 1px 0 rgba(255,255,255,.96),inset 1px 0 0 rgba(255,255,255,.48),inset 0 -1px 0 rgba(239,246,255,.55);
+  backdrop-filter:blur(30px) saturate(165%);
+  -webkit-backdrop-filter:blur(30px) saturate(165%);
+}
+.fh-liquid-glass .fh-card,.fh-liquid-glass .fh-kpi {
+  position:relative;
+}
+.fh-liquid-glass .fh-card::before,
+.fh-liquid-glass .fh-kpi::before {
+  content:"";
+  position:absolute;
+  top:1px;
+  left:18px;
+  right:18px;
+  height:41px;
+  border-radius:45% 45% 85% 85%;
+  background:linear-gradient(180deg,rgba(255,255,255,.49),transparent);
+  pointer-events:none;
+  opacity:.67;
+}
+.fh-liquid-glass .fh-sidebar .fh-nav a.fh-nav-active {
+  background:linear-gradient(125deg,rgba(56,125,255,.92),rgba(88,144,255,.79)) padding-box,
+    linear-gradient(160deg,#fff,rgba(194,214,255,.75),#fff) border-box;
+  border:1px solid transparent;
+  box-shadow:0 8px 21px rgba(37,91,212,.27),inset 0 1px 0 rgba(255,255,255,.53),inset 0 -1px 0 rgba(36,85,202,.22);
+  backdrop-filter:blur(12px);
+}
+.fh-liquid-glass .fh-sidebar .fh-nav a:not(.fh-nav-active):hover {
+  background:rgba(255,255,255,.36);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.66);
+}
+.fh-liquid-glass .fh-subnav a.fh-tab-active {
+  border-bottom:2px solid #2b70ff;
+  background:linear-gradient(180deg,rgba(255,255,255,.23),transparent);
+  text-shadow:0 1px 0 rgba(255,255,255,.8);
+}
+.fh-liquid-glass .fh-filter,
+.fh-liquid-glass .fh-control,
+.fh-liquid-glass .fh-top-icon,
+.fh-liquid-glass .fh-account-control,
+.fh-liquid-glass .fh-overview-alert,
+.fh-liquid-glass .fh-spotlight-row,
+.fh-liquid-glass .fh-integration-links a,
+.fh-liquid-glass .fh-info-action {
+  border:1px solid rgba(255,255,255,.82);
+  background:linear-gradient(135deg,rgba(255,255,255,.52),rgba(239,246,255,.27));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.86),0 4px 13px rgba(59,100,178,.07);
+  backdrop-filter:blur(16px) saturate(155%);
+  -webkit-backdrop-filter:blur(16px) saturate(155%);
+}
+.fh-liquid-glass .fh-overview-alert:hover,.fh-liquid-glass .fh-spotlight-row:hover {
+  background:rgba(236,245,255,.65);
+  box-shadow:0 7px 18px rgba(52,102,194,.12),inset 0 1px rgba(255,255,255,.92);
+}
+.fh-liquid-glass .fh-legacy-module .panel-head,
+.fh-liquid-glass .fh-legacy-module .table-wrap,
+.fh-liquid-glass .fh-legacy-module table,
+.fh-liquid-glass .fh-table {
+  background:transparent;
+}
+.fh-liquid-glass .fh-legacy-module th,.fh-liquid-glass .fh-table th {
+  background:rgba(255,255,255,.36);
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))) {
+  .fh-liquid-glass .fh-sidebar,.fh-liquid-glass .fh-topbar,.fh-liquid-glass .fh-subnav,
+  .fh-liquid-glass .fh-card,.fh-liquid-glass .fh-kpi,.fh-liquid-glass .fh-legacy-module .panel {
+    background:rgba(250,252,255,.95);
+  }
+}
+@media(max-width:880px) {
+  .fh-liquid-glass .fh-glass-atmosphere i:nth-child(3) {display:none}
+  .fh-liquid-glass .fh-sidebar {backdrop-filter:blur(24px) saturate(155%)}
+}
+@media(prefers-reduced-transparency:reduce) {
+  .fh-liquid-glass .fh-sidebar,.fh-liquid-glass .fh-topbar,.fh-liquid-glass .fh-subnav,
+  .fh-liquid-glass .fh-card,.fh-liquid-glass .fh-kpi,.fh-liquid-glass .fh-legacy-module .panel,
+  .fh-liquid-glass .fh-filter {
+    background:rgba(250,252,255,.97);
+    backdrop-filter:none;
+    -webkit-backdrop-filter:none;
+  }
+}

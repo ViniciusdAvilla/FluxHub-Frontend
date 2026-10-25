@@ -86,6 +86,7 @@ export default function ModernShell({
     activeModule.tabs.find(t => t.href === path) ?? activeModule.tabs[0];
 
   return <div className="fh-app fh-liquid-glass">
+    <div className="fh-glass-atmosphere" aria-hidden="true"><i/><i/><i/></div>
     <aside className={`fh-sidebar ${mobileOpen ? "fh-open" : ""}`}>
       <div className="fh-logo">
         <span className="fh-logo-mark"><Zap size={23} fill="currentColor" /></span>
