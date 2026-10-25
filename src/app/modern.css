@@ -628,7 +628,7 @@ html, body { background: #f6f8fe; color: #1d3058; }
 .fh-wizard-header p { margin:0; color:#69809c; font-size:12px; line-height:1.6; }
 .fh-wizard-close { width:44px; height:44px; flex-shrink:0; display:grid; place-items:center; border:0; border-radius:10px; background:transparent; color:#687a9b; cursor:pointer; }
 .fh-wizard-close:hover { background:#edf4ff; color:#246ce0; }
-.fh-wizard-progress { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:5px; }
+.fh-wizard-progress { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:5px; }
 .fh-wizard-step {
   display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
   position:relative; gap:8px; background:transparent; border:0; padding:2px 0;
@@ -724,7 +724,7 @@ html, body { background: #f6f8fe; color: #1d3058; }
 @media (max-width:720px) {
   .fh-wizard { width:calc(100vw - 16px); max-height:94dvh; }
   .fh-wizard-inner { padding:18px; gap:17px; }
-  .fh-wizard-progress { grid-template-columns:repeat(7,minmax(0,1fr)); gap:0; }
+  .fh-wizard-progress { grid-template-columns:repeat(6,minmax(0,1fr)); gap:0; }
   .fh-wizard-step { font-size:0; }
   .fh-wizard-step-number { width:31px; height:31px; font-size:12px; }
   .fh-wizard-step:not(:last-child)::after { top:16px; left:calc(50% + 17px); width:calc(100% - 32px); }
