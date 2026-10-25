@@ -15,7 +15,7 @@ export default function AdminOverview({data,clientsOnly=false}:{data:AdminReport
   const inactive=total!==null?(total-(v?.active_users||0)):null;
   const mlConnected=data.clients.filter(c=>c.sources.some(s=>s.provider==="mercado_livre"&&s.connected)).length;
   const mpConnected=data.clients.filter(c=>c.sources.some(s=>s.provider==="mercado_pago"&&s.connected)).length;
-  return <ModernShell title={clientsOnly?"Clientes":"Administração"} eyebrow={clientsOnly?"Gerenciamento":"Visão geral"} adminMode isAdmin>
+  return <ModernShell title={clientsOnly?"Clientes e usuários":"Administrador Master"} eyebrow={clientsOnly?"Gerenciamento":"Visão geral"} adminMode isAdmin>
     {data.error&&<div className="fh-notice error" role="alert">{data.error}. Faça login com uma conta de administrador do FluxHub.</div>}
     {!clientsOnly&&<>
       <div className="fh-kpis">
@@ -63,7 +63,7 @@ export default function AdminOverview({data,clientsOnly=false}:{data:AdminReport
         </table></div>
         {data.clients.length===100&&<p style={{color:"#8d9ab1",fontSize:11}}>Exibindo os primeiros 100 usuários. Use a paginação da API para os seguintes.</p>}
       </section>
-      <section className="fh-card"><div className="fh-card-head"><div><h2>Criar cliente</h2><p>Cadastro no PostgreSQL pelo FastAPI</p></div></div>
+      <section className="fh-card" id="cadastrar-usuario"><div className="fh-card-head"><div><h2>Cadastrar novo usuário</h2><p>Apenas administradores autorizados podem cadastrar clientes. O acesso é criado no PostgreSQL pelo FastAPI.</p></div></div>
         <CreateClientForm/><hr className="fh-separator"/>
         <div className="fh-admin-actions"><Link href="/integracoes">Conexões Mercado Livre e Pago</Link><Link href="/dados">Consultar dados da API</Link><Link href="/">Abrir painel do vendedor</Link></div>
       </section>
