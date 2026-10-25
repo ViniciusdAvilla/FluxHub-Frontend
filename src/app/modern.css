@@ -435,3 +435,146 @@ html, body { background: #f6f8fe; color: #1d3058; }
 .finance-dialog .field input,
 .finance-dialog .field select { background: #fff; color: #21395f; }
 .finance-dialog select option { background: #fff; color: #21395f; }
+
+/* Marketplace cards: logos supplied by the FluxHub owner, shipped locally. */
+.fh-marketplace-catalog {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 16px;
+}
+.fh-marketplace-provider {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 0;
+  position: relative;
+  min-height: 286px;
+  padding: 23px 20px 20px;
+  border: 1px solid #d5e3fa;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 7px 25px rgba(30,69,137,.045);
+}
+.fh-marketplace-provider > .fh-pill {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: #e9f2ff;
+  color: #2466c9;
+  font-weight: 800;
+}
+.fh-marketplace-provider-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 1;
+  width: 100%;
+  gap: 7px;
+  padding-top: 23px;
+  text-align: center;
+}
+.fh-marketplace-logo {
+  width: min(180px,85%);
+  height: 154px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 9px;
+}
+.fh-marketplace-logo img {
+  width: 100%;
+  max-width: 154px;
+  height: 100%;
+  max-height: 144px;
+  object-fit: contain;
+}
+.fh-marketplace-provider-content h3 {
+  margin: 0;
+  color: #192e59;
+  font-size: 19px;
+  font-weight: 800;
+}
+.fh-marketplace-provider-content p {
+  margin: 0;
+  font-size: 12px;
+  color: #6c7f9c;
+}
+.fh-integrations-guide { margin-bottom: 18px; }
+.fh-integrations-guide .fh-card-head { margin-bottom: 17px; }
+.fh-guide-steps {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: integration-steps;
+}
+.fh-guide-steps > li {
+  counter-increment: integration-steps;
+  position: relative;
+  min-width: 0;
+  min-height: 78px;
+  border: 1px solid #e2eaf7;
+  border-radius: 12px;
+  background: #f8fbff;
+  padding: 15px 13px 15px 51px;
+}
+.fh-guide-steps > li::before {
+  content: counter(integration-steps);
+  position: absolute;
+  top: 14px;
+  left: 13px;
+  display: grid;
+  place-items: center;
+  width: 27px;
+  height: 27px;
+  border-radius: 9px;
+  background: #dceaff;
+  color: #1d64c6;
+  font-size: 12px;
+  font-weight: 850;
+}
+.fh-guide-steps strong { display: block; color: #263b60; font-size: 12px; line-height: 1.45; }
+.fh-guide-steps span { display: block; margin-top: 5px; font-size: 11px; line-height: 1.55; color: #657895; }
+.fh-guide-steps a { color: #145ec9; text-decoration: underline; text-underline-offset: 2px; }
+.fh-setup-details { margin-top: 17px; border-top: 1px solid #e2eafa; padding-top: 15px; }
+.fh-setup-details > summary {
+  cursor: pointer;
+  color: #1763cb;
+  font-weight: 800;
+  font-size: 12px;
+  line-height: 1.55;
+  padding: 10px 12px;
+  background: #edf5ff;
+  border-radius: 10px;
+}
+.fh-setup-details > summary:focus-visible,
+.fh-guide-steps a:focus-visible { outline: 2px solid #347dff; outline-offset: 3px; }
+.fh-setup-details-body { padding: 16px 2px 2px; }
+.fh-setup-details-body > p { margin: 0 0 14px; font-size: 12px; line-height: 1.65; color: #526986; }
+.fh-setup-code {
+  display: block;
+  margin-top: 11px;
+  overflow-wrap: anywhere;
+  padding: 8px 10px;
+  color: #1d5ab0;
+  background: #e7f1ff;
+  border: 1px solid #c9def9;
+  border-radius: 8px;
+  font-size: 10px;
+}
+.fh-setup-details-body .fh-setup-note {
+  margin-top: 15px;
+  color: #576e90;
+}
+@media (max-width: 1050px) {
+  .fh-marketplace-catalog { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 750px) {
+  .fh-marketplace-catalog { grid-template-columns: 1fr; }
+  .fh-marketplace-provider { min-height: 230px; }
+  .fh-guide-steps { grid-template-columns: 1fr; }
+}
