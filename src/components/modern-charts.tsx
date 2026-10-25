@@ -15,23 +15,26 @@ export function PerformanceChart({points}:{points:TimelinePoint[]}) {
   if(!data.length) return <div className="fh-empty"><BarChart3 size={28}/><strong>Aguardando dados de vendas</strong><span>Conecte o Mercado Livre e sincronize pedidos para visualizar o histórico.</span></div>;
   const width=860,height=203,pad=10;
   const revenue=data.map(p=>Math.max(0,Number(p.gross_non_cancelled)||0));
-  const visits=data.map(p=>Math.max(0,Number(p.visits)||0));
-  const maxRev=Math.max(...revenue,1)*1.1, maxVisits=Math.max(...visits,1)*1.1;
+  const orders=data.map(p=>Math.max(0,Number(p.orders)||0));
+  const maxRev=Math.max(...revenue,1)*1.1, maxOrders=Math.max(...orders,1)*1.1;
   const primary=pathFor(revenue,maxRev,width,height), secondary=pathFor(visits,maxVisits,width,height);
   const date=data[hover??data.length-1];
   return <div>
     <div className="fh-chart-key" style={{marginBottom:5}}>
-      <span><i className="fh-key-dot" style={{background:"#367dff"}}/>Pedidos brutos não cancelados</span>
-      <span><i className="fh-key-dot" style={{background:"#9d69fd"}}/>Visitas (quando disponíveis)</span>
+      <span><i className="fh-key-dot" style={{background:"#367dff"}}/>Faturamento (R$)</span>
+      <span><i className="fh-key-dot" style={{background:"#9d69fd"}}/>Pedidos</span>
     </div>
     <div className="fh-chart-wrap" style={{position:"relative"}}>
-      <svg viewBox="0 0 945 260" role="img" aria-label="Histórico de valores dos pedidos e visitas">
+      <svg viewBox="0 0 945 260" role="img" aria-label="Histórico de faturamento e quantidade de pedidos">
         <defs><linearGradient id="fhRevArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#4087ff" stopOpacity=".23"/><stop offset="1" stopColor="#4087ff" stopOpacity=".01"/></linearGradient></defs>
         <g transform="translate(62,20)">
           {[0,.25,.5,.75,1].map((factor)=><g key={factor}><line x1="0" x2={width} y1={height*(1-factor)} y2={height*(1-factor)} stroke="#edf1f9" strokeDasharray="4 5"/><text textAnchor="end" x="-9" y={height*(1-factor)+4} className="fh-chart-label">{compactMoney(maxRev*factor)}</text></g>)}
           <path d={primary+` L ${width} ${height} L 0 ${height} Z`} fill="url(#fhRevArea)"/>
           <path d={primary} fill="none" stroke="#3b83f9" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"/>
-          {data.some(p=>p.visits!==null)&&<path d={secondary} fill="none" stroke="#a36aff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="5 4"/>}
+          <path d={secondary} fill="none" stroke="#a36aff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+          {data.map((p,i)=><circle key={`revenue-${p.date}`} cx={i/Math.max(1,data.length-1)*width} cy={height-revenue[i]/maxRev*height} r="2.8" fill="#fff" stroke="#357cff" strokeWidth="1.8"/>)}
+          {data.map((p,i)=><circle key={`orders-${p.date}`} cx={i/Math.max(1,data.length-1)*width} cy={height-orders[i]/maxOrders*height} r="2.5" fill="#fff" stroke="#9462fa" strokeWidth="1.6"/>)}
+          {[0,.25,.5,.75,1].map(factor=><text key={factor} x={width+12} y={height*(1-factor)+4} fill="#9c68ed" className="fh-chart-label">{Math.round(maxOrders*factor).toLocaleString("pt-BR")}</text>)}
           {data.map((point,i)=><rect key={point.date} x={Math.max(0,(i/Math.max(1,data.length-1))*width-width/Math.max(1,data.length)/2)} y="0" width={width/Math.max(1,data.length)} height={height} fill="transparent" onMouseEnter={()=>setHover(i)} onMouseLeave={()=>setHover(null)}/>)}
           {hover!==null&&<line x1={hover/Math.max(1,data.length-1)*width} x2={hover/Math.max(1,data.length-1)*width} y1="0" y2={height} stroke="#a4b9e5" strokeDasharray="4 4"/>}
           {data.filter((_,i)=>i%Math.max(1,Math.ceil(data.length/7))===0).map(p=><text key={p.date} className="fh-chart-label" textAnchor="middle" x={data.indexOf(p)/Math.max(1,data.length-1)*width} y={height+23}>{p.date.slice(5).split("-").reverse().join("/")}</text>)}
@@ -39,8 +42,8 @@ export function PerformanceChart({points}:{points:TimelinePoint[]}) {
       </svg>
       {hover!==null&&<div style={{position:"absolute",right:13,top:12,background:"#fff",border:"1px solid #e4eafa",borderRadius:10,padding:"10px 12px",boxShadow:"0 8px 25px #142a4d1e",fontSize:11,zIndex:2}}>
         <strong>{date.date.split("-").reverse().join("/")}</strong>
-        <div>Pedidos: {compactMoney(date.gross_non_cancelled)}</div>
-        <div>Visitas: {date.visits===null?"Não disponível":date.visits.toLocaleString("pt-BR")}</div>
+        <div>Faturamento: {compactMoney(date.gross_non_cancelled)}</div>
+        <div>Pedidos: {date.orders.toLocaleString("pt-BR")}</div>
       </div>}
     </div>
   </div>;
