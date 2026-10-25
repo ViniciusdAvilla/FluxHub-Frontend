@@ -1,6 +1,6 @@
 import Link from "next/link";
 import {
-  ArrowRight, BadgeDollarSign, Boxes, CalendarDays, CircleAlert,
+  ArrowRight, BadgeDollarSign, Boxes, CircleAlert,
   Eye, Package, Percent, ShoppingBag, ShoppingCart,
   Tag, TrendingUp, Wallet, Zap,
 } from "lucide-react";
@@ -9,10 +9,33 @@ import type { SellerReport } from "@/lib/seller-data";
 import ModernShell from "./modern-shell";
 import { DailyBars, DonutStats, PerformanceChart } from "./modern-charts";
 import SyncAction from "./sync-action";
+import OverviewPeriodFilter from "./overview-period-filter";
 
-function Stat({title,value,help,color,icon:Icon}:{title:string;value:string;help:string;color:"blue"|"green"|"purple"|"orange"|"rose";icon:typeof ShoppingCart}) {
-  return <article className={`fh-kpi ${color}`}><div className="fh-kpi-top"><div className="fh-kpi-icon"><Icon size={18}/></div><span className="fh-kpi-label">{title}</span></div>
-    <strong className="fh-kpi-value">{value}</strong><span className="fh-kpi-note">{help}</span></article>;
+function halfPeriodChange(values: number[]):number|null {
+  if(values.length<4) return null;
+  const cut=Math.floor(values.length/2);
+  const previous=values.slice(0,cut).reduce((a,b)=>a+b,0);
+  const current=values.slice(-cut).reduce((a,b)=>a+b,0);
+  return previous>0 ? (current-previous)/previous*100 : null;
+}
+function Sparkline({values,color}:{values:number[];color:string}) {
+  if(values.length<2) return null;
+  const max=Math.max(...values),min=Math.min(...values),range=Math.max(max-min,1);
+  const path=values.map((value,i)=>`${i===0?"M":"L"} ${(i/(values.length-1)*74).toFixed(1)} ${(25-(value-min)/range*21).toFixed(1)}`).join(" ");
+  return <svg className="fh-sparkline" viewBox="0 0 74 29" role="img" aria-label="Tendência no período">
+    <path d={path} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>;
+}
+function Stat({title,value,help,color,icon:Icon,spark,change}:{title:string;value:string;help:string;color:"blue"|"green"|"purple"|"orange"|"rose";icon:typeof ShoppingCart;spark?:number[];change?:number|null}) {
+  return <article className={`fh-kpi ${color}`}>
+    <div className="fh-kpi-top"><div className="fh-kpi-icon"><Icon size={18}/></div><span className="fh-kpi-label">{title}</span></div>
+    <strong className="fh-kpi-value">{value}</strong>
+    {spark&&<Sparkline values={spark} color={color==="purple"?"#8358ff":"#277aff"}/>}
+    <span className="fh-kpi-foot">
+      {change!==null&&change!==undefined&&<span className={`fh-kpi-trend ${change<0?"down":""}`}>{change>0?"↗":change<0?"↘":"→"} {change>0?"+":""}{change.toFixed(1).replace(".",",")}%</span>}
+      <span className="fh-kpi-note">{change!==null&&change!==undefined?"vs. metade anterior":help}</span>
+    </span>
+  </article>;
 }
 function Box({title,subtitle,children,href}:{title:string;subtitle?:string;children:React.ReactNode;href?:string}) {
   return <section className="fh-card"><div className="fh-card-head"><div><h2>{title}</h2>{subtitle&&<p>{subtitle}</p>}</div>{href&&<Link href={href} className="fh-card-link">Ver detalhes →</Link>}</div>{children}</section>;
@@ -43,13 +66,13 @@ export default function SellerHome({report}:{report:SellerReport}){
   const ordersByStatus=new Map<string,number>();
   for(const o of orders) ordersByStatus.set(o.status,(ordersByStatus.get(o.status)||0)+1);
   const statusItems=[...ordersByStatus.entries()].map(([name,value],i)=>({name,value,color:["#20c58b","#488bfa","#ffbd46","#f2737a","#9878f6"][i%5]}));
-  return <ModernShell title="Visão geral" eyebrow="Resumo geral" isAdmin={Boolean(report.user?.is_admin)}>
-    <form className="fh-filters" action="/" method="get">
-      <label className="fh-filter"><CalendarDays size={15}/> Período <select name="days" defaultValue={String(days)} aria-label="Período"><option value="7">Últimos 7 dias</option><option value="30">Últimos 30 dias</option><option value="90">Últimos 90 dias</option></select></label>
-      <label className="fh-filter">Mercado Livre</label>
-      {accounts.length > 1 && <label className="fh-filter">Conta <select name="account" defaultValue={accountId??""} aria-label="Conta Mercado Livre"><option value="">Todas as contas</option>{accounts.map(a=><option value={a.account_id} key={a.account_id}>{a.nickname||a.account_id}</option>)}</select></label>}
-      <button className="fh-control" type="submit">Aplicar filtros</button>
-    </form>
+  const orderedTimeline=[...timeline].sort((a,b)=>a.date.localeCompare(b.date));
+  const revenueSeries=orderedTimeline.map(p=>p.gross_non_cancelled);
+  const orderSeries=orderedTimeline.map(p=>p.orders);
+  const visitSeries=orderedTimeline.map(p=>p.visits??0);
+  const conversionSeries=orderedTimeline.map(p=>p.visits&&p.visits>0?p.orders/p.visits*100:0);
+  return <ModernShell title="Visão geral" eyebrow="Resumo geral" isAdmin={Boolean(report.user?.is_admin)}
+    action={<OverviewPeriodFilter days={days} accountId={accountId} accounts={accounts}/>}>
     {pendingSync.length>0&&<section className="fh-notice" aria-label="Primeira sincronização">
       <strong>Conta conectada: importando dados oficiais do Mercado Livre.</strong>
       <p>O primeiro carregamento pode levar mais tempo. As telas serão atualizadas quando a sincronização terminar.</p>
@@ -58,10 +81,10 @@ export default function SellerHome({report}:{report:SellerReport}){
     {!hasData&&<div className="fh-notice"><strong>Nenhuma conta Mercado Livre conectada.</strong> Consulte o status da conta salva no backend em <Link href="/integracoes" style={{color:"#237af4",fontWeight:750}}>Mercado Livre</Link>. O Client ID e o Client Secret não substituem tokens de vendedor. O painel não usa valores fictícios.</div>}
     {report.failedSources.length>0&&<div className="fh-notice error" role="status">Algumas consultas não responderam: {report.failedSources.join(", ")}. Verifique se o FastAPI está online e autenticado.</div>}
     <div className="fh-kpis fh-overview-kpis" id="resumo">
-      <Stat color="blue" icon={BadgeDollarSign} title="Faturamento" value={money(revenue)} help="Valor bruto dos pedidos não cancelados"/>
-      <Stat color="purple" icon={ShoppingCart} title="Pedidos" value={number(totalOrders)} help="Pedidos registrados no período"/>
-      <Stat color="blue" icon={Eye} title="Visitas" value={number(visits)} help="Visitas informadas pelo Mercado Livre"/>
-      <Stat color="purple" icon={TrendingUp} title="Conversão" value={visits!==null&&visits>0&&totalOrders!==null?percent(totalOrders/visits*100):"—"} help="Pedidos ÷ visitas disponíveis"/>
+      <Stat color="blue" icon={BadgeDollarSign} title="Faturamento" value={money(revenue)} help="Valor bruto dos pedidos não cancelados" spark={revenueSeries} change={halfPeriodChange(revenueSeries)}/>
+      <Stat color="purple" icon={ShoppingCart} title="Pedidos" value={number(totalOrders)} help="Pedidos registrados no período" spark={orderSeries} change={halfPeriodChange(orderSeries)}/>
+      <Stat color="blue" icon={Eye} title="Visitas" value={number(visits)} help="Visitas informadas pelo Mercado Livre" spark={visitSeries} change={halfPeriodChange(visitSeries)}/>
+      <Stat color="purple" icon={TrendingUp} title="Conversão" value={visits!==null&&visits>0&&totalOrders!==null?percent(totalOrders/visits*100):"—"} help="Pedidos ÷ visitas disponíveis" spark={conversionSeries} change={halfPeriodChange(conversionSeries)}/>
     </div>
     <div className="fh-hero-grid fh-overview-charts" id="desempenho">
       <Box title="Evolução das vendas"><PerformanceChart points={timeline}/></Box>

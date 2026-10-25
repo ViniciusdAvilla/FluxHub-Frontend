@@ -89,7 +89,7 @@ export default function ModernShell({
     <div className="fh-glass-atmosphere" aria-hidden="true"><i/><i/><i/></div>
     <aside className={`fh-sidebar ${mobileOpen ? "fh-open" : ""}`}>
       <div className="fh-logo">
-        <span className="fh-logo-mark"><Zap size={23} fill="currentColor" /></span>
+        <span className="fh-logo-mark fh-logo-bars" aria-hidden="true"><i/><i/><i/></span>
         <strong>Flux<span>Hub</span></strong>
         <button className="fh-mobile-close" onClick={() => setMobileOpen(false)} aria-label="Fechar menu"><X size={18}/></button>
       </div>

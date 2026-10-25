@@ -1437,3 +1437,100 @@ html, body { background: #f6f8fe; color: #1d3058; }
     -webkit-backdrop-filter:none;
   }
 }
+
+
+/* Precision pass against the approved 1672×941 desktop reference. */
+.fh-liquid-glass .fh-sidebar {left:18px;top:19px;bottom:19px;width:254px;height:calc(100dvh - 38px)}
+.fh-liquid-glass .fh-content {margin-left:303px;padding:26px 22px 34px 0}
+.fh-liquid-glass .fh-topbar {min-height:119px;padding:19px 27px;border-radius:18px 18px 0 0}
+.fh-liquid-glass .fh-subnav {min-height:38px;padding:0 24px;gap:8px;margin-bottom:16px;border-radius:0 0 15px 15px}
+.fh-liquid-glass .fh-subnav a {min-height:38px;padding:8px 20px;font-weight:650}
+.fh-liquid-glass .fh-main {padding:0 0 50px}
+.fh-liquid-glass .fh-logo-bars {
+  width:31px;height:33px;display:flex;flex:0 0 31px;align-items:flex-end;justify-content:center;
+  gap:3px;transform:none;color:inherit;
+}
+.fh-liquid-glass .fh-logo-bars i {display:block;width:7px;border-radius:4px 4px 2px 2px;background:linear-gradient(165deg,#0c74ff,#314bd6);box-shadow:0 1px 3px rgba(39,112,231,.17)}
+.fh-liquid-glass .fh-logo-bars i:nth-child(1){height:15px}
+.fh-liquid-glass .fh-logo-bars i:nth-child(2){height:27px}
+.fh-liquid-glass .fh-logo-bars i:nth-child(3){height:22px}
+.fh-liquid-glass .fh-logo::after {left:60px;top:57px}
+.fh-liquid-glass .fh-overview-topbar .fh-top-actions {
+  flex-direction:column-reverse;
+  justify-content:center;
+  align-items:flex-end;
+  gap:8px;
+}
+.fh-liquid-glass .fh-overview-topbar .fh-top-icon {display:none}
+.fh-liquid-glass .fh-overview-topbar .fh-account-control {
+  min-height:40px;min-width:182px;max-width:232px;
+  padding:4px 13px;border-radius:12px;justify-content:flex-end;
+}
+.fh-liquid-glass .fh-overview-topbar .fh-ml-identity {gap:8px}
+.fh-liquid-glass .fh-overview-topbar .fh-ml-avatar {width:31px;height:31px}
+.fh-liquid-glass .fh-glass-period-group {display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}
+.fh-liquid-glass .fh-glass-period {
+  display:flex;align-items:center;gap:9px;min-height:38px;min-width:190px;
+  padding:8px 12px;color:#244272;font-size:12px;font-weight:680;
+  border:1px solid rgba(255,255,255,.87);border-radius:11px;
+  background:linear-gradient(135deg,rgba(255,255,255,.58),rgba(239,246,255,.38));
+  box-shadow:0 4px 14px rgba(49,90,174,.06),inset 0 1px rgba(255,255,255,.94);
+  backdrop-filter:blur(22px) saturate(160%);
+  -webkit-backdrop-filter:blur(22px) saturate(160%);
+}
+.fh-liquid-glass .fh-glass-period select {flex:1;min-width:0;max-width:180px;border:0;background:transparent;appearance:none;outline:none;font:inherit;color:inherit;cursor:pointer}
+.fh-liquid-glass .fh-glass-period select:focus-visible {outline:2px solid #3179f5;outline-offset:4px;border-radius:3px}
+.fh-liquid-glass .fh-glass-period svg {flex:0 0 auto;color:#5270a7}
+.fh-liquid-glass .fh-overview-kpis {gap:13px;margin-bottom:14px}
+.fh-liquid-glass .fh-overview-kpis .fh-kpi {height:134px;min-height:134px;padding:15px 16px;overflow:hidden}
+.fh-liquid-glass .fh-overview-kpis .fh-kpi::after {content:none}
+.fh-liquid-glass .fh-overview-kpis .fh-kpi-top {margin:0;align-items:flex-start}
+.fh-liquid-glass .fh-overview-kpis .fh-kpi-icon {width:52px;height:52px;flex:0 0 52px;border:1px solid rgba(255,255,255,.83);border-radius:16px;box-shadow:inset 0 1px rgba(255,255,255,.82)}
+.fh-liquid-glass .fh-overview-kpis .fh-kpi-icon svg {width:20px;height:20px}
+.fh-liquid-glass .fh-overview-kpis .fh-kpi-label {font-size:13px;font-weight:700;margin-top:7px}
+.fh-liquid-glass .fh-overview-kpis .fh-kpi-value {display:block;margin:-26px 0 0 70px;padding:0;font-size:clamp(21px,1.8vw,30px);line-height:1.16;font-weight:830;white-space:nowrap}
+.fh-liquid-glass .fh-overview-kpis .fh-sparkline {position:absolute;right:17px;top:50px;width:76px;height:31px}
+.fh-liquid-glass .fh-overview-kpis .fh-kpi-foot {display:flex;align-items:center;gap:7px;min-width:0;margin:18px 0 0 70px}
+.fh-liquid-glass .fh-overview-kpis .fh-kpi-trend {display:inline-flex;align-items:center;white-space:nowrap;padding:5px 7px;border-radius:8px;background:#daf7ee;color:#078f7e;font-size:11px;font-weight:800}
+.fh-liquid-glass .fh-overview-kpis .fh-kpi-trend.down {background:#ffebed;color:#cb4763}
+.fh-liquid-glass .fh-overview-kpis .fh-kpi-note {min-width:0;margin:0;color:#8192b4;font-size:10px;line-height:1.35}
+.fh-liquid-glass .fh-overview-charts {gap:13px;margin-bottom:14px}
+.fh-liquid-glass .fh-overview-charts .fh-card {min-height:282px}
+.fh-liquid-glass .fh-overview-charts .fh-card-head {margin-bottom:9px}
+.fh-liquid-glass .fh-chart-key {justify-content:flex-end;font-size:11px}
+.fh-liquid-glass .fh-overview-bottom {gap:14px}
+.fh-liquid-glass .fh-overview-bottom > .fh-card {min-height:269px}
+.fh-liquid-glass .fh-spotlight-row,.fh-liquid-glass .fh-overview-alert {min-height:60px}
+.fh-liquid-glass .fh-spotlight-icon {color:#427adb;background:linear-gradient(145deg,#e5edff,#f9f9ff)}
+.fh-liquid-glass .fh-spotlight-sales strong {font-size:14px}
+.fh-liquid-glass .fh-card-head h2 {letter-spacing:-.3px}
+@media(max-width:1320px) {
+  .fh-liquid-glass .fh-overview-kpis .fh-kpi-value {font-size:20px;margin:6px 0 0}
+  .fh-liquid-glass .fh-overview-kpis .fh-kpi-foot {margin:10px 0 0}
+  .fh-liquid-glass .fh-overview-kpis .fh-sparkline {right:13px;top:55px}
+  .fh-liquid-glass .fh-overview-kpis .fh-kpi {min-height:142px;height:auto}
+}
+@media(max-width:1100px) {
+  .fh-liquid-glass .fh-sidebar {width:218px}
+  .fh-liquid-glass .fh-content {margin-left:248px}
+  .fh-liquid-glass .fh-overview-topbar .fh-heading p {max-width:440px}
+}
+@media(max-width:880px) {
+  .fh-liquid-glass .fh-sidebar {left:0;top:0;bottom:0;height:100dvh;width:min(285px,88vw)}
+  .fh-liquid-glass .fh-content {margin-left:0;padding:10px}
+  .fh-liquid-glass .fh-topbar {min-height:104px}
+}
+@media(max-width:600px) {
+  .fh-liquid-glass .fh-overview-topbar {align-items:flex-start;min-height:112px;flex-wrap:wrap}
+  .fh-liquid-glass .fh-overview-topbar .fh-top-actions {width:100%;flex-direction:row;align-items:center;justify-content:space-between}
+  .fh-liquid-glass .fh-overview-topbar .fh-account-control {min-width:0;max-width:52px;padding:3px}
+  .fh-liquid-glass .fh-overview-topbar .fh-glass-period {min-width:155px}
+  .fh-liquid-glass .fh-overview-topbar .fh-glass-period-group {flex:1}
+  .fh-liquid-glass .fh-overview-kpis .fh-kpi-value {font-size:19px}
+  .fh-liquid-glass .fh-overview-kpis .fh-kpi-foot {flex-wrap:wrap;gap:4px}
+  .fh-liquid-glass .fh-overview-kpis .fh-sparkline {width:54px;right:7px;top:45px}
+  .fh-liquid-glass .fh-overview-kpis .fh-kpi-label {font-size:10px}
+}
+@media(prefers-reduced-transparency:reduce) {
+  .fh-liquid-glass .fh-glass-period {background:#f8fbff;backdrop-filter:none;-webkit-backdrop-filter:none}
+}
