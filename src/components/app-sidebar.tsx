@@ -4,7 +4,7 @@ import Link from "next/link";
 import {
   BadgeDollarSign, Boxes, Calculator, ChartNoAxesCombined, ChevronRight,
   ClipboardList, Database, Factory, Gauge, LogOut, Link2, Package, ScanSearch,
-  ShoppingCart, X,
+  ShoppingCart, X, MessagesSquare,
 } from "lucide-react";
 import type { View } from "./platform-page";
 import FluxHubLogo from "./fluxhub-logo";
@@ -46,6 +46,7 @@ export default function AppSidebar({
             <Icon size={18} /><span>{label}</span>{view === itemView && <ChevronRight size={14} />}
           </Link>
         ))}
+        <Link href="/mensagens" onClick={onClose}><MessagesSquare size={18}/><span>Atendimento</span></Link>
         <Link href="/integracoes" onClick={onClose}><Link2 size={18}/><span>Integrações</span></Link>
       </nav>
       <div className="sidebar-foot">

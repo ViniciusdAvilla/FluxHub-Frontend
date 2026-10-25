@@ -8,7 +8,7 @@ import {
   Activity, BadgeDollarSign, Bell, Boxes, ChevronRight, CircleHelp,
   ChartNoAxesCombined, ClipboardList,
   Database, LayoutDashboard, Link2, LogOut, Menu, Package, Settings2,
-  ShieldCheck, ShoppingBag, ShoppingCart, Users, X, Zap,
+  ShieldCheck, ShoppingBag, ShoppingCart, Users, X, Zap, MessagesSquare,
 } from "lucide-react";
 
 const sellerLinks = [
@@ -23,6 +23,7 @@ const sellerLinks = [
   { href: "/reposicao", label: "Compras e reposição", icon: Activity },
   { href: "/curva-abc", label: "Curva ABC", icon: ChartNoAxesCombined },
   { href: "/pedidos", label: "Pedidos", icon: ClipboardList },
+  { href: "/mensagens", label: "Atendimento", icon: MessagesSquare },
   { href: "/raio-x", label: "Raio-X de anúncios", icon: ShieldCheck },
   { href: "/dados", label: "Central de dados", icon: Database },
   { href: "/integracoes", label: "Integrações", icon: Link2 },
