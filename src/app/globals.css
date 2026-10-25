@@ -218,7 +218,7 @@ td strong { font-weight: 750; }
 .data-table table { min-width: 900px; }
 .raw-json { border-top: 1px solid var(--line); }
 .raw-json summary { cursor: pointer; padding: 10px 12px; color: var(--muted); font-size: 10px; background: #fafbfc; }
-.json-view { margin: 0; padding: 14px; overflow: auto; max-height: 440px; background: #20262e; color: #dbe3ea; font-size: 10px; line-height: 1.5; }
+.json-view { margin: 0; padding: 14px; overflow: auto; max-height: 440px; background: #f6f9ff; color: #26466f; border: 1px solid #e3eaf6; border-radius: 8px; font-size: 10px; line-height: 1.5; }
 .endpoint-catalog { max-height: 620px; overflow: auto; }
 .catalog-row { display: grid; grid-template-columns: 54px minmax(220px,.8fr) 1.3fr 140px; gap: 10px; align-items: center; padding: 9px 13px; border-bottom: 1px solid #edf0f2; font-size: 10px; }
 .catalog-row:last-child { border-bottom: 0; }
@@ -528,129 +528,16 @@ main { padding-top: 26px; }
 .finance-track { flex: 1 1 0; min-width: 0; }
 
 
-/* FluxHub | Nova identidade dark SaaS e dourado */
-:root {
-  color-scheme: dark;
-  --bg:#090e11; --surface:#131b20; --surface-2:#182128;
-  --line:#29353d; --text:#f0f4f6; --muted:#96a4ae;
-  --primary:#ffd439; --primary-soft:rgba(255,212,57,.11);
-  --good:#37ca87; --good-soft:rgba(55,202,135,.11);
-  --warning:#ffca55; --warning-soft:rgba(255,202,85,.11);
-  --bad:#ff7777; --bad-soft:rgba(255,119,119,.11);
-  --shadow:0 15px 48px rgba(0,0,0,.25);
-  --sidebar:248px;
-}
-html,body { background:var(--bg); }
-body { background-image:radial-gradient(ellipse at 84% -10%,rgba(244,182,31,.065),transparent 46%); }
-::selection { background:#ffd439; color:#16130a; }
-button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline-color:#ffd439; }
+
+/* Marca e acessibilidade globais. A área interna usa o tema claro do modern.css. */
+::selection { background: #c9e1ff; color: #123a78; }
+button:focus-visible, a:focus-visible, input:focus-visible,
+select:focus-visible, summary:focus-visible { outline-color: #357af0; }
 .fluxhub-logo { display:inline-flex; align-items:center; gap:9px; white-space:nowrap; letter-spacing:-.055em; }
-.fluxhub-logo .fluxhub-symbol { width:37px; height:37px; flex:0 0 auto; filter:drop-shadow(0 1px 8px rgba(252,195,31,.24)); }
-.fluxhub-logo strong { font-size:26px; color:#f7f8f8; font-weight:800; line-height:1; }
-.fluxhub-logo strong span { color:#ffcf2e; }
+.fluxhub-logo .fluxhub-symbol { width:37px; height:37px; flex:0 0 auto; filter:drop-shadow(0 1px 7px rgba(36,111,240,.15)); }
+.fluxhub-logo strong { font-size:26px; color:#18335f; font-weight:800; line-height:1; }
+.fluxhub-logo strong span { color:#216cdd; }
 .sr-only { position:absolute!important; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-
-/* Estrutura do dashboard */
-.sidebar { background:linear-gradient(165deg,#10171c,#080d10 90%); border-right-color:#263137; box-shadow:8px 0 35px rgba(0,0,0,.15); }
-.brand-block { height:92px; padding:15px 21px; align-items:flex-start; flex-direction:column; justify-content:center; gap:4px; position:relative; border-bottom-color:#222b30; }
-.brand-subtitle { display:block; font-size:10px; color:#8f9aa5; letter-spacing:.13em; text-transform:uppercase; padding-left:47px; }
-.sidebar-logo .fluxhub-symbol { width:37px; height:37px; }
-.sidebar-nav { padding:23px 13px; gap:5px; }
-.nav-section { color:#71808a; }
-.sidebar-nav a { font-size:13px; min-height:46px; border-radius:11px; color:#9eaab3; font-weight:600; }
-.sidebar-nav a.active { background:linear-gradient(95deg,rgba(255,212,57,.17),rgba(255,212,57,.045)); color:#ffdc58; box-shadow:inset 3px 0 #ffd439; }
-.sidebar-nav a.active svg:first-child { color:#ffd439; }
-.sidebar-nav a:hover { background:rgba(255,212,57,.075); color:#f8e5ad; }
-.sidebar-foot { border-top-color:#232c31; }
-.connection { background:rgba(255,255,255,.025); border:1px solid #273236; }
-.logout-button { color:#9da8b1; }
-.logout-button:hover { background:#252321; color:#ffd439; }
-.logout-button:focus-visible { outline-color:#ffd439; }
-.brand-block .mobile-close { position:absolute; right:12px; top:29px; }
-.workspace { min-height:100vh; }
-.topbar { background:rgba(13,18,21,.94); border-bottom:1px solid #263034; height:76px; backdrop-filter:blur(18px); }
-.breadcrumb { color:#9da8ae; font-size:13px; }
-.breadcrumb strong { color:#f7d153; }
-.schema-version { color:#788991; }
-main { padding-top:32px; }
-.eyebrow { color:#ebbd2b; }
-.page-heading { margin-bottom:25px; }
-.page-heading h1 { font-size:clamp(29px,3vw,39px); letter-spacing:-.04em; }
-.page-heading h1 b { color:#ffd439; }
-.page-heading p { color:#aab2bb; }
-.heading-pills span { background:#111a1c; color:#9fc2ad; border-color:#2a3833; }
-.heading-pills svg { color:#3ecb86; }
-.button,.icon-button { background:#161d21; border-color:#344047; color:#f3f5f5; }
-.button:hover,.icon-button:hover { background:#262a28; border-color:#e5b930; }
-.button.primary { background:#ffd439; border-color:#ffd439; color:#10100c; }
-.button.primary:hover { background:#ffe16c; border-color:#ffe16c; }
-.notice.good { border-color:#225843; }
-.notice.warning { border-color:#785a1e; color:#ffd571; }
-
-/* Indicadores e controles */
-.filterbar { background:linear-gradient(125deg,#151c20,#11171a); border:1px solid #30393d; border-radius:15px; padding:13px; box-shadow:0 16px 42px rgba(0,0,0,.09); }
-.search-field,.search-field.compact { background:#0c1215; border-color:#333f44; color:#a9b5bb; }
-.search-field input { color:#f2f5f6; }
-.search-field input::placeholder { color:#73818a; }
-.filterbar select,.field input,.field select,.panel-head select { background:#0e1518; color:var(--text); border-color:#38444b; }
-select option { background:#10191e; color:#f1f5f6; }
-.metric-grid { gap:15px; margin-bottom:20px; }
-.metric-grid.five { grid-template-columns:repeat(5,minmax(0,1fr)); }
-.metric-card { border-radius:17px; padding:20px; border:1px solid #293439; box-shadow:0 10px 26px rgba(0,0,0,.16); background:linear-gradient(135deg,#171f23,#0d1317 96%); position:relative; overflow:hidden; }
-.metric-card::before { content:""; position:absolute; width:125px; height:125px; top:-88px; right:-50px; border-radius:50%; background:rgba(255,205,45,.10); filter:blur(29px); pointer-events:none; }
-.metric-card:hover { border-color:rgba(255,212,57,.45); transition:border-color .2s ease; }
-.metric-top { align-items:flex-start; gap:7px; color:#aab6be; font-weight:600; font-size:12px; }
-.metric-icon { display:grid; place-items:center; background:rgba(255,211,54,.10); border-radius:12px; height:37px; width:37px; min-width:37px; color:#ffd439; }
-.metric-value { font-size:clamp(21px,2.1vw,32px); margin-top:18px; letter-spacing:-.05em; }
-.metric-card small { color:#8fa0a9; font-size:10px; line-height:1.5; }
-.panel { background:linear-gradient(155deg,#131b1f,#0e1418); border:1px solid #2a353b; border-radius:17px; box-shadow:0 12px 32px rgba(0,0,0,.12); }
-.panel-head { padding:18px 20px; border-bottom-color:#253138; }
-.panel-head h2 { color:#eef3f5; font-size:15px; }
-.panel-head p { color:#90a1aa; font-size:11px; }
-.chart-layout { gap:15px; }
-.chart-layout .panel > :last-child:not(.panel-head) { padding:19px; }
-.chart-grid span,.column-label { color:#8e9da7; }
-.chart-grid i { background:#293339; }
-.column-fill { background:linear-gradient(0deg,#776430,#d8a82f); border-radius:6px 6px 0 0; }
-.column-fill.leading { background:linear-gradient(0deg,#b78c16,#ffd439); box-shadow:0 0 19px rgba(255,212,57,.12); }
-.chart-column:hover .column-fill { filter:brightness(1.2); }
-.supplier-track { background:#263136; }
-.supplier-meta { color:#94a4ab; }
-.rank-number { color:#e6bd3f; }
-.donut-center { background:#121a1e; }
-.category-name { color:#a6b2ba; }
-.empty-icon { background:#233038; color:#dfba4c; }
-.status-strip { gap:15px; }
-.status-strip > div,.abc-summary > div,.tool-control { background:#141d21; border-color:#2b383f; border-radius:14px; }
-th { background:#171f23; color:#94a3ac; border-bottom-color:#2b373d; }
-td { border-bottom-color:#263238; color:#dde6ea; }
-tbody tr:hover,.click-row:hover { background:#192327; }
-.product-cell { color:#e1e9ea; }
-.product-cell strong { color:#f0f4f5; }
-.cell-sub,.product-cell span { color:#90a2a9; }
-.subtabs { background:#0c1417; border-color:#2c393e; }
-.subtabs button.active { background:#ffd439; color:#151510; }
-.endpoint-list { background:#11191c; }
-.endpoint-item.active { background:#302a18; border-color:#5b4821; }
-.endpoint-item:hover { background:#222b2f; }
-.endpoint-title code,.query-box,.detail-grid > div,.market-price-grid > div,.price-note { background:#1d272b; color:var(--text); }
-.result-toolbar,.raw-json summary { background:#182226; }
-.json-view { background:#090f12; }
-.catalog-row,.check-row,.raw-fields > div { border-bottom-color:#29353b; }
-.market-thumb { background:#182126; border-color:#324047; }
-.market-thumb img { background:#fff; }
-.market-source span { background:#2c281a; color:#ffd439; }
-.raiox-selector { background:#161f24; border-color:#2b363d; }
-.raiox-product-price { background:#10181c; border-color:#354249; }
-.finance-dialog,.detail-drawer { background:#11191d; color:var(--text); border:1px solid #334047; }
-.finance-dialog::backdrop,.drawer-backdrop { background:rgba(0,0,0,.75); }
-.legend-revenue,.finance-bar.revenue { background:#ffd439; }
-.legend-profit,.finance-bar.profit { background:#34c88b; }
-.skeleton { background:linear-gradient(90deg,#1c272a,#2b353a,#1c272a); background-size:220% 100%; }
-@media (max-width:1360px) { .metric-grid.five { grid-template-columns:repeat(3,minmax(0,1fr)); } }
-@media (max-width:1100px) { .metric-grid.five { grid-template-columns:repeat(2,minmax(0,1fr)); } }
-@media (max-width:860px) { .sidebar { box-shadow:18px 0 44px rgba(0,0,0,.4); } }
-@media (max-width:600px) { .metric-grid.five { grid-template-columns:1fr; } .brand-block { height:82px; } }
 
 /* FluxHub login SaaS — somente azul e branco; visual demonstrativo, sem cadastro público. */
 .login-page {
