@@ -62,7 +62,7 @@ export default function ModernShell({
           <strong>{adminMode ? "Controle da plataforma" : "Sua operação em um só lugar"}</strong>
           <p>{adminMode ? "Clientes, contas e integrações com isolamento por usuário." : "Acompanhe vendas, anúncios e dados reais do Mercado Livre."}</p>
         </div>
-        <div className="fh-help"><CircleHelp size={17}/> {adminMode ? "Administração" : "Central FluxHub"}</div>
+        <div className="fh-help"><CircleHelp size={17}/> {adminMode ? "Administrador Master" : "Central FluxHub"}</div>
         <form method="post" action="/api/auth/logout"><button className="fh-signout" type="submit"><LogOut size={16}/> Sair da conta</button></form>
       </div>
     </aside>

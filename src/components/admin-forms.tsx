@@ -15,14 +15,14 @@ export function CreateClientForm(){
   const router=useRouter();
   async function save(event:React.FormEvent<HTMLFormElement>){
     event.preventDefault();setBusy(true);setMessage("");
-    try{await doAdmin({action:"create",email,password});setMessage("Cliente criado com sucesso.");setEmail("");setPassword("");router.refresh();}
+    try{await doAdmin({action:"create",email,password});setMessage("Usuário criado com sucesso.");setEmail("");setPassword("");router.refresh();}
     catch(e){setMessage(e instanceof Error?e.message:"Erro ao cadastrar.");}
     finally{setBusy(false);}
   }
   return <form className="fh-form" onSubmit={save}>
     <label>E-mail do novo usuário <input type="email" required maxLength={320} value={email} onChange={e=>setEmail(e.target.value)} placeholder="cliente@empresa.com.br" autoComplete="off"/></label>
     <label>Senha inicial <input type="password" required minLength={12} maxLength={256} value={password} onChange={e=>setPassword(e.target.value)} autoComplete="new-password" placeholder="Mínimo 12 caracteres"/></label>
-    <button type="submit" className="fh-primary-btn" disabled={busy}><UserPlus size={16}/>{busy?"Criando...":"Criar cliente"}</button>
+    <button type="submit" className="fh-primary-btn" disabled={busy}><UserPlus size={16}/>{busy?"Criando...":"Cadastrar usuário"}</button>
     {message&&<p role="status" style={{fontSize:12,color:"#5c749e",margin:0}}>{message}</p>}
   </form>;
 }
