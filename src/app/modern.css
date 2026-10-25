@@ -215,3 +215,34 @@ html, body { background: #f6f8fe; color: #1d3058; }
 .fh-ml-backend-only .fh-integration-security{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
 @media(max-width:800px){.fh-ml-backend-only .fh-integration-security{grid-template-columns:1fr;gap:2px;}}
 @media(max-width:530px){.fh-ml-details{grid-template-columns:1fr;}}
+
+
+/* SaaS: marketplace cards respond to narrow screens without hiding account actions. */
+.fh-marketplace-catalog {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 12px;
+  padding: 8px 0 0;
+}
+.fh-marketplace-provider {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px;
+  border: 1px solid var(--border, #e4e8ec);
+  border-radius: 12px;
+}
+.fh-marketplace-provider h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+.fh-marketplace-provider p {
+  font-size: 0.86rem;
+  margin: 0;
+}
+.fh-integration-account-actions {
+  flex-wrap: wrap;
+}

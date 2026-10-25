@@ -1,145 +1,179 @@
 import Link from "next/link";
 import {
   ArrowRight, CheckCircle2, CircleAlert, Database, LockKeyhole,
-  ShoppingBag, ShieldCheck, RefreshCw,
+  ShoppingBag, ShieldCheck, RefreshCw, Layers3,
 } from "lucide-react";
 import ModernShell from "@/components/modern-shell";
 import SyncAction from "@/components/sync-action";
 import IntegrationRefresh from "@/components/integration-refresh";
-import { getIntegrationOverview } from "@/lib/integration-overview";
+import MarketplaceConnectionActions from "@/components/marketplace-connection-actions";
+import { getMarketplaceOverview } from "@/lib/marketplace-overview";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 function lastSync(value: string | null) {
-  if (!value) return "Ainda não sincronizada";
+  if (!value) return "Aguardando primeira sincronização";
   const date = new Date(value);
   return Number.isNaN(date.getTime())
-    ? "Data não informada"
+    ? "Data indisponível"
     : date.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
 }
 
-export default async function MercadoLivrePage() {
-  const data = await getIntegrationOverview();
-  const { seller, profileState, sourcesAvailable } = data;
-  const account = seller.kind === "ready" ? seller.account : null;
-  const verified = Boolean(account && profileState === "valid");
-  const sourceReady = Boolean(account?.sourceKnown && account.enabled && account.sourceConnected === true);
+type Params = { ml?: string; ml_reason?: string };
+export default async function IntegracoesPage({
+  searchParams,
+}: { searchParams?: Promise<Params> }) {
+  const [data, params] = await Promise.all([
+    getMarketplaceOverview(), searchParams ?? Promise.resolve({} as Params),
+  ]);
+  const { ml, marketplaces } = data;
+  const ready = ml.status !== "unavailable";
+  const connected = ml.accounts.length;
 
-  return <ModernShell title="Mercado Livre" eyebrow="Dados do backend"
+  return <ModernShell title="Integrações" eyebrow="FluxHub SaaS"
     isAdmin={data.isAdmin} action={<IntegrationRefresh/>}>
+
     <section className="fh-integration-intro">
-      <div className="fh-integration-intro-icon"><ShoppingBag size={24}/></div>
+      <div className="fh-integration-intro-icon"><Layers3 size={24}/></div>
       <div>
-        <span className="fh-integration-eyebrow">Uma única conexão · Mercado Livre</span>
-        <h2>Os dados da sua conta, direto do backend</h2>
-        <p>Sem configurar Client ID, Client Secret, callback ou tokens nesta tela.
-          O FluxHub consulta os dados oficiais armazenados no FastAPI e no PostgreSQL.</p>
+        <span className="fh-integration-eyebrow">Central de marketplaces · Multi-conta</span>
+        <h2>Conecte sua loja em poucos cliques</h2>
+        <p>Escolha um marketplace e autorize no site oficial do provedor.
+          O FluxHub armazena os tokens com criptografia e sincroniza os
+          dados de cada vendedor separadamente.</p>
       </div>
     </section>
+
+    {params.ml === "connected" && <div className="fh-notice" role="status">
+      <CheckCircle2 size={18}/> Mercado Livre autorizado com sucesso.
+      Sua conta já pode aparecer abaixo; a primeira importação será iniciada automaticamente.
+    </div>}
+    {params.ml === "cancelled" && <div className="fh-notice" role="status">
+      A autorização foi cancelada. Seus dados existentes foram preservados.
+    </div>}
+    {params.ml === "error" && <div className="fh-notice error" role="alert">
+      <CircleAlert size={18}/> Não foi possível concluir a autorização.
+      {params.ml_reason === "state"
+        ? " O link expirou ou já foi usado. Inicie uma nova conexão."
+        : params.ml_reason === "backend"
+        ? " Verifique se o FastAPI e o token de serviço estão configurados."
+        : " Confira o aplicativo no Mercado Livre e tente novamente."}
+    </div>}
 
     <section className="fh-card fh-integration-main">
       <div className="fh-card-head fh-integration-header">
         <div className="fh-integration-brand">
           <span className="fh-integration-provider-icon"><ShoppingBag size={21}/></span>
-          <div><h2>Mercado Livre</h2><p>Fonte exclusiva deste painel</p></div>
+          <div>
+            <h2>Mercado Livre</h2>
+            <p>Login oficial OAuth · até várias contas vendedoras</p>
+          </div>
         </div>
-        <span className={`fh-pill ${verified ? "" : "offline"}`}>
-          {verified ? <CheckCircle2 size={14}/> : <CircleAlert size={14}/>}
-          {verified ? "API validada" : account ? "Acesso não validado" : "Aguardando backend"}
+        <span className={`fh-pill ${connected ? "" : "offline"}`}>
+          {connected ? <CheckCircle2 size={14}/> : <CircleAlert size={14}/>}
+          {connected ? `${connected} conta(s) vinculada(s)` : "Não conectado"}
         </span>
       </div>
 
-      {seller.kind === "unavailable" && <div className="fh-integration-empty" role="status">
-        <CircleAlert size={27}/>
-        <h3>Não foi possível consultar o FastAPI</h3>
-        <p>A consulta às contas Mercado Livre falhou. Verifique se o backend está no ar,
-          se BACKEND_URL e BACKEND_TOKEN estão configurados no Next.js e se a sessão FluxHub é válida.</p>
+      {!ready && <div className="fh-integration-empty" role="status">
+        <CircleAlert size={26}/>
+        <h3>Não foi possível consultar suas integrações</h3>
+        <p>Verifique a sessão FluxHub e se o FastAPI está acessível.
+          BACKEND_TOKEN precisa ser o mesmo no Next.js e no FastAPI.</p>
         <IntegrationRefresh/>
       </div>}
 
-      {seller.kind === "not_linked" && <div className="fh-integration-empty" role="status">
-        <Database size={27}/>
-        <h3>O backend ainda não retornou uma conta de vendedor autorizada</h3>
-        <p>O aplicativo Mercado Livre está configurado no servidor, mas o Client ID e o
-          Client Secret não dão acesso privado aos anúncios e pedidos. Para importar dados,
-          o FastAPI precisa ter um access token e um refresh token válidos de uma autorização anterior.</p>
-        <p>Este frontend não oferece login nem uma nova conexão com o Mercado Livre.
-          Depois que a conta estiver cadastrada no backend, ela aparecerá automaticamente aqui.</p>
-        <IntegrationRefresh/>
+      {ready && connected === 0 && <div className="fh-integration-empty">
+        <ShoppingBag size={28}/>
+        <h3>Conecte seu primeiro vendedor</h3>
+        <p>Não é necessário copiar tokens, abrir terminal ou configurar aplicativos
+          na conta de cada cliente. Entre no Mercado Livre, confirme as permissões
+          e volte automaticamente ao FluxHub.</p>
+        <MarketplaceConnectionActions/>
       </div>}
 
-      {seller.kind === "multiple" && <div className="fh-integration-empty" role="alert">
-        <CircleAlert size={27}/>
-        <h3>Há mais de um vendedor no backend</h3>
-        <p>O FastAPI devolveu {seller.count} contas autorizadas. Não é seguro escolher uma
-          delas pelo Client ID do aplicativo, pois ele não identifica o vendedor.
-          Configure somente a conta desejada no backend para manter uma fonte única neste painel.</p>
-      </div>}
-
-      {account && <div className="fh-integration-accounts">
+      {ready && connected > 0 && <div className="fh-integration-accounts">
         <div className="fh-integration-summary">
-          <CheckCircle2 size={19}/>
-          <div><strong>Conta vendedora encontrada no FastAPI</strong>
-            <span>Os dados de autorização permanecem no backend. Nenhum novo login no Mercado Livre foi solicitado.</span>
+          <CheckCircle2 size={20}/>
+          <div><strong>Suas contas Mercado Livre</strong>
+            <span>Cada vendedor fica isolado na sua conta FluxHub.</span>
           </div>
         </div>
-        <article className="fh-integration-account">
-          <div className="fh-integration-account-top">
-            <div className="fh-integration-avatar"><ShoppingBag size={19}/></div>
-            <div className="fh-integration-account-name">
-              <h3>{data.liveNickname || account.nickname}</h3>
-              <span>Seller ID: {account.accountId}</span>
+        {ml.accounts.map(account =>
+          <article key={account.accountId} className="fh-integration-account">
+            <div className="fh-integration-account-top">
+              <div className="fh-integration-avatar"><ShoppingBag size={18}/></div>
+              <div className="fh-integration-account-name">
+                <h3>{account.nickname}</h3>
+                <span>Seller ID: {account.accountId}</span>
+              </div>
+              <span className={`fh-pill ${account.enabled ? "" : "offline"}`}>
+                {account.enabled ? "Autorizada" : "Sincronização pausada"}
+              </span>
             </div>
-            <span className={`fh-pill ${verified ? "" : "offline"}`}>
-              {verified ? "Token funcionando" : "Verificação pendente"}
-            </span>
-          </div>
-          <div className="fh-integration-details fh-ml-details">
-            <div><span>Perfil Mercado Livre</span><strong>{verified ? "Consulta realizada com sucesso" : "Não foi possível consultar /users/me"}</strong></div>
-            <div><span>Última importação</span><strong>{lastSync(account.lastSyncedAt)}</strong></div>
-            <div><span>Produtos já armazenados</span><strong>{data.productCount ?? "Indisponível"}</strong></div>
-            <div><span>Pedidos recentes armazenados</span><strong>{data.recentOrderCount ?? "Indisponível"}{data.recentOrderCount === 100 ? " (até 100)" : ""}</strong></div>
-          </div>
-          {!verified && <div className="fh-notice error" role="status">
-            <CircleAlert size={16}/> A conta está registrada, mas o FastAPI não conseguiu
-            confirmar o acesso atual ao Mercado Livre. Se o refresh token estiver expirado
-            ou revogado, o frontend não consegue substituí-lo usando apenas as credenciais do aplicativo.
-          </div>}
-          {!sourcesAvailable && <div className="fh-notice error" role="status">
-            Não foi possível consultar o estado da sincronização no backend.
-          </div>}
-          {account.sourceKnown && !account.enabled && <div className="fh-notice" role="status">
-            A fonte desta conta está pausada ou desconectada no backend.
-            A importação automática permanece desativada.
-          </div>}
-          {!account.sourceKnown && <div className="fh-notice" role="status">
-            O vendedor está registrado, mas não há uma fonte de sincronização correspondente no FastAPI.
-          </div>}
-          <div className="fh-integration-account-actions">
-            {sourceReady && verified && <SyncAction accountId={account.accountId}
-              auto={!account.lastSyncedAt}/>}
-            <nav className="fh-integration-links" aria-label="Ver dados da conta">
-              <Link href={`/?account=${account.accountId}`}>Dashboard <ArrowRight size={14}/></Link>
-              <Link href="/produtos">Produtos <ArrowRight size={14}/></Link>
-              <Link href={`/pedidos?account=${account.accountId}`}>Pedidos <ArrowRight size={14}/></Link>
-            </nav>
-          </div>
-        </article>
+            <div className="fh-integration-details fh-ml-details">
+              <div><span>Autorização OAuth</span><strong>Salva no FastAPI</strong></div>
+              <div><span>Última sincronização</span><strong>{lastSync(account.lastSyncedAt)}</strong></div>
+              <div><span>Status da fonte</span><strong>
+                {account.sourceKnown
+                  ? account.sourceConnected && account.enabled ? "Ativa" : "Pausada"
+                  : "Pendente de configuração"}
+              </strong></div>
+            </div>
+            {!account.sourceKnown && <p className="fh-notice" role="status">
+              O backend ainda não retornou uma fonte de sincronização para esta conta.
+            </p>}
+            <div className="fh-integration-account-actions">
+              {account.sourceKnown && account.sourceConnected && account.enabled &&
+                <SyncAction accountId={account.accountId} auto={!account.lastSyncedAt}/>}
+              <nav className="fh-integration-links" aria-label={`Dados de ${account.nickname}`}>
+                <Link href={`/?account=${account.accountId}`}>Dashboard <ArrowRight size={14}/></Link>
+                <Link href={`/pedidos?account=${account.accountId}`}>Pedidos <ArrowRight size={14}/></Link>
+                <Link href="/produtos">Produtos <ArrowRight size={14}/></Link>
+              </nav>
+              <MarketplaceConnectionActions accountId={account.accountId}/>
+            </div>
+          </article>
+        )}
+        <div className="fh-integration-account-actions">
+          <MarketplaceConnectionActions/>
+          <p>Você pode conectar outro vendedor sem remover os anteriores.</p>
+        </div>
       </div>}
+    </section>
+
+    <section className="fh-card fh-integration-main">
+      <div className="fh-card-head">
+        <div className="fh-integration-brand">
+          <span className="fh-integration-provider-icon neutral"><Layers3 size={20}/></span>
+          <div><h2>Outros marketplaces</h2>
+            <p>Estrutura multi-plataforma preparada, sem falsas conexões.</p></div>
+        </div>
+      </div>
+      <div className="fh-marketplace-catalog">
+        {marketplaces.filter(provider => provider.id !== "mercado_livre").map(provider =>
+          <article className="fh-marketplace-provider" key={provider.id}>
+            <div className="fh-integration-brand">
+              <span className="fh-integration-provider-icon neutral"><ShoppingBag size={19}/></span>
+              <div><h3>{provider.name}</h3>
+                <p>Conector em preparação</p></div>
+            </div>
+            <span className="fh-pill offline">Em breve</span>
+          </article>
+        )}
+      </div>
     </section>
 
     <section className="fh-card fh-ml-backend-only">
       <div className="fh-integration-brand">
         <span className="fh-integration-provider-icon neutral"><LockKeyhole size={18}/></span>
-        <div><h2>Credenciais e renovação: somente no backend</h2>
-          <p>O frontend recebe dados da sua API privada, nunca o Client Secret ou os tokens.</p>
-        </div>
+        <div><h2>Seus dados protegidos</h2><p>As senhas do Mercado Livre nunca passam pelo FluxHub.</p></div>
       </div>
       <div className="fh-integration-security">
-        <p><ShieldCheck size={16}/>Se já houver autorização válida, o FastAPI renova o token e reutiliza a conta automaticamente.</p>
-        <p><Database size={16}/>Produtos, pedidos e dados da dashboard vêm de consultas reais ao backend.</p>
-        <p><RefreshCw size={16}/>Use “Verificar conexão” ou “Atualizar dados” para buscar os registros mais recentes.</p>
+        <p><ShieldCheck size={16}/>O login acontece no site oficial. Os tokens ficam criptografados no PostgreSQL.</p>
+        <p><Database size={16}/>Anúncios e pedidos são consultados por vendedor e por usuário do SaaS.</p>
+        <p><RefreshCw size={16}/>O backend renova o acesso automaticamente enquanto o grant for válido.</p>
       </div>
     </section>
   </ModernShell>;
