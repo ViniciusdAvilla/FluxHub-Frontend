@@ -41,9 +41,9 @@ test("assistente volta no cartão Mercado Livre somente para o Administrador Mas
   assert.ok(css.includes(".fh-wizard-progress"));
   assert.ok(css.includes(".fh-ml-setup-trigger"));
   assert.ok(css.includes("grid-template-columns:repeat(6,minmax(0,1fr))"));
-  const labels = [...wizard.matchAll(/\\{ name: "([^"]+)", title: /g)].map(x => x[1]);
+  const labels = [...wizard.matchAll(/\{ name: "([^"]+)", title: /g)].map(x => x[1]);
   assert.deepEqual(labels, ["DevCenter","Aplicativo","Callback","PKCE","Credenciais","Teste"]);
-  assert.doesNotMatch(wizard, /backend|\\bVPS\\b|name: "Backend"|MERCADO_LIVRE_CLIENT_SECRET/i);
+  assert.doesNotMatch(wizard, /backend|\bVPS\b|name: "Backend"|MERCADO_LIVRE_CLIENT_SECRET/i);
   assert.doesNotMatch(page, /<ol className="fh-guide-steps/);
 });
 
