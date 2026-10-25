@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import {
   ArrowLeft, ArrowRight, BookOpen, CheckCircle2, ClipboardCopy,
-  ExternalLink, KeyRound, LockKeyhole, ShieldCheck, Store, X,
+  ExternalLink, KeyRound, LockKeyhole, ShieldCheck, Store, X, Lightbulb,
 } from "lucide-react";
 
 const CALLBACK = "https://myfluxhub.tech/api/v1/connectors/mercado-livre/callback";
@@ -46,7 +47,6 @@ export default function MercadoLivreSetupWizard() {
   const [step, setStep] = useState(0);
   const [copied, setCopied] = useState(false);
   const current = steps[step];
-  const Icon = current.icon;
 
   useEffect(() => {
     if (!copied) return;
@@ -72,7 +72,7 @@ export default function MercadoLivreSetupWizard() {
 
   return <>
     <button className="fh-primary-btn fh-setup-launch" type="button" onClick={open}>
-      <BookOpen size={18} aria-hidden="true"/> Configurar Mercado Livre <ArrowRight size={16} aria-hidden="true"/>
+      <BookOpen size={18} aria-hidden="true"/> Configurar <ArrowRight size={16} aria-hidden="true"/>
     </button>
     <dialog ref={dialog} className="fh-wizard" aria-labelledby="ml-wizard-heading"
       aria-describedby="ml-wizard-subtitle" onClick={event => {
@@ -80,10 +80,10 @@ export default function MercadoLivreSetupWizard() {
       }}>
       <div className="fh-wizard-inner">
         <header className="fh-wizard-header">
-          <span className="fh-wizard-brand" aria-hidden="true"><Store size={28}/></span>
+          <span className="fh-wizard-brand" aria-hidden="true"><Image src="/marketplaces/mercado-livre-icon.webp" alt="" width={76} height={76} unoptimized/></span>
           <div className="fh-wizard-header-text">
             <h2 id="ml-wizard-heading">Configurar Mercado Livre</h2>
-            <p id="ml-wizard-subtitle">Assistente exclusivo do Administrador Master — configuração única.</p>
+            <p id="ml-wizard-subtitle">Esta é uma configuração feita apenas uma vez pelo dono da plataforma.</p>
           </div>
           <button type="button" className="fh-wizard-close" onClick={close} aria-label="Fechar assistente"><X size={22}/></button>
         </header>
@@ -108,10 +108,24 @@ export default function MercadoLivreSetupWizard() {
           </div>
           <p className="fh-wizard-description">{current.text}</p>
           {step === 0 && <div className="fh-wizard-illustration">
-            <div className="fh-wizard-mini-browser">
-              <span className="fh-wizard-browser-dots">● ● ●</span>
-              <strong>mercado livre</strong>
-              <span>DevCenter • Minhas aplicações</span>
+            <div className="fh-wizard-mini-browser" role="img"
+              aria-label="Ilustração de uma página do DevCenter Mercado Livre com cadastro de aplicativo">
+              <div className="fh-wizard-browser-dots" aria-hidden="true">
+                <i/><i/><i/>
+              </div>
+              <div className="fh-wizard-browser-body">
+                <div className="fh-wizard-browser-preview">
+                  <div className="fh-wizard-browser-marketplace">
+                    <Image src="/marketplaces/mercado-livre-icon.webp" alt="" width={92} height={92} unoptimized/>
+                    <strong>mercado<br/>livre</strong>
+                  </div>
+                  <span className="fh-wizard-demo-line wide"/><span className="fh-wizard-demo-line medium"/>
+                </div>
+                <div className="fh-wizard-browser-form" aria-hidden="true">
+                  <span className="fh-wizard-demo-line medium"/><span className="fh-wizard-demo-line short"/>
+                  <span className="fh-wizard-demo-input"/><span className="fh-wizard-demo-input"/>
+                </div>
+              </div>
             </div>
           </div>}
           {step === 2 && <div className="fh-wizard-copy">
@@ -130,21 +144,21 @@ export default function MercadoLivreSetupWizard() {
             <code>MERCADO_LIVRE_REDIRECT_URI</code>
             <code>MERCADO_LIVRE_PKCE_ENABLED</code>
           </div>}
-          <div className="fh-wizard-tip"><ShieldCheck size={21} aria-hidden="true"/><div>
-            <strong>Dica importante</strong><p>{current.tip}</p>
+          <div className="fh-wizard-tip"><Lightbulb size={24} aria-hidden="true"/><div>
+            <strong>Dica: esta etapa é feita apenas uma vez.</strong><p>{current.tip}</p>
           </div></div>
         </section>
         <footer className="fh-wizard-actions">
           <button type="button" className="fh-wizard-secondary" onClick={() => setStep(n => Math.max(0, n - 1))}
             disabled={step === 0}><ArrowLeft size={17}/> Voltar</button>
           <div className="fh-wizard-actions-right">
-            {"url" in current && <a className="fh-wizard-external" href={current.url} target="_blank"
-              rel="noopener noreferrer"><ExternalLink size={17}/> Abrir DevCenter</a>}
             <button className="fh-wizard-next" type="button"
               onClick={() => step === steps.length - 1 ? close() : setStep(n => n + 1)}>
               {step === steps.length - 1 ? "Concluir" : "Próximo passo"}
               {step === steps.length - 1 ? <CheckCircle2 size={18}/> : <ArrowRight size={18}/>}
             </button>
+            {"url" in current && <a className="fh-wizard-external" href={current.url} target="_blank"
+              rel="noopener noreferrer"><ExternalLink size={17}/> Abrir DevCenter</a>}
           </div>
         </footer>
       </div>
