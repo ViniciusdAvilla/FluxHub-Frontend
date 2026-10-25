@@ -18,16 +18,31 @@ test("cards dos provedores planejados utilizam as três logos locais enviadas", 
   assert.match(css, /\.fh-marketplace-logo img/);
 });
 
-test("novos vendedores recebem passos de autorização sem DevCenter nem Client Secret", () => {
-  assert.match(page, /Primeiros passos para conectar o Mercado Livre/);
-  assert.match(page, /Conectar Mercado Livre/);
-  assert.match(page, /Autorize como titular ou administrador da loja/);
-  assert.match(page, /Confira a conta e sincronize/);
+test("tela principal mostra Mercado Livre primeiro, sem lista longa de passos", () => {
+  assert.match(page, /Conecte o FluxHub aos seus canais/);
+  assert.match(page, /Conecte seu primeiro vendedor/);
+  assert.match(page, /<MarketplaceConnectionActions\s*\/>/);
+  assert.match(page, /fh-ml-brand-logo/);
+  assert.match(page, /mercado-livre-icon\.webp/);
+  assert.doesNotMatch(page, /<ol className="fh-guide-steps/);
+  assert.ok(page.indexOf("fh-integration-header") < page.indexOf("fh-other-marketplaces"));
 });
 
+test("mockup aprovado tem 7 passos, logo no popup, progresso e botoes", () => {
+  const wizard = readFileSync("src/components/mercado-livre-setup-wizard.tsx", "utf8");
+  assert.match(wizard, /<dialog ref=\{dialog\}/);
+  assert.match(wizard, /fh-wizard-browser-marketplace/);
+  assert.match(wizard, /fh-wizard-progress/);
+  assert.match(wizard, /fh-wizard-tip/);
+  assert.match(wizard, /Próximo passo/);
+  assert.match(wizard, /Abrir DevCenter/);
+  assert.match(wizard, /mercado-livre-icon\.webp/);
+  assert.ok(existsSync("public/marketplaces/mercado-livre-icon.webp"));
+  assert.ok(statSync("public/marketplaces/mercado-livre-icon.webp").size > 1000);
+});
 test("assistente DevCenter so aparece para administrador e abre popup por etapas", () => {
   const wizard = readFileSync("src/components/mercado-livre-setup-wizard.tsx", "utf8");
-  assert.match(page, /data\.isAdmin && <div className="fh-setup-wizard-entry"/);
+  assert.match(page, /data\.isAdmin && <div className="fh-ml-setup-trigger"/);
   assert.match(page, /<MercadoLivreSetupWizard\s*\/>/);
   assert.match(wizard, /<dialog ref=\{dialog\}/);
   assert.match(wizard, /showModal\(\)/);
