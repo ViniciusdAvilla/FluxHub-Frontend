@@ -32,6 +32,11 @@ export default async function SalesPage(){
    <section className="fh-card"><div className="fh-card-head"><h2>Histórico de pedidos e visitas</h2></div><PerformanceChart points={r.timeline}/></section>
    <section className="fh-card"><div className="fh-card-head"><h2>Pedidos por status</h2></div><DonutStats label="pedidos" items={[...statuses.entries()].map(([name,value],i)=>({name,value,color:["#20c58b","#4386fc","#ffc34d","#f07887"][i%4]}))}/></section>
   </div>
+  <section className="fh-card" style={{marginBottom:15}}>
+    <div className="fh-card-head"><div><h2>Receita diária registrada</h2>
+      <p>Representação dos pedidos sincronizados; não é saldo de pagamentos.</p></div></div>
+    <DailyBars points={r.timeline}/>
+  </section>
   <section className="fh-card"><div className="fh-card-head"><div><h2>Pedidos recentes</h2><p>Últimos 100 pedidos consultados no PostgreSQL</p></div><Link className="fh-card-link" href="/pedidos">Detalhes →</Link></div>
   <div className="fh-table-wrap"><table className="fh-table"><thead><tr><th>Pedido</th><th>Conta</th><th>Data</th><th>Status</th><th>Valor</th></tr></thead><tbody>
    {r.orders.map(o=><tr key={o.external_id}><td><strong>{o.external_id}</strong></td><td>{o.seller_id||"—"}</td><td>{o.created_at?new Date(o.created_at).toLocaleString("pt-BR"):"—"}</td><td><span className={`fh-pill ${o.is_cancelled?"offline":""}`}>{o.status}</span></td><td>{money(o.total_amount)}</td></tr>)}
