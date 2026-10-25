@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   Activity, BadgeDollarSign, Bell, Boxes, ChevronRight, CircleHelp,
+  ChartNoAxesCombined, ClipboardList,
   Database, LayoutDashboard, Link2, LogOut, Menu, Package, Settings2,
   ShieldCheck, ShoppingBag, ShoppingCart, Users, X, Zap,
 } from "lucide-react";
@@ -14,10 +15,16 @@ const sellerLinks = [
   { href: "/vendas", label: "Vendas", icon: ShoppingCart },
   { href: "/anuncios", label: "Anúncios", icon: ShoppingBag },
   { href: "/produtos", label: "Produtos", icon: Package },
-  { href: "/pedidos", label: "Pedidos", icon: Boxes },
+  { href: "/estoque", label: "Estoque", icon: Boxes },
   { href: "/financeiro", label: "Financeiro", icon: BadgeDollarSign },
-  { href: "/integracoes", label: "Mercado Livre", icon: Link2 },
+  { href: "/fabricantes", label: "Fabricantes", icon: Users },
+  { href: "/precificacao", label: "Precificação", icon: Settings2 },
+  { href: "/reposicao", label: "Compras e reposição", icon: Activity },
+  { href: "/curva-abc", label: "Curva ABC", icon: ChartNoAxesCombined },
+  { href: "/pedidos", label: "Pedidos", icon: ClipboardList },
+  { href: "/raio-x", label: "Raio-X de anúncios", icon: ShieldCheck },
   { href: "/dados", label: "Central de dados", icon: Database },
+  { href: "/integracoes", label: "Integrações", icon: Link2 },
 ];
 const adminLinks = [
   { href: "/admin", label: "Visão geral", icon: LayoutDashboard },
@@ -46,10 +53,11 @@ export default function ModernShell({
         <strong>Flux<span>Hub</span></strong>
         <button className="fh-mobile-close" onClick={() => setMobileOpen(false)} aria-label="Fechar menu"><X size={18}/></button>
       </div>
-      <nav className="fh-nav" aria-label="Navegação">
+      <nav className="fh-nav" aria-label={adminMode ? "Navegação administrativa" : "Navegação principal"}>
         {links.map(({ href, icon: Icon, label }) =>
           <Link key={href + label} href={href}
             onClick={() => setMobileOpen(false)}
+            aria-current={path === href ? "page" : undefined}
             className={path === href ? "fh-nav-active" : ""}>
             <Icon size={19} strokeWidth={1.85}/><span>{label}</span>
             {path === href && <ChevronRight size={14} className="fh-nav-tail" />}
