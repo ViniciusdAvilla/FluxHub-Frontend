@@ -224,10 +224,15 @@ function ProductTable({
           {rows.map((row) => (
             <tr key={row.id}>
               <td>
-                <button className="product-cell" onClick={() => onInspect?.(row)}>
-                  <strong>{row.title}</strong>
-                  <span>{row.id} · {row.brand} · {row.category}</span>
-                </button>
+                {/^ML[A-Z]{1,2}\d{5,20}$/.test(row.id)
+                  ? <Link className="product-cell" href={`/produtos/${encodeURIComponent(row.id)}${typeof row.raw?.source_key === "string" && /^ml:\d+$/.test(row.raw.source_key) ? `?account=${row.raw.source_key.slice(3)}` : ""}`}>
+                      <strong>{row.title}</strong>
+                      <span>{row.id} · {row.brand} · {row.category}</span>
+                    </Link>
+                  : <button className="product-cell" onClick={() => onInspect?.(row)}>
+                      <strong>{row.title}</strong>
+                      <span>{row.id} · {row.brand} · {row.category}</span>
+                    </button>}
               </td>
               <td>{money(row.price)}</td>
               <td>{number(row.sales)}</td>
