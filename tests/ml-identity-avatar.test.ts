@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { trustedSellerAvatar, sellerInitials } from "../src/components/mercado-livre-identity";
 
 test("foto do vendedor aceita somente imagens oficiais HTTPS mlstatic", () => {
@@ -19,7 +20,6 @@ test("sem foto real o fallback exibe as iniciais de nome recebido", () => {
 });
 
 test("API intermediaria so retorna informacao publica de conta autenticada", () => {
-  const {readFileSync} = require("node:fs") as typeof import("node:fs");
   const content = readFileSync("src/app/api/platform/mercado-livre/identity/route.ts","utf8");
   assert.match(content, /backendRequest/);
   assert.match(content, /account_id/);
