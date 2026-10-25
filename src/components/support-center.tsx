@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Bot, CheckCheck, CircleAlert, Clock3, Inbox, LoaderCircle,
   MessageCircle, RefreshCw, Send, ShieldCheck, Sparkles } from "lucide-react";
 
@@ -21,6 +21,7 @@ async function loadJson(url: string, signal?: AbortSignal) {
 
 export default function SupportCenter({accounts}: {accounts: Account[]}) {
   const [accountId,setAccountId] = useState(accounts[0]?.accountId ?? 0);
+  const requestVersion = useRef(0);
   const [kind,setKind] = useState<Kind>("messages");
   const [threads,setThreads] = useState<Thread[]>([]);
   const [active,setActive] = useState<string | null>(null);
@@ -36,27 +37,29 @@ export default function SupportCenter({accounts}: {accounts: Account[]}) {
   useEffect(() => {
     if (!accountId) return;
     const abort = new AbortController();
+    const version = ++requestVersion.current;
     setLoading(true); setThreads([]); setActive(null); setDetail(null);
     setDraft(""); setError(""); setNotice("");
     const query = new URLSearchParams({account_id:String(accountId), kind});
     loadJson(`/api/platform/support?${query}`, abort.signal)
       .then((data: {threads?: Thread[]}) => {
-        if (!abort.signal.aborted) setThreads(Array.isArray(data.threads) ? data.threads : []);
-      }).catch(e => { if (!abort.signal.aborted) setError(e instanceof Error?e.message:"Falha na consulta."); })
-      .finally(() => { if (!abort.signal.aborted) setLoading(false); });
+        if (!abort.signal.aborted && version===requestVersion.current) setThreads(Array.isArray(data.threads) ? data.threads : []);
+      }).catch(e => { if (!abort.signal.aborted && version===requestVersion.current) setError(e instanceof Error?e.message:"Falha na consulta."); })
+      .finally(() => { if (!abort.signal.aborted && version===requestVersion.current) setLoading(false); });
     return () => abort.abort();
   }, [accountId,kind,refreshKey]);
 
   const loadDetail = useCallback((ref: string) => {
     if (!accountId) return Promise.resolve();
+    const version = ++requestVersion.current;
     const query = new URLSearchParams({account_id:String(accountId), kind, reference:ref});
     setDetailLoading(true); setDetail(null); setError(""); setNotice("");
     return loadJson(`/api/platform/support?${query}`)
       .then((data: Detail) => {
         // prevent showing data from a stale selection
-        setDetail(data);
-      }).catch(e=>setError(e instanceof Error?e.message:"Falha na conversa."))
-      .finally(()=>setDetailLoading(false));
+        if (version===requestVersion.current) setDetail(data);
+      }).catch(e=>{if(version===requestVersion.current) setError(e instanceof Error?e.message:"Falha na conversa.");})
+      .finally(()=>{if(version===requestVersion.current) setDetailLoading(false);});
   }, [accountId,kind]);
 
   async function selectThread(reference: string) {
@@ -103,7 +106,7 @@ export default function SupportCenter({accounts}: {accounts: Account[]}) {
       <div className="fh-support-control">
         <label htmlFor="support-account">Conta conectada</label>
         <select id="support-account" value={accountId}
-          onChange={event=>setAccountId(Number(event.target.value))}>
+          onChange={event=>{requestVersion.current++;setAccountId(Number(event.target.value));}}>
           {accounts.map(a=><option value={a.accountId} key={a.accountId}>{a.nickname || a.accountId} · {a.accountId}</option>)}
         </select>
       </div>
@@ -116,16 +119,16 @@ export default function SupportCenter({accounts}: {accounts: Account[]}) {
       <div className="fh-support-toolbar">
         <div className="fh-support-tabs" role="group" aria-label="Tipo de atendimento">
           <button type="button" className={kind==="messages"?"selected":""}
-            aria-pressed={kind==="messages"} onClick={()=>setKind("messages")}>
+            aria-pressed={kind==="messages"} onClick={()=>{requestVersion.current++;setKind("messages");}}>
             <MessageCircle size={16}/> Pós-venda
           </button>
           <button type="button" className={kind==="questions"?"selected":""}
-            aria-pressed={kind==="questions"} onClick={()=>setKind("questions")}>
+            aria-pressed={kind==="questions"} onClick={()=>{requestVersion.current++;setKind("questions");}}>
             <Inbox size={16}/> Perguntas de anúncios
           </button>
         </div>
         <button className="fh-support-reload" type="button" disabled={busy!==null}
-          onClick={()=>setRefreshKey(i=>i+1)}><RefreshCw size={15}/> Atualizar</button>
+          onClick={()=>{requestVersion.current++;setRefreshKey(i=>i+1);}}><RefreshCw size={15}/> Atualizar</button>
       </div>
       {error && <div className="fh-notice error" role="alert"><CircleAlert size={17}/>{error}</div>}
       {notice && <div className="fh-notice" role="status"><CheckCheck size={17}/>{notice}</div>}
