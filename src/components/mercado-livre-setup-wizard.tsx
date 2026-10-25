@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import {
   ArrowLeft, ArrowRight, BookOpen, CheckCircle2, ClipboardCopy,
-  ExternalLink, KeyRound, LockKeyhole, ShieldCheck, Store, X, Lightbulb,
+  ExternalLink, KeyRound, ShieldCheck, Store, X, Lightbulb,
 } from "lucide-react";
 
 const CALLBACK = "https://myfluxhub.tech/api/v1/connectors/mercado-livre/callback";
@@ -24,17 +24,13 @@ const steps = [
     tip: "O endereço de notificações/webhooks é separado. Não use o callback OAuth para notificações.",
     icon: ClipboardCopy },
   { name: "PKCE", title: "Confira as permissões e o PKCE",
-    text: "Autorize somente os recursos de que o FluxHub precisa (como anúncios e pedidos). Veja se o PKCE está ativado ou desativado: o backend deve usar a mesma opção.",
-    tip: "Se o PKCE estiver ativo, configure MERCADO_LIVRE_PKCE_ENABLED=true no backend. Se estiver desligado, use false.",
+    text: "Autorize somente os recursos de que o FluxHub precisa (como anúncios e pedidos). Confira se a opção PKCE está ativada ou desativada. Essa configuração precisa estar alinhada à configuração técnica do FluxHub.",
+    tip: "Informe ao responsável técnico se o PKCE está ativado ou desativado, para manter a integração compatível.",
     icon: ShieldCheck },
   { name: "Credenciais", title: "Localize o Client ID e o Client Secret",
     text: "Encontre as credenciais do aplicativo na área de configurações do DevCenter. Elas pertencem à plataforma FluxHub, e não a cada cliente.",
-    tip: "Nunca coloque Client Secret no frontend, em mensagens, prints ou no GitHub.",
+    tip: "O Client Secret deve ser configurado uma única vez pelo responsável técnico da plataforma, fora deste assistente. Nunca compartilhe essa credencial.",
     icon: KeyRound },
-  { name: "Backend", title: "Configure as credenciais privadas na VPS",
-    text: "No servidor, configure MERCADO_LIVRE_CLIENT_ID, MERCADO_LIVRE_CLIENT_SECRET, MERCADO_LIVRE_REDIRECT_URI e MERCADO_LIVRE_PKCE_ENABLED no ambiente privado do FastAPI. Depois reinicie o backend.",
-    tip: "O FluxHub não pede nem armazena suas credenciais do aplicativo neste assistente. A configuração é feita diretamente no servidor.",
-    icon: LockKeyhole },
   { name: "Teste", title: "Conecte o primeiro vendedor",
     text: "Feche este assistente e clique em Conectar Mercado Livre. Entre na conta oficial do vendedor, autorize e confirme que a loja aparece como vinculada.",
     tip: "Após a autorização, o FluxHub mostrará o nome e, se disponível pela API oficial, a foto do vendedor.",
@@ -137,12 +133,6 @@ export default function MercadoLivreSetupWizard() {
           {step === 3 && <div className="fh-wizard-help-choice">
             <strong>PKCE no DevCenter</strong>
             <p>Ativado no aplicativo → <code>true</code> no backend. Desativado → <code>false</code>.</p>
-          </div>}
-          {step === 5 && <div className="fh-wizard-code">
-            <code>MERCADO_LIVRE_CLIENT_ID</code>
-            <code>MERCADO_LIVRE_CLIENT_SECRET</code>
-            <code>MERCADO_LIVRE_REDIRECT_URI</code>
-            <code>MERCADO_LIVRE_PKCE_ENABLED</code>
           </div>}
           <div className="fh-wizard-tip"><Lightbulb size={24} aria-hidden="true"/><div>
             <strong>Dica: esta etapa é feita apenas uma vez.</strong><p>{current.tip}</p>
