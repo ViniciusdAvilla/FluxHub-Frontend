@@ -56,7 +56,7 @@ export default function MercadoLivreIdentity({
       }).catch(() => {});
     return () => controller.abort();
   }, [accountId]);
-  const name = seller?.display_name?.trim() || fallbackName;
+  const name = seller?.display_name?.trim() || (variant === "header" ? "Minha conta" : fallbackName);
   const picture = !imageFailed ? trustedSellerAvatar(seller?.picture_url) : null;
   return <span className={`fh-ml-identity fh-ml-identity-${variant}`}>
     <span className="fh-ml-avatar" aria-hidden="true">
@@ -68,7 +68,7 @@ export default function MercadoLivreIdentity({
     <span className="fh-ml-identity-text">
       <strong title={name}>{name}</strong>
       <small>{seller?.nickname && seller.nickname !== name ? seller.nickname :
-        variant === "header" ? "Conta Mercado Livre" : "Vendedor Mercado Livre"}</small>
+        variant === "header" ? seller ? "Conta Mercado Livre" : "FluxHub" : "Vendedor Mercado Livre"}</small>
     </span>
   </span>;
 }
