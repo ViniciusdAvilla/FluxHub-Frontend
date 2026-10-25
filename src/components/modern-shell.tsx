@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import MercadoLivreIdentity from "./mercado-livre-identity";
 import {
   Activity, BadgeDollarSign, Bell, Boxes, ChevronRight, CircleHelp,
   ChartNoAxesCombined, ClipboardList,
@@ -81,7 +82,13 @@ export default function ModernShell({
         <div className="fh-heading"><h1>{title}</h1><span>Início</span><ChevronRight size={14}/><span>{eyebrow || title}</span></div>
         <div className="fh-top-actions">{action}
           <Link href="/integracoes" title="Mercado Livre" aria-label="Mercado Livre" className="fh-top-icon"><Bell size={18}/></Link>
-          <Link href={isAdmin ? "/admin" : "/integracoes"} className="fh-avatar" title="Minha conta"><Users size={16}/></Link>
+          <Link href={adminMode ? "/admin" : "/integracoes"} className="fh-account-control"
+            title={adminMode ? "Administrador Master" : "Conta Mercado Livre"}>
+            {adminMode ? <span className="fh-admin-account">
+              <span className="fh-avatar"><Users size={16}/></span>
+              <span>Administrador Master</span>
+            </span> : <MercadoLivreIdentity variant="header"/>}
+          </Link>
         </div>
       </header>
       <main className="fh-main">{children}</main>
