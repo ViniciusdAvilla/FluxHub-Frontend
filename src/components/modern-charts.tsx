@@ -17,7 +17,7 @@ export function PerformanceChart({points}:{points:TimelinePoint[]}) {
   const revenue=data.map(p=>Math.max(0,Number(p.gross_non_cancelled)||0));
   const orders=data.map(p=>Math.max(0,Number(p.orders)||0));
   const maxRev=Math.max(...revenue,1)*1.1, maxOrders=Math.max(...orders,1)*1.1;
-  const primary=pathFor(revenue,maxRev,width,height), secondary=pathFor(visits,maxVisits,width,height);
+  const primary=pathFor(revenue,maxRev,width,height), secondary=pathFor(orders,maxOrders,width,height);
   const date=data[hover??data.length-1];
   return <div>
     <div className="fh-chart-key" style={{marginBottom:5}}>
