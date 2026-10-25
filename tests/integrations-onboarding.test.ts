@@ -42,7 +42,7 @@ test("mockup aprovado tem 7 passos, logo no popup, progresso e botoes", () => {
 });
 test("assistente DevCenter so aparece para administrador e abre popup por etapas", () => {
   const wizard = readFileSync("src/components/mercado-livre-setup-wizard.tsx", "utf8");
-  assert.match(page, /data\.isAdmin && <div className="fh-setup-wizard-entry"/);
+  assert.match(page, /data\.isAdmin && <div className="fh-ml-setup-trigger"/);
   assert.match(page, /<MercadoLivreSetupWizard\s*\/>/);
   assert.match(wizard, /<dialog ref=\{dialog\}/);
   assert.match(wizard, /showModal\(\)/);
