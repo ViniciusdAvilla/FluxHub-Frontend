@@ -3,6 +3,7 @@ import { Boxes, Package, Tag } from "lucide-react";
 import ModernShell from "@/components/modern-shell";
 import SyncAction from "@/components/sync-action";
 import { DonutStats } from "@/components/modern-charts";
+import RankedBarChart from "@/components/ranked-bar-chart";
 import { getSellerReport } from "@/lib/seller-data";
 import { money,number } from "@/lib/analytics";
 export const dynamic="force-dynamic";export const runtime="nodejs";
@@ -33,6 +34,13 @@ export default async function ListingsPage(){
     <Link href="/integracoes" className="fh-info-action" style={{marginTop:15}}>Sincronizar anúncios →</Link>
    </section>
   </div>
+  <section className="fh-card" style={{marginBottom:15}}>
+    <div className="fh-card-head"><div><h2>Produtos por fabricante</h2>
+      <p>Quantidade de produtos sincronizados com identificação do fabricante.</p></div></div>
+    <RankedBarChart values={[...new Map(r.products.filter(p=>p.brand).map(p=>[
+      p.brand,r.products.filter(other=>other.brand===p.brand).length
+    ] as const))].map(([label,value])=>({label,value})).sort((a,b)=>b.value-a.value).slice(0,7)}/>
+  </section>
   <section className="fh-card"><div className="fh-card-head"><div><h2>Catálogo de anúncios</h2><p>Preços, produtos e estoque disponível</p></div></div>
    <div className="fh-table-wrap"><table className="fh-table"><thead><tr><th>Anúncio</th><th>Marca</th><th>Preço</th><th>Estoque</th><th>Origem</th></tr></thead><tbody>
     {r.products.slice(0,100).map(p=><tr key={p.external_id}><td className="fh-table-name"><strong>{p.title}</strong><small>{p.external_id}</small></td><td>{p.brand||"—"}</td><td>{money(p.promotional_price)}</td><td>{number(p.stock_qty)}</td><td>{p.source_key||"—"}</td></tr>)}
