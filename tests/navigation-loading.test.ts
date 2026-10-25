@@ -7,7 +7,8 @@ test("navegação interna nunca mostra a antiga tela de loading com ícones e si
     "O loading global antigo recria AppSidebar durante as transições e causa o flash de ícones.");
   const shell = readFileSync("src/components/modern-shell.tsx", "utf8");
   assert.match(shell, /<aside className=\{`fh-sidebar/);
-  assert.match(shell, /<Link key=\{href \+ label\} href=\{href\}/);
+  assert.match(shell, /modules\.map\(/);
+  assert.match(shell, /className="fh-subnav"/);
   assert.doesNotMatch(shell, /AppSidebar/);
 });
 
