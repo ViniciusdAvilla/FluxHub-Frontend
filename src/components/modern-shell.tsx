@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useId, useState } from "react";
 import MercadoLivreIdentity from "./mercado-livre-identity";
 import {
-  Activity, BadgeDollarSign, Bell, Boxes, ChevronRight, CircleHelp,
+  Activity, BadgeDollarSign, Bell, Boxes, ChevronDown, ChevronRight, CircleHelp,
   ChartNoAxesCombined, ClipboardList,
   Database, LayoutDashboard, Link2, LogOut, Menu, Package, Settings2,
   ShieldCheck, ShoppingBag, ShoppingCart, Users, X, Zap, MessagesSquare,
@@ -19,19 +19,15 @@ const sellerLinks = [
   { href: "/estoque", label: "Estoque", icon: Boxes },
   { href: "/financeiro", label: "Financeiro", icon: BadgeDollarSign },
   { href: "/fabricantes", label: "Fabricantes", icon: Users },
-  { href: "/precificacao", label: "Precificação", icon: Settings2 },
   { href: "/reposicao", label: "Compras e reposição", icon: Activity },
   { href: "/curva-abc", label: "Curva ABC", icon: ChartNoAxesCombined },
   { href: "/pedidos", label: "Pedidos", icon: ClipboardList },
   { href: "/mensagens", label: "Atendimento", icon: MessagesSquare },
   { href: "/raio-x", label: "Raio-X de anúncios", icon: ShieldCheck },
-  { href: "/dados", label: "Central de dados", icon: Database },
-  { href: "/integracoes", label: "Integrações", icon: Link2 },
 ];
 const adminLinks = [
   { href: "/admin", label: "Visão geral", icon: LayoutDashboard },
   { href: "/admin/clientes", label: "Clientes e usuários", icon: Users },
-  { href: "/integracoes", label: "Integrações", icon: Link2 },
   { href: "/admin", label: "Operação", icon: Activity },
 ];
 
@@ -47,6 +43,10 @@ export default function ModernShell({
 }) {
   const path = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const settingsActive = path === "/dados" || path === "/integracoes";
+  const [settingsOpen, setSettingsOpen] = useState(settingsActive);
+  const settingsId = useId();
+  useEffect(() => { if (settingsActive) setSettingsOpen(true); }, [settingsActive]);
   const links = adminMode ? adminLinks : sellerLinks;
   return <div className="fh-app">
     <aside className={`fh-sidebar ${mobileOpen ? "fh-open" : ""}`}>
@@ -64,6 +64,26 @@ export default function ModernShell({
             <Icon size={19} strokeWidth={1.85}/><span>{label}</span>
             {path === href && <ChevronRight size={14} className="fh-nav-tail" />}
           </Link>)}
+        <button type="button"
+          className={`fh-settings-trigger ${settingsActive ? "fh-settings-active" : ""}`}
+          aria-expanded={settingsOpen} aria-controls={settingsId}
+          onClick={() => setSettingsOpen(open => !open)}>
+          <Settings2 size={19} strokeWidth={1.85}/>
+          <span>Configurações</span>
+          <ChevronDown size={15} className={`fh-settings-chevron ${settingsOpen ? "open" : ""}`}/>
+        </button>
+        {settingsOpen && <div id={settingsId} className="fh-settings-children" role="group" aria-label="Configurações">
+          <Link href="/dados" onClick={() => setMobileOpen(false)}
+            aria-current={path === "/dados" ? "page" : undefined}
+            className={path === "/dados" ? "fh-nav-active" : ""}>
+            <Database size={17}/><span>Central de dados</span>
+          </Link>
+          <Link href="/integracoes" onClick={() => setMobileOpen(false)}
+            aria-current={path === "/integracoes" ? "page" : undefined}
+            className={path === "/integracoes" ? "fh-nav-active" : ""}>
+            <Link2 size={17}/><span>Integrações</span>
+          </Link>
+        </div>}
         {isAdmin && !adminMode && <Link href="/admin" className="fh-admin-link"><ShieldCheck size={19}/> Administração</Link>}
         {adminMode && <Link href="/" className="fh-admin-link"><LayoutDashboard size={19}/> Painel do vendedor</Link>}
       </nav>
