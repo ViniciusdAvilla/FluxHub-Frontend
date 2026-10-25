@@ -28,15 +28,23 @@ test("tela principal mostra Mercado Livre primeiro, sem lista longa de passos", 
   assert.ok(page.indexOf("fh-integration-header") < page.indexOf("fh-other-marketplaces"));
 });
 
-test("nenhum assistente, popup ou fluxo DevCenter aparece na página Integrações", () => {
-  assert.doesNotMatch(page, /MercadoLivreSetupWizard|fh-ml-setup-trigger|Configuração inicial da plataforma/);
-  assert.doesNotMatch(page, /configure o aplicativo em seis etapas|<dialog|fh-guide-steps/);
-  assert.equal(existsSync("src/components/mercado-livre-setup-wizard.tsx"), false);
-  assert.equal(css.includes(".fh-wizard"), false);
-  assert.equal(css.includes(".fh-ml-setup-trigger"), false);
-  assert.match(page, /MercadoLivreIdentity accountId=/);
-  assert.ok(page.includes("<MarketplaceConnectionActions/>"));
-  assert.match(page, /fh-other-marketplaces/);
+test("assistente volta no cartão Mercado Livre somente para o Administrador Master", () => {
+  const wizard = readFileSync("src/components/mercado-livre-setup-wizard.tsx", "utf8");
+  assert.ok(page.includes('data.isAdmin && <div className="fh-ml-setup-trigger"'));
+  assert.ok(page.includes("<MercadoLivreSetupWizard />"));
+  assert.ok(wizard.includes("<dialog"));
+  assert.ok(wizard.includes("showModal()"));
+  assert.ok(wizard.includes("Próximo passo"));
+  assert.ok(wizard.includes("Voltar"));
+  assert.ok(wizard.includes("Abrir DevCenter"));
+  assert.ok(wizard.includes("https://myfluxhub.tech/api/v1/connectors/mercado-livre/callback"));
+  assert.ok(css.includes(".fh-wizard-progress"));
+  assert.ok(css.includes(".fh-ml-setup-trigger"));
+  assert.ok(css.includes("grid-template-columns:repeat(6,minmax(0,1fr))"));
+  const labels = [...wizard.matchAll(/\\{ name: "([^"]+)", title: /g)].map(x => x[1]);
+  assert.deepEqual(labels, ["DevCenter","Aplicativo","Callback","PKCE","Credenciais","Teste"]);
+  assert.doesNotMatch(wizard, /backend|\\bVPS\\b|name: "Backend"|MERCADO_LIVRE_CLIENT_SECRET/i);
+  assert.doesNotMatch(page, /<ol className="fh-guide-steps/);
 });
 
 test("perfil conectado usa foto e nome oficiais sem inventar avatar", () => {
