@@ -73,6 +73,7 @@ export default function SupportCenter({accounts}: {accounts: Account[]}) {
       setError("Confira o texto e o limite de caracteres deste canal."); return;
     }
     if (op === "reply" && !window.confirm("Confirmar envio desta resposta ao comprador pelo Mercado Livre?")) return;
+    const version = requestVersion.current;
     setBusy(op); setError(""); setNotice("");
     try {
       const response = await fetch("/api/platform/support",{
@@ -82,6 +83,7 @@ export default function SupportCenter({accounts}: {accounts: Account[]}) {
           ...(op === "reply" ? {text:draft,confirmed:true}:{})}),
       });
       const data = await response.json().catch(()=>null);
+      if (version !== requestVersion.current) return;
       if (!response.ok) throw new Error(data?.error || "Não foi possível concluir.");
       if (op === "suggest") {
         if (typeof data.suggestion !== "string") throw new Error("Resposta da IA inválida.");
