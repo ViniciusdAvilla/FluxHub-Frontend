@@ -41,10 +41,8 @@ export default async function IntegracoesPage({
       <div className="fh-integration-intro-icon"><Layers3 size={24}/></div>
       <div>
         <span className="fh-integration-eyebrow">Central de marketplaces · Multi-conta</span>
-        <h2>Conecte sua loja em poucos cliques</h2>
-        <p>Escolha um marketplace e autorize no site oficial do provedor.
-          O FluxHub armazena os tokens com criptografia e sincroniza os
-          dados de cada vendedor separadamente.</p>
+        <h2>Conecte o FluxHub aos seus canais</h2>
+        <p>Conecte o Mercado Livre para gerenciar sua operação e sincronizar vendas, produtos e pedidos. Os dados de cada vendedor ficam separados.</p>
       </div>
     </section>
 
@@ -65,40 +63,27 @@ export default async function IntegracoesPage({
     </div>}
 
 
-    <section className="fh-card fh-integrations-guide" aria-labelledby="fh-guide-heading">
-      <div className="fh-card-head">
-        <div>
-          <h2 id="fh-guide-heading">Primeiros passos para conectar o Mercado Livre</h2>
-          <p>O cliente autoriza sua loja uma única vez, sem informar senhas ou criar aplicativos.</p>
-        </div>
-      </div>
-      <ol className="fh-guide-steps fh-guide-short">
-        <li><strong>Entre no FluxHub</strong><span>Use o e-mail e a senha cadastrados pelo Administrador Master.</span></li>
-        <li><strong>Clique em Conectar Mercado Livre</strong><span>O botão abre a página oficial de autorização do Mercado Livre.</span></li>
-        <li><strong>Autorize como titular ou administrador da loja</strong><span>Confirme as permissões e volte automaticamente para esta página.</span></li>
-        <li><strong>Confira a conta e sincronize</strong><span>Quando aparecer como vinculada, os pedidos e anúncios poderão ser importados.</span></li>
-      </ol>
-      {data.isAdmin && <div className="fh-setup-wizard-entry">
-        <div><strong>Primeiro acesso: configure o aplicativo da plataforma</strong>
-          <p>DevCenter, Callback, PKCE, credenciais e teste em um assistente simples, etapa por etapa.</p>
-        </div>
-        <MercadoLivreSetupWizard/>
-      </div>}
-    </section>
-
+    {/* Um único fluxo central: não exibir o guia de sete passos atrás do popup. */}
     <section className="fh-card fh-integration-main">
       <div className="fh-card-head fh-integration-header">
         <div className="fh-integration-brand">
-          <span className="fh-integration-provider-icon"><ShoppingBag size={21}/></span>
+          <span className="fh-integration-provider-icon fh-ml-brand-logo"><Image
+            src="/marketplaces/mercado-livre-icon.webp" width={66} height={66} alt="" unoptimized /></span>
           <div>
             <h2>Mercado Livre</h2>
-            <p>Login oficial OAuth · até várias contas vendedoras</p>
+            <p>Vendas, produtos e pedidos da sua loja em um só lugar.</p>
           </div>
         </div>
         <span className={`fh-pill ${connected ? "" : "offline"}`}>
           {connected ? <CheckCircle2 size={14}/> : <CircleAlert size={14}/>}
           {connected ? `${connected} conta(s) vinculada(s)` : "Não conectado"}
         </span>
+      </div>
+      {data.isAdmin && <div className="fh-ml-setup-trigger">
+        <span><strong>Configuração inicial da plataforma</strong>
+          <small>Abra o assistente visual e configure o aplicativo em sete etapas.</small>
+        </span>
+        <MercadoLivreSetupWizard />
       </div>
 
       {!ready && <div className="fh-integration-empty" role="status">
@@ -167,12 +152,12 @@ export default async function IntegracoesPage({
       </div>}
     </section>
 
-    <section className="fh-card fh-integration-main">
+    <section className="fh-card fh-integration-main fh-other-marketplaces">
       <div className="fh-card-head">
         <div className="fh-integration-brand">
           <span className="fh-integration-provider-icon neutral"><Layers3 size={20}/></span>
           <div><h2>Outros marketplaces</h2>
-            <p>Estrutura multi-plataforma preparada, sem falsas conexões.</p></div>
+            <p>Mercado Pago, Shopee e TikTok Shop em preparação.</p></div>
         </div>
       </div>
       <div className="fh-marketplace-catalog">
