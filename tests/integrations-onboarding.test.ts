@@ -32,9 +32,10 @@ test("nenhum assistente, popup ou fluxo DevCenter aparece na página Integraçõ
   assert.doesNotMatch(page, /MercadoLivreSetupWizard|fh-ml-setup-trigger|Configuração inicial da plataforma/);
   assert.doesNotMatch(page, /configure o aplicativo em seis etapas|<dialog|fh-guide-steps/);
   assert.equal(existsSync("src/components/mercado-livre-setup-wizard.tsx"), false);
-  assert.doesNotMatch(css, /\\.fh-wizard|\\.fh-ml-setup-trigger/);
+  assert.equal(css.includes(".fh-wizard"), false);
+  assert.equal(css.includes(".fh-ml-setup-trigger"), false);
   assert.match(page, /MercadoLivreIdentity accountId=/);
-  assert.match(page, /<MarketplaceConnectionActions\\s*\\/>/);
+  assert.ok(page.includes("<MarketplaceConnectionActions/>"));
   assert.match(page, /fh-other-marketplaces/);
 });
 
