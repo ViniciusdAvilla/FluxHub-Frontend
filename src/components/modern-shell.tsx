@@ -113,7 +113,7 @@ export default function ModernShell({
     </aside>
     {mobileOpen && <button className="fh-overlay" aria-label="Fechar menu" onClick={() => setMobileOpen(false)}/>}
     <div className="fh-content">
-      <header className="fh-topbar">
+      <header className={`fh-topbar ${path === "/" && !adminMode ? "fh-overview-topbar" : ""}`}>
         <button className="fh-mobile-toggle" onClick={() => setMobileOpen(true)} aria-label="Abrir menu"><Menu size={23}/></button>
         <div className="fh-heading">
           <h1>{adminMode ? title : sellerTitle}</h1>
