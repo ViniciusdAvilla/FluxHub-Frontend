@@ -43,7 +43,7 @@ export default function SellerHome({report}:{report:SellerReport}){
   const ordersByStatus=new Map<string,number>();
   for(const o of orders) ordersByStatus.set(o.status,(ordersByStatus.get(o.status)||0)+1);
   const statusItems=[...ordersByStatus.entries()].map(([name,value],i)=>({name,value,color:["#20c58b","#488bfa","#ffbd46","#f2737a","#9878f6"][i%5]}));
-  return <ModernShell title="Dashboard" eyebrow="Visão geral" isAdmin={Boolean(report.user?.is_admin)}>
+  return <ModernShell title="Visão geral" eyebrow="Resumo geral" isAdmin={Boolean(report.user?.is_admin)}>
     <form className="fh-filters" action="/" method="get">
       <label className="fh-filter"><CalendarDays size={15}/> Período <select name="days" defaultValue={String(days)} aria-label="Período"><option value="7">Últimos 7 dias</option><option value="30">Últimos 30 dias</option><option value="90">Últimos 90 dias</option></select></label>
       <label className="fh-filter">Mercado Livre</label>
@@ -58,17 +58,17 @@ export default function SellerHome({report}:{report:SellerReport}){
     {!hasData&&<div className="fh-notice"><strong>Nenhuma conta Mercado Livre conectada.</strong> Consulte o status da conta salva no backend em <Link href="/integracoes" style={{color:"#237af4",fontWeight:750}}>Mercado Livre</Link>. O Client ID e o Client Secret não substituem tokens de vendedor. O painel não usa valores fictícios.</div>}
     {report.failedSources.length>0&&<div className="fh-notice error" role="status">Algumas consultas não responderam: {report.failedSources.join(", ")}. Verifique se o FastAPI está online e autenticado.</div>}
     <div className="fh-kpis">
-      <Stat color="blue" icon={ShoppingCart} title="Pedidos · valor bruto" value={money(revenue)} help="Não cancelados, páginas sincronizadas"/>
+      <Stat color="blue" icon={ShoppingCart} title="Faturamento" value={money(revenue)} help="Não cancelados, páginas sincronizadas"/>
       <Stat color="green" icon={BadgeDollarSign} title="Lucro após Ads" value={money(profit)} help="Somente com custos e Ads completos"/>
       <Stat color="purple" icon={Percent} title="Margem estimada" value={percent(margin)} help="Sobre receita atribuída aos anúncios"/>
-      <Stat color="orange" icon={ShoppingBag} title="Pedidos registrados" value={number(totalOrders)} help="No período e na conta selecionados"/>
+      <Stat color="orange" icon={ShoppingBag} title="Pedidos" value={number(totalOrders)} help="No período e na conta selecionados"/>
       <Stat color="blue" icon={Eye} title="Visitas" value={number(visits)} help="Visitas obtidas da API oficial"/>
       <Stat color="rose" icon={TrendingUp} title="Taxa de conversão" value={visits!==null&&visits>0&&totalOrders!==null?percent(totalOrders/visits*100):"—"} help="Pedidos registrados ÷ visitas disponíveis"/>
       <Stat color="green" icon={Tag} title="Ticket médio" value={money(avgTicket)} help="Receita bruta ÷ pedidos registrados"/>
       <Stat color="purple" icon={Boxes} title="Anúncios ativos" value={number(activeListings)} help="Últimos anúncios sincronizados"/>
     </div>
-    <div className="fh-hero-grid">
-      <Box title="Desempenho da conta" subtitle="Pedidos brutos registrados e visitas ao longo do período"><PerformanceChart points={timeline}/></Box>
+    <div className="fh-hero-grid" id="desempenho">
+      <Box title="Evolução das vendas" subtitle="Pedidos brutos registrados e visitas ao longo do período"><PerformanceChart points={timeline}/></Box>
       <Box title="Conta Mercado Livre" subtitle="Integração e sincronização">
         <div className="fh-rowline" style={{marginBottom:8}}><strong style={{fontSize:13}}>{account?.nickname|| (accounts.length>1?"Múltiplas contas":accounts[0]?.nickname||"Sem conta vinculada")}</strong><span className={`fh-pill ${hasData?"":"offline"}`}>{hasData?"Conectada":"Não conectada"}</span></div>
         <div className="fh-info-row"><span>Contas conectadas</span><strong>{accounts.length}</strong></div>
@@ -89,7 +89,7 @@ export default function SellerHome({report}:{report:SellerReport}){
       <Box title="Saúde dos anúncios" href="/anuncios"><DonutStats items={Object.entries(report.listing?.by_status||{}).map(([name,value],i)=>({name,value,color:["#1ac68e","#4c8dff","#ffc75c","#f67c8c"][i%4]}))} label="anúncios"/></Box>
       <Box title="Top categorias" href="/produtos"><div className="fh-mini-list">{sortedCategories.length?sortedCategories.map(([category,value])=><div key={category} className="fh-mini-row"><span style={{minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",width:110}}>{category}</span><div className="fh-progress"><i style={{width:`${value/Math.max(...sortedCategories.map(c=>c[1]))*100}%`}}/></div><strong>{number(value)}</strong></div>):<div className="fh-empty">Sem produtos classificados.</div>}</div></Box>
     </div>
-    <div className="fh-alert-row">
+    <div className="fh-alert-row" id="alertas">
       <div className="fh-alert rose"><span>Cancelamentos registrados</span><strong>{number(canceled)}</strong></div>
       <div className="fh-alert orange"><span>Estoque zerado</span><strong>{number(products.filter(p=>p.stock_qty===0).length)}</strong></div>
       <div className="fh-alert green"><span>Gasto em publicidade</span><strong>{accountId===null?money(ads?.ad_spend??null):"—"}</strong></div>
