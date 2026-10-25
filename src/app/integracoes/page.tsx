@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Image from "next/image";
-import MercadoLivreSetupWizard from "@/components/mercado-livre-setup-wizard";
 import MercadoLivreIdentity from "@/components/mercado-livre-identity";
 import {
   ArrowRight, CheckCircle2, CircleAlert, Database, LockKeyhole,
@@ -63,7 +62,6 @@ export default async function IntegracoesPage({
     </div>}
 
 
-    {/* Um único fluxo central: não exibir o guia de sete passos atrás do popup. */}
     <section className="fh-card fh-integration-main">
       <div className="fh-card-head fh-integration-header">
         <div className="fh-integration-brand">
@@ -79,12 +77,6 @@ export default async function IntegracoesPage({
           {connected ? `${connected} conta(s) vinculada(s)` : "Não conectado"}
         </span>
       </div>
-      {data.isAdmin && <div className="fh-ml-setup-trigger">
-        <span><strong>Configuração inicial da plataforma</strong>
-          <small>Abra o assistente visual e configure o aplicativo em seis etapas.</small>
-        </span>
-        <MercadoLivreSetupWizard />
-      </div>}
 
       {!ready && <div className="fh-integration-empty" role="status">
         <CircleAlert size={26}/>
