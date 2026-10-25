@@ -7,7 +7,7 @@ import MercadoLivreIdentity from "./mercado-livre-identity";
 import {
   Activity, BadgeDollarSign, Bell, Boxes, ChevronRight, CircleHelp,
   ChartNoAxesCombined, ClipboardList,
-  Database, LayoutDashboard, Link2, LogOut, Menu, Package, Settings2,
+  Database, LayoutDashboard, Link2, LogOut, Menu, MessageSquareText, Package, Settings2,
   ShieldCheck, ShoppingBag, ShoppingCart, Users, X, Zap,
 } from "lucide-react";
 
@@ -23,6 +23,7 @@ const sellerLinks = [
   { href: "/reposicao", label: "Compras e reposição", icon: Activity },
   { href: "/curva-abc", label: "Curva ABC", icon: ChartNoAxesCombined },
   { href: "/pedidos", label: "Pedidos", icon: ClipboardList },
+  { href: "/atendimento", label: "Atendimento", icon: MessageSquareText },
   { href: "/raio-x", label: "Raio-X de anúncios", icon: ShieldCheck },
   { href: "/dados", label: "Central de dados", icon: Database },
   { href: "/integracoes", label: "Integrações", icon: Link2 },
