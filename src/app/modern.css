@@ -1145,3 +1145,114 @@ html, body { background: #f6f8fe; color: #1d3058; }
 @media(prefers-reduced-motion:reduce) {
   .fh-liquid-glass .fh-sidebar,.fh-liquid-glass .fh-subnav a,.fh-liquid-glass .fh-nav a {transition:none}
 }
+
+
+/* Reference-accurate FluxHub overview: card hierarchy and smooth pearlescent glass. */
+.fh-liquid-glass {
+  background:
+    radial-gradient(ellipse 34% 65% at 0% 84%,rgba(181,162,255,.36),transparent 76%),
+    radial-gradient(ellipse 60% 58% at 95% 58%,rgba(188,213,255,.35),transparent 80%),
+    linear-gradient(135deg,#e6efff 0%,#eaf1ff 50%,#e9ebff 100%);
+}
+.fh-liquid-glass .fh-sidebar {width:253px;inset:18px auto 18px 18px;height:calc(100dvh - 36px)}
+.fh-liquid-glass .fh-sidebar .fh-logo {padding:24px 19px 31px;align-items:flex-start}
+.fh-liquid-glass .fh-logo {position:relative}
+.fh-liquid-glass .fh-logo::after {
+  content:"Mercado Livre";
+  position:absolute;left:61px;top:57px;color:#7c8bb5;
+  font-size:12px;font-weight:500;letter-spacing:0;
+}
+.fh-liquid-glass .fh-sidebar .fh-nav {gap:11px}
+.fh-liquid-glass .fh-sidebar .fh-nav a {min-height:49px;padding:0 15px;font-size:13px}
+.fh-liquid-glass .fh-content {margin-left:289px;padding:26px 20px 34px 0}
+.fh-liquid-glass .fh-topbar {
+  border-radius:17px 17px 0 0;min-height:118px;padding:23px 27px;
+  background:linear-gradient(115deg,rgba(255,255,255,.55),rgba(239,245,255,.39));
+}
+.fh-liquid-glass .fh-heading h1 {font-size:clamp(26px,2.65vw,39px);letter-spacing:-1.4px}
+.fh-liquid-glass .fh-heading p {font-size:15px}
+.fh-liquid-glass .fh-subnav {min-height:47px;margin-bottom:14px;border-radius:0 0 14px 14px}
+.fh-liquid-glass .fh-subnav a {font-size:13px;min-height:39px}
+.fh-liquid-glass .fh-main {padding:1px 0 50px}
+.fh-liquid-glass .fh-card,
+.fh-liquid-glass .fh-kpi {
+  border-radius:17px;
+  border:1px solid rgba(255,255,255,.82);
+  background:linear-gradient(142deg,rgba(255,255,255,.8),rgba(255,255,255,.56));
+  box-shadow:0 7px 25px rgba(54,84,151,.055),inset 0 1px rgba(255,255,255,.9);
+}
+.fh-liquid-glass .fh-filters {margin:0 0 12px}
+.fh-liquid-glass .fh-overview-kpis {grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-bottom:14px}
+.fh-liquid-glass .fh-overview-kpis .fh-kpi {min-height:133px;padding:17px 18px;position:relative;overflow:hidden}
+.fh-liquid-glass .fh-overview-kpis .fh-kpi::after {
+  content:"";position:absolute;right:17px;top:57px;width:78px;height:32px;opacity:.74;
+  background:linear-gradient(135deg,transparent 35%,rgba(53,111,255,.28) 36%,transparent 40%,transparent 58%,rgba(53,111,255,.36) 60%,transparent 64%);
+  border-radius:18px;pointer-events:none;
+}
+.fh-liquid-glass .fh-overview-kpis .fh-kpi.purple::after {filter:hue-rotate(46deg)}
+.fh-liquid-glass .fh-overview-kpis .fh-kpi-top {margin-bottom:8px}
+.fh-liquid-glass .fh-overview-kpis .fh-kpi-value {font-size:clamp(20px,1.9vw,30px);padding-left:49px;margin-top:-26px}
+.fh-liquid-glass .fh-overview-kpis .fh-kpi-note {
+  display:block;margin:20px 0 0 49px;color:#7181a2;font-size:10px;line-height:1.4;
+}
+.fh-liquid-glass .fh-overview-kpis .fh-kpi-label {font-size:13px;color:#334870}
+.fh-liquid-glass .fh-overview-kpis .fh-kpi-icon {height:47px;width:47px}
+.fh-liquid-glass .fh-overview-charts {grid-template-columns:minmax(0,2.2fr) minmax(290px,1fr);gap:13px;margin-bottom:13px}
+.fh-liquid-glass .fh-overview-charts .fh-card {min-height:286px;padding:21px}
+.fh-liquid-glass .fh-overview-charts .fh-card-head h2,.fh-liquid-glass .fh-overview-bottom .fh-card-head h2 {font-size:17px;color:#15234c;letter-spacing:-.5px}
+.fh-liquid-glass .fh-overview-charts .fh-chart-wrap {height:205px}
+.fh-liquid-glass .fh-overview-charts .fh-card:nth-child(2) > div:nth-child(2) {min-height:198px;justify-content:center}
+.fh-liquid-glass .fh-overview-charts .fh-card:nth-child(2) > div:nth-child(2) > div:first-child {width:165px!important;height:165px!important}
+.fh-liquid-glass .fh-overview-charts .fh-card:nth-child(2) > div:nth-child(2) > div:first-child > div {inset:29px!important;background:rgba(248,251,255,.98)!important}
+.fh-liquid-glass .fh-status-more {display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#2c73ef}
+.fh-liquid-glass .fh-overview-bottom {display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:22px}
+.fh-liquid-glass .fh-overview-bottom > .fh-card {padding:18px 20px;min-height:255px}
+.fh-liquid-glass .fh-spotlight-list,.fh-liquid-glass .fh-alert-list {display:flex;flex-direction:column;gap:7px}
+.fh-liquid-glass .fh-spotlight-row,.fh-liquid-glass .fh-overview-alert {
+  display:flex;align-items:center;gap:12px;min-height:57px;
+  border:1px solid rgba(255,255,255,.85);border-radius:12px;
+  background:rgba(247,249,255,.65);padding:7px 11px;color:#1c315d;
+}
+.fh-liquid-glass .fh-spotlight-row:hover,.fh-liquid-glass .fh-overview-alert:hover {background:rgba(232,242,255,.92)}
+.fh-liquid-glass .fh-spotlight-icon,.fh-liquid-glass .fh-overview-alert-icon {
+  width:43px;height:43px;flex:0 0 43px;display:grid;place-items:center;
+  border-radius:12px;color:#2673f4;background:#e8f1ff;
+}
+.fh-liquid-glass .fh-overview-alert-icon {color:#e69523;background:#fff5e3}
+.fh-liquid-glass .fh-spotlight-copy,.fh-liquid-glass .fh-overview-alert > span:nth-child(2) {flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.fh-liquid-glass .fh-spotlight-copy strong,.fh-liquid-glass .fh-overview-alert strong {font-size:12px;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fh-liquid-glass .fh-spotlight-copy small,.fh-liquid-glass .fh-overview-alert small {color:#7687aa;font-size:10px;line-height:1.3}
+.fh-liquid-glass .fh-spotlight-sales {min-width:46px;text-align:center;display:flex;flex-direction:column;gap:2px}
+.fh-liquid-glass .fh-spotlight-sales strong {font-size:13px}
+.fh-liquid-glass .fh-spotlight-sales small {color:#7b8ca8;font-size:10px}
+.fh-liquid-glass .fh-spotlight-row > svg:last-child,.fh-liquid-glass .fh-overview-alert > svg:last-child {color:#5575b0;flex-shrink:0}
+.fh-liquid-glass .fh-overview-secondary {margin:25px 0 18px}
+.fh-liquid-glass .fh-overview-secondary > h2 {font-size:19px;margin:0 0 4px;letter-spacing:-.4px}
+.fh-liquid-glass .fh-overview-secondary > p {color:#6d7d9f;font-size:12px;margin:0 0 14px}
+.fh-liquid-glass .fh-overview-account {margin-bottom:16px}
+.fh-liquid-glass .fh-overview-account .fh-info-action {width:auto}
+@media(max-width:1280px){
+  .fh-liquid-glass .fh-overview-kpis .fh-kpi-value {padding-left:0;margin-top:9px}
+  .fh-liquid-glass .fh-overview-kpis .fh-kpi-note {margin-left:0;margin-top:10px}
+  .fh-liquid-glass .fh-overview-charts {grid-template-columns:minmax(0,1.65fr) minmax(260px,1fr)}
+}
+@media(max-width:1050px) {
+  .fh-liquid-glass .fh-overview-kpis {grid-template-columns:repeat(2,minmax(0,1fr))}
+  .fh-liquid-glass .fh-overview-charts,.fh-liquid-glass .fh-overview-bottom {grid-template-columns:1fr}
+}
+@media(max-width:880px) {
+  .fh-liquid-glass .fh-sidebar {inset:0 auto 0 0;width:min(285px,88vw);height:100dvh}
+  .fh-liquid-glass .fh-content {margin-left:0;padding:10px}
+  .fh-liquid-glass .fh-heading h1 {font-size:26px}
+}
+@media(max-width:530px) {
+  .fh-liquid-glass .fh-heading p {font-size:11px}
+  .fh-liquid-glass .fh-overview-kpis {grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .fh-liquid-glass .fh-overview-kpis .fh-kpi {padding:12px;min-height:123px}
+  .fh-liquid-glass .fh-overview-kpis .fh-kpi-icon {height:35px;width:35px}
+  .fh-liquid-glass .fh-overview-kpis .fh-kpi-label {font-size:11px}
+  .fh-liquid-glass .fh-overview-kpis .fh-kpi-value {font-size:20px;margin-top:6px}
+  .fh-liquid-glass .fh-overview-kpis .fh-kpi-note {font-size:9px}
+  .fh-liquid-glass .fh-overview-bottom > .fh-card {padding:13px}
+  .fh-liquid-glass .fh-overview-charts .fh-card:nth-child(2) > div:nth-child(2) {flex-wrap:wrap}
+}
