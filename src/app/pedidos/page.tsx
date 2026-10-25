@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CalendarDays, ShoppingCart, Wallet, XCircle, Boxes } from "lucide-react";
 import ModernShell from "@/components/modern-shell";
 import SyncAction from "@/components/sync-action";
+import { DailyBars, DonutStats } from "@/components/modern-charts";
 import { money, number } from "@/lib/analytics";
 import { getSellerReport, validAccount, validDays } from "@/lib/seller-data";
 
@@ -59,6 +60,20 @@ export default async function OrdersPage({
       <article className="fh-kpi green"><div className="fh-kpi-top"><Wallet size={18}/> Valor bruto não cancelado</div><strong className="fh-kpi-value">{money(visibleOrders.length ? gross : null)}</strong></article>
       <article className="fh-kpi rose"><div className="fh-kpi-top"><XCircle size={18}/> Cancelados</div><strong className="fh-kpi-value">{number(visibleOrders.length ? cancelled : null)}</strong></article>
       <article className="fh-kpi purple"><div className="fh-kpi-top"><Boxes size={18}/> Contas vinculadas</div><strong className="fh-kpi-value">{number(accounts.length)}</strong></article>
+    </div>
+    <div className="fh-insight-grid">
+      <section className="fh-card">
+        <div className="fh-card-head"><div><h2>Valor dos pedidos por dia</h2>
+          <p>Pedidos não cancelados já sincronizados neste período.</p></div></div>
+        <DailyBars points={report.timeline}/>
+      </section>
+      <section className="fh-card">
+        <div className="fh-card-head"><div><h2>Pedidos por status</h2>
+          <p>Distribuição dos pedidos recentes armazenados.</p></div></div>
+        <DonutStats label="pedidos" items={[...new Map(visibleOrders.map(order=>[
+          order.status||"Não informado",visibleOrders.filter(o=>(o.status||"Não informado")===(order.status||"Não informado")).length
+        ] as const))].map(([name,value],i)=>({name,value,color:["#347dff","#23a9ef","#81bdf7","#adcff6"][i%4]}))}/>
+      </section>
     </div>
     <section className="fh-card">
       <div className="fh-card-head">
