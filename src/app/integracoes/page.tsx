@@ -81,7 +81,7 @@ export default async function IntegracoesPage({
       </div>
       {data.isAdmin && <div className="fh-ml-setup-trigger">
         <span><strong>Configuração inicial da plataforma</strong>
-          <small>Abra o assistente visual e configure o aplicativo em sete etapas.</small>
+          <small>Abra o assistente visual e configure o aplicativo em seis etapas.</small>
         </span>
         <MercadoLivreSetupWizard />
       </div>}
