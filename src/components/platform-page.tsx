@@ -224,8 +224,8 @@ function ProductTable({
           {rows.map((row) => (
             <tr key={row.id}>
               <td>
-                {/^ML[A-Z]{1,2}\\d{5,20}$/.test(row.id)
-                  ? <Link className="product-cell" href={`/produtos/${encodeURIComponent(row.id)}${typeof row.raw?.source_key === "string" && /^ml:\\d+$/.test(row.raw.source_key) ? `?account=${row.raw.source_key.slice(3)}` : ""}`}>
+                {/^ML[A-Z]{1,2}\d{5,20}$/.test(row.id)
+                  ? <Link className="product-cell" href={`/produtos/${encodeURIComponent(row.id)}${typeof row.raw?.source_key === "string" && /^ml:\d+$/.test(row.raw.source_key) ? `?account=${row.raw.source_key.slice(3)}` : ""}`}>
                       <strong>{row.title}</strong>
                       <span>{row.id} · {row.brand} · {row.category}</span>
                     </Link>
