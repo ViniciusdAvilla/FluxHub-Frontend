@@ -943,3 +943,51 @@ html, body { background: #f6f8fe; color: #1d3058; }
 @media(max-width:1250px) {.fh-support-grid {grid-template-columns:minmax(200px,.9fr) minmax(300px,1.7fr)} .fh-support-help {grid-column:1/-1;min-height:0} }
 @media(max-width:690px) {.fh-support-grid {grid-template-columns:1fr} .fh-support-threads,.fh-support-conversation,.fh-support-help {min-height:0} .fh-support-thread-list {max-height:270px} .fh-support-messages {min-height:200px} .fh-support-summary {padding:18px} .fh-support-control {width:100%} .fh-support-help {grid-column:auto} .fh-support-availability {white-space:normal}}
 @media(prefers-reduced-motion:reduce){.fh-spin {animation:none}}
+
+/* Sidebar settings group: one navigation destination with two nested pages. */
+.fh-sidebar .fh-nav .fh-settings-trigger {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 37px;
+  width: 100%;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #606e90;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+}
+.fh-sidebar .fh-nav .fh-settings-trigger:hover,
+.fh-sidebar .fh-nav .fh-settings-trigger.fh-settings-active {
+  background: #eaf2ff;
+  color: #276ff1;
+}
+.fh-sidebar .fh-nav .fh-settings-trigger:focus-visible {
+  outline: 2px solid #2f79ed;
+  outline-offset: -2px;
+}
+.fh-settings-chevron {
+  margin-left: auto;
+  transition: transform 160ms ease;
+}
+.fh-settings-chevron.open { transform: rotate(180deg); }
+.fh-sidebar .fh-nav .fh-settings-children {
+  display: grid;
+  gap: 2px;
+  margin-left: 18px;
+  padding-left: 10px;
+  border-left: 1px solid #e3eaf6;
+}
+.fh-sidebar .fh-nav .fh-settings-children a {
+  min-height: 35px;
+  padding-left: 10px;
+  font-size: 12px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .fh-settings-chevron { transition: none; }
+}
