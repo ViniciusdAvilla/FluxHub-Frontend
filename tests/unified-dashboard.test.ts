@@ -52,7 +52,12 @@ test("modulos usam ModernShell, sem sidebar e cabecalho legados", () => {
   }
   assert.match(platform,/ModernShell title=\{current.title\}/);
   for(const path of ["/","/vendas","/anuncios","/produtos","/estoque","/financeiro",
-    "/fabricantes","/precificacao","/reposicao","/curva-abc","/pedidos","/raio-x","/dados","/integracoes"]){
+    "/fabricantes","/reposicao","/curva-abc","/pedidos","/raio-x"]){
     assert.ok(shell.includes(`href: "${path}"`), path);
   }
+  assert.doesNotMatch(shell, /href: "\/precificacao"/);
+  assert.match(shell, /<span>Configurações<\/span>/);
+  assert.match(shell, /href="\/dados"/);
+  assert.match(shell, /href="\/integracoes"/);
+  assert.match(shell, /aria-expanded=\{settingsOpen\}/);
 });
