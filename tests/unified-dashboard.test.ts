@@ -52,12 +52,17 @@ test("modulos usam ModernShell, sem sidebar e cabecalho legados", () => {
   }
   assert.match(platform,/ModernShell title=\{current.title\}/);
   for(const path of ["/","/vendas","/anuncios","/produtos","/estoque","/financeiro",
-    "/fabricantes","/reposicao","/curva-abc","/pedidos","/raio-x"]){
-    assert.ok(shell.includes(`href: "${path}"`), path);
+    "/fabricantes","/reposicao","/curva-abc","/pedidos","/raio-x","/mensagens",
+    "/dados","/integracoes"]){
+    assert.ok(shell.includes('"' + path + '"'), path);
+  }
+  for(const module of ["Visão geral","Vendas e pedidos","Produtos e anúncios","Gestão de compras",
+    "Relatórios e análises","Financeiro","Atendimento","Configurações"]){
+    assert.ok(shell.includes('label: "' + module + '"'),module);
   }
   assert.doesNotMatch(shell, /href: "\/precificacao"/);
-  assert.match(shell, /<span>Configurações<\/span>/);
-  assert.match(shell, /href="\/dados"/);
-  assert.match(shell, /href="\/integracoes"/);
-  assert.match(shell, /aria-expanded=\{settingsOpen\}/);
+  assert.match(shell, /className="fh-subnav"/);
+  assert.match(shell, /aria-label=\{\`Abas de /);
+  assert.match(shell, /Resumo geral/);
+  assert.match(shell, /Controle de estoque/);
 });
