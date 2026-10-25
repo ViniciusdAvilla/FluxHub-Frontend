@@ -84,7 +84,7 @@ export default async function IntegracoesPage({
           <small>Abra o assistente visual e configure o aplicativo em sete etapas.</small>
         </span>
         <MercadoLivreSetupWizard />
-      </div>
+      </div>}
 
       {!ready && <div className="fh-integration-empty" role="status">
         <CircleAlert size={26}/>
