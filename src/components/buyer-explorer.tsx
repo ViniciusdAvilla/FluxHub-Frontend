@@ -13,8 +13,14 @@ type Contact = { buyer: Record<string, unknown>;
   delivery_address: Record<string, unknown> | null;
   fiscal: Record<string, unknown> | null };
 const money = new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"});
-const text = (value: unknown) => typeof value === "string" || typeof value === "number"
-  ? String(value) : "Não informado";
+const text = (value: unknown) => {
+  if (typeof value === "string" || typeof value === "number") return String(value);
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    const entry = value as Record<string, unknown>;
+    return [entry.area_code, entry.number, entry.extension].filter(Boolean).join(" ") || "Não informado";
+  }
+  return "Não informado";
+};
 
 export default function BuyerExplorer() {
   const [buyers, setBuyers] = useState<Buyer[]>([]);
