@@ -46,8 +46,17 @@ export async function POST(request: Request) {
     const accountId = accountIdFrom((body as { accountId?: unknown }).accountId);
     if (accountId === null)
       return Response.json({ error: "Conta inválida." }, { status: 422 });
-    const result = await backendMutation("/api/v1/analytics/sync-jobs", "POST", undefined,
-      10000, new URLSearchParams({ account_id: String(accountId) }));
+    const action = (body as { action?: unknown }).action ?? "sync";
+    if (action !== "sync" && action !== "pause" && action !== "orders")
+      return Response.json({ error: "Ação inválida." }, { status: 422 });
+    const target = action === "pause"
+      ? `/api/v1/analytics/sync-jobs/${accountId}/pause`
+      : action === "orders"
+        ? `/api/v1/analytics/sync-jobs/${accountId}/orders`
+        : "/api/v1/analytics/sync-jobs";
+    const query = action === "sync"
+      ? new URLSearchParams({ account_id: String(accountId) }) : undefined;
+    const result = await backendMutation(target, "POST", undefined, 10000, query);
     return Response.json(result, { status: 202, headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     return errorResponse(error);

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { RefreshCw } from "lucide-react";
 
-type JobStatus = "idle" | "queued" | "running" | "retry" | "completed" | "failed";
+type JobStatus = "idle" | "queued" | "running" | "retry" | "paused" | "completed" | "failed";
 type SyncJob = {
   account_id: number;
   status: JobStatus;
@@ -38,7 +38,7 @@ function date(value: string | null) {
     result.toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
 }
 
-export default function SyncAction({ accountId, auto = false }: {
+export default function SyncAction({ accountId }: {
   accountId: number;
   auto?: boolean;
 }) {
@@ -46,11 +46,10 @@ export default function SyncAction({ accountId, auto = false }: {
   const [job, setJob] = useState<SyncJob | null>(null);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState("");
-  const alreadyAutoStarted = useRef(false);
   const startInFlight = useRef(false);
   const priorStatus = useRef<JobStatus | null>(null);
 
-  const start = useCallback(async () => {
+  const start = useCallback(async (action: "sync" | "orders" = "sync") => {
     if (startInFlight.current) return;
     startInFlight.current = true;
     setStarting(true);
@@ -59,7 +58,7 @@ export default function SyncAction({ accountId, auto = false }: {
       const response = await fetch("/api/platform/sync-job", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ accountId }),
+        body: JSON.stringify({ accountId, action }),
         cache: "no-store",
       });
       const data: SyncJob & { error?: string } = await response.json();
@@ -71,6 +70,26 @@ export default function SyncAction({ accountId, auto = false }: {
     } finally {
       setStarting(false);
       startInFlight.current = false;
+    }
+  }, [accountId]);
+
+  const pause = useCallback(async () => {
+    setStarting(true);
+    setError("");
+    try {
+      const response = await fetch("/api/platform/sync-job", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accountId, action: "pause" }),
+        cache: "no-store",
+      });
+      const data: SyncJob & { error?: string } = await response.json();
+      if (!response.ok) throw new Error(data.error || "Não foi possível pausar.");
+      setJob(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao pausar.");
+    } finally {
+      setStarting(false);
     }
   }, [accountId]);
 
@@ -90,10 +109,6 @@ export default function SyncAction({ accountId, auto = false }: {
         if (closed) return;
         setJob(result);
         setError("");
-        if (result.status === "idle" && auto && !alreadyAutoStarted.current) {
-          alreadyAutoStarted.current = true;
-          void start();
-        }
         if (result.status === "completed" && priorStatus.current !== "completed") {
           router.refresh();
         }
@@ -110,7 +125,7 @@ export default function SyncAction({ accountId, auto = false }: {
       controller.abort();
       if (timer) clearTimeout(timer);
     };
-  }, [accountId, auto, router, start]);
+  }, [accountId, router]);
 
   const running = job !== null && activeStatuses.includes(job.status);
   const total = job?.listings_total;
@@ -118,7 +133,8 @@ export default function SyncAction({ accountId, auto = false }: {
     Math.round(job.listings_scanned / total * 100)) : null;
   const title = !job || job.status === "idle" ? "Pronto para sincronizar" :
     job.status === "queued" ? "Na fila de sincronização" :
-    job.status === "retry" ? "Pausado temporariamente: retomada automática" :
+    job.status === "retry" ? "Aguardando nova tentativa" :
+    job.status === "paused" ? "Sincronização pausada" :
     job.status === "failed" ? "Sincronização interrompida" :
     job.status === "completed" ? "Sincronização concluída" :
     job.phase === "listings" ? "Buscando anúncios do Mercado Livre" :
@@ -129,15 +145,23 @@ export default function SyncAction({ accountId, auto = false }: {
       onClick={() => void start()} disabled={starting || running}>
       <RefreshCw size={16} className={running || starting ? "fh-spinning" : ""} />
       {starting ? "Iniciando..." : running ? "Sincronização em andamento" :
+        job?.status === "paused" ? "Retomar sincronização" :
         job?.status === "failed" ? "Tentar novamente" :
         job?.status === "completed" ? "Sincronizar novamente" :
         "Sincronizar todos os dados"}
     </button>
+    {running && <button className="fh-control" type="button" onClick={() => void pause()} disabled={starting}>
+      Pausar sincronização
+    </button>}
+    {!running && <button className="fh-control" type="button"
+      onClick={() => void start("orders")} disabled={starting}>
+      Atualizar pedidos e faturamento
+    </button>}
     <div className="fh-sync-message" aria-live="polite" role="status">
       <p><strong>{title}</strong></p>
       {job && job.status !== "idle" && <>
-        <p>{number(job.listings_scanned)} anúncios consultados, {number(job.listings_saved)} salvos/atualizados,
-          {" "}{number(job.orders_saved)} pedidos processados em {number(job.pages_done)} lotes.</p>
+        <p>{number(job.listings_saved)} anúncios no banco, {number(job.orders_saved)} pedidos armazenados.
+          {" "}{number(job.pages_done)} lotes executados (incluindo retomadas).</p>
         {job.phase === "listings" && percent !== null && <div role="progressbar"
           aria-label="Anúncios consultados" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}
           style={{ width: "100%", maxWidth: 420, height: 7, borderRadius: 8,
@@ -146,7 +170,7 @@ export default function SyncAction({ accountId, auto = false }: {
             borderRadius: 8, transition: "width .3s" }} />
         </div>}
         {job.phase === "listings" && total !== null && total !== undefined &&
-          <p>{number(job.listings_scanned)} de {number(total)} anúncios previstos pela API.</p>}
+          <p>{number(job.listings_saved)} de {number(total)} anúncios existentes na API.</p>}
         {job.phase === "orders" && job.orders_window_start && <p>
           Período de pedidos: {date(job.orders_window_start)} até {date(job.orders_window_end)}.
           Histórico consultado por intervalos para evitar limites de paginação.
@@ -155,6 +179,7 @@ export default function SyncAction({ accountId, auto = false }: {
           Nova tentativa agendada para {date(job.retry_at)}. Tentativa {job.retry_count}.
         </p>}
         {job.last_error && <p>{job.last_error}</p>}
+        {job.status === "paused" && <p>Os dados no PostgreSQL estão preservados. Retome quando desejar.</p>}
         {job.status === "completed" && <p>Concluída em {date(job.completed_at)}.
           Os registros permanecem no PostgreSQL.</p>}
         {running && <p>O processo continua no servidor mesmo se você fechar esta página.</p>}

@@ -116,17 +116,42 @@ async function financeSnapshot() {
   }
 }
 
+async function ordersRevenueSnapshot(): Promise<Snapshot["sales"]> {
+  try {
+    const payload = await backendRequest("/api/v1/sales/?days=30");
+    if (!payload || typeof payload !== "object") return null;
+    const row = payload as Record<string, unknown>;
+    if (typeof row.paid_order_count !== "number" ||
+        (row.gross_paid_order_amount !== null && typeof row.gross_paid_order_amount !== "number"))
+      return null;
+    return {
+      days: typeof row.days === "number" ? row.days : 30,
+      total_orders: typeof row.total_orders === "number" ? row.total_orders : 0,
+      paid_order_count: row.paid_order_count,
+      gross_paid_order_amount: row.gross_paid_order_amount as number | null,
+      data_complete: row.data_complete === true,
+      partial_data: row.partial_data !== false,
+      note: typeof row.note === "string" ? row.note : "Pedidos cadastrados.",
+    };
+  } catch (error) {
+    console.warn("[orders-revenue]", error instanceof Error ? error.message : "Indisponível");
+    return null;
+  }
+}
+
 export async function getSnapshot(): Promise<Snapshot> {
-  const schema = await getBackendSchema();
-  const finance = await financeSnapshot();
+  const [schema, finance, sales] = await Promise.all([
+    getBackendSchema(), financeSnapshot(), ordersRevenueSnapshot(),
+  ]);
   try {
     const baseProducts = normalizeProducts(
-      await backendRequest(chooseProductsPath(schema)),
+      await backendRequest(chooseProductsPath(schema), undefined, 30000),
     );
     const products = await enrichBrandsFromBackend(baseProducts, schema);
     return {
       products,
       finance,
+      sales,
       schema,
       updatedAt: new Date().toISOString(),
       error: null,
@@ -139,6 +164,7 @@ export async function getSnapshot(): Promise<Snapshot> {
     return {
       products: [],
       finance,
+      sales,
       schema,
       updatedAt: null,
       error:

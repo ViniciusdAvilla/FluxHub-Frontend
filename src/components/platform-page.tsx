@@ -221,7 +221,7 @@ function ProductTable({
             <th>Preço</th>
             <th>Vendidos</th>
             <th>Estoque</th>
-            <th>Receita</th>
+            <th>Receita estimada</th>
             <th>Lucro</th>
             <th>Margem</th>
             <th aria-label="Ações" />
@@ -516,6 +516,12 @@ export default function PlatformPage({ initial, view, syncAccounts = [], isAdmin
     });
   }, [rows, deferredQuery, category, manufacturer, stockTone]);
   const summary = useMemo(() => summarize(filtered), [filtered]);
+  const paidRevenue = snapshot.sales?.gross_paid_order_amount ?? null;
+  const paidRevenueNote = !snapshot.sales
+    ? "Consulta de pedidos indisponível"
+    : snapshot.sales.partial_data
+      ? `Parcial: ${number(snapshot.sales.paid_order_count)} pedidos pagos importados`
+      : `${number(snapshot.sales.paid_order_count)} pedidos pagos em 30 dias`;
   const abc = useMemo(() => classifyAbc(filtered), [filtered]);
 
   async function refresh() {
@@ -581,7 +587,7 @@ export default function PlatformPage({ initial, view, syncAccounts = [], isAdmin
           {view === "overview" && (
             <>
               <div className="metric-grid five">
-                <Metric label="Receita estimada" value={money(summary.revenue)} note={`${summary.revenueCount}/${summary.productCount} produtos com base de cálculo`} icon={Coins} />
+                <Metric label="Pedidos pagos — bruto (30 dias)" value={money(paidRevenue)} note={paidRevenueNote} icon={Coins} />
                 <Metric label="Lucro estimado" value={money(summary.profit)} note={`${summary.covered}/${summary.productCount} produtos com custos`} icon={BadgeDollarSign} tone={marginTone(summary.margin)} />
                 <Metric label="Margem estimada" value={percent(summary.margin)} note={summary.losses ? `${summary.losses} produto(s) no prejuízo` : "Sem prejuízo entre itens calculados"} icon={Gauge} tone={marginTone(summary.margin)} />
                 <Metric label="Unidades vendidas" value={number(summary.sales)} note="Volume informado para 30 dias" icon={ShoppingCart} />
@@ -658,7 +664,7 @@ export default function PlatformPage({ initial, view, syncAccounts = [], isAdmin
           {view === "finance" && (
             <>
               <div className="metric-grid four">
-                <Metric label="Receita estimada" value={money(summary.revenue)} note="Com preço e volume válidos" icon={Coins} />
+                <Metric label="Pedidos pagos — bruto (30 dias)" value={money(paidRevenue)} note={paidRevenueNote} icon={Coins} />
                 <Metric label="Lucro estimado" value={money(summary.profit)} note={`${summary.covered} produtos calculados`} icon={BadgeDollarSign} tone={marginTone(summary.margin)} />
                 <Metric label="Margem" value={percent(summary.margin)} note="Sobre produtos com custos" icon={Gauge} tone={marginTone(summary.margin)} />
                 <Metric label="Cobertura de custos" value={summary.productCount ? percent((summary.covered / summary.productCount) * 100) : "—"} note={`${summary.productCount - summary.covered} sem custo cadastrado`} icon={Database} tone={summary.covered === summary.productCount && summary.productCount > 0 ? "good" : "warning"} />
