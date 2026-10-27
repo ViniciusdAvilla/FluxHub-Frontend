@@ -48,7 +48,7 @@ export default async function IntegracoesPage({
 
     {params.ml === "connected" && <div className="fh-notice" role="status">
       <CheckCircle2 size={18}/> Mercado Livre autorizado com sucesso.
-      Sua conta já pode aparecer abaixo; a primeira importação será iniciada automaticamente.
+      Sua conta já pode aparecer abaixo; inicie a sincronização quando desejar.
     </div>}
     {params.ml === "cancelled" && <div className="fh-notice" role="status">
       A autorização foi cancelada. Seus dados existentes foram preservados.
@@ -135,7 +135,7 @@ export default async function IntegracoesPage({
             </p>}
             <div className="fh-integration-account-actions">
               {account.sourceKnown && account.sourceConnected && account.enabled &&
-                <SyncAction accountId={account.accountId} auto={!account.lastSyncedAt}/>}
+                <SyncAction accountId={account.accountId}/>}
               <nav className="fh-integration-links" aria-label={`Dados de ${account.nickname}`}>
                 <Link href={`/?account=${account.accountId}`}>Dashboard <ArrowRight size={14}/></Link>
                 <Link href={`/pedidos?account=${account.accountId}`}>Pedidos <ArrowRight size={14}/></Link>
