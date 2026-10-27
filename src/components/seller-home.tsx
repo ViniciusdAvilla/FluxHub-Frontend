@@ -1,14 +1,13 @@
 import Link from "next/link";
 import {
   ArrowRight, BadgeDollarSign, Boxes, CircleAlert,
-  Eye, Package, Percent, ShoppingBag, ShoppingCart,
-  Tag, TrendingUp, Wallet, Zap,
+  Eye, Package, Percent, ShoppingCart,
+  Tag, TrendingUp,
 } from "lucide-react";
 import { money, number, percent } from "@/lib/analytics";
 import type { SellerReport } from "@/lib/seller-data";
 import ModernShell from "./modern-shell";
 import { DailyBars, DonutStats, PerformanceChart } from "./modern-charts";
-import SyncAction from "./sync-action";
 import OverviewPeriodFilter from "./overview-period-filter";
 
 function halfPeriodChange(values: number[]):number|null {
@@ -42,54 +41,32 @@ function Box({title,subtitle,children,href}:{title:string;subtitle?:string;child
 }
 function safeNum(input:unknown):number|null {return typeof input==="number"&&Number.isFinite(input)?input:null;}
 export default function SellerHome({report}:{report:SellerReport}){
-  const {accounts,accountId,days,products,orders,timeline,costs,ads}=report;
-  const hasData=accounts.length>0;
-  const revenue=timeline.length?timeline.reduce((a,p)=>a+p.gross_non_cancelled,0):null;
+  const {accounts,accountId,days,products,timeline,costs,ads}=report;
+  const revenue=report.paidRevenue?.gross_paid_order_amount??null;
   const totalOrders=timeline.length?timeline.reduce((a,p)=>a+p.orders,0):null;
   const visits=timeline.some(p=>p.visits!==null)?timeline.reduce((a,p)=>a+(p.visits||0),0):null;
   const profit=accountId===null&&ads?.profit_complete?safeNum(ads.net_profit_after_ads):null;
   const margin=profit!==null&&ads?.attributed_revenue&&ads.attributed_revenue>0?profit/ads.attributed_revenue*100:null;
-  const countOrders=totalOrders??(orders.length?orders.length:null);
-  const avgTicket=revenue!==null&&countOrders&&countOrders>0?revenue/countOrders:null;
+  const paidOrders=report.paidRevenue?.paid_order_count??null;
+  const avgTicket=revenue!==null&&paidOrders&&paidOrders>0?revenue/paidOrders:null;
   const canceled=timeline.length?timeline.reduce((a,p)=>a+p.cancelled_orders,0):null;
   const categories=new Map<string,number>();
   for(const p of products) categories.set(p.category||"Sem categoria",(categories.get(p.category||"Sem categoria")||0)+1);
   const sortedCategories=[...categories.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5);
-  const account=accounts.find(a=>a.account_id===accountId);
-  const reputation=report.profile?.seller_reputation;
-  const sources=report.sources.filter(s=>s.provider==="mercado_livre");
-  const lastSync=sources.find(s=>s.account_key===`ml:${account?.account_id}`)?.last_synced_at || sources.find(s=>s.provider==="mercado_livre"&&s.last_synced_at)?.last_synced_at;
-  const pendingSync = accounts.filter(a => !sources.some(s => s.account_key === `ml:${a.account_id}` && Boolean(s.last_synced_at)));
   const topProducts=[...products].sort((a,b)=>(b.sales_30d??-1)-(a.sales_30d??-1)).slice(0,8);
   const costIndex=new Map(costs.map(c=>[c.external_id,c]));
   const statusItems=Object.entries(report.orderStatus?.by_status||{}).map(([name,value],i)=>({
     name,value,color:["#20c58b","#488bfa","#ffbd46","#f2737a","#9878f6"][i%5]
   }));
   const orderedTimeline=[...timeline].sort((a,b)=>a.date.localeCompare(b.date));
-  const revenueSeries=orderedTimeline.map(p=>p.gross_non_cancelled);
   const orderSeries=orderedTimeline.map(p=>p.orders);
   const visitSeries=orderedTimeline.map(p=>p.visits??0);
   const conversionSeries=orderedTimeline.map(p=>p.visits&&p.visits>0?p.orders/p.visits*100:0);
   return <ModernShell title="Visão geral" eyebrow="Resumo geral" isAdmin={Boolean(report.user?.is_admin)}
     action={<OverviewPeriodFilter days={days} accountId={accountId} accounts={accounts}/>}>
-    {pendingSync.length>0&&<section className="fh-notice" aria-label="Primeira sincronização">
-      <strong>Conta conectada: importando dados oficiais do Mercado Livre.</strong>
-      <p>O primeiro carregamento pode levar mais tempo. As telas serão atualizadas quando a sincronização terminar.</p>
-    </section>}
-    {hasData&&<section className="fh-card" aria-label="Sincronização completa do Mercado Livre">
-      <div className="fh-card-head"><div><h2>Sincronização de todos os dados</h2>
-        <p>O trabalho continua no servidor. Acompanhe anúncios, pedidos, tentativas e conclusão por conta.</p>
-      </div></div>
-      <div className="fh-inline-actions">
-        {accounts.filter(a=>accountId===null||a.account_id===accountId).map(a=>
-          <SyncAction key={a.account_id} accountId={a.account_id} auto/>
-        )}
-      </div>
-    </section>}
-    {!hasData&&<div className="fh-notice"><strong>Nenhuma conta Mercado Livre conectada.</strong> Consulte o status da conta salva no backend em <Link href="/integracoes" style={{color:"#237af4",fontWeight:750}}>Mercado Livre</Link>. O Client ID e o Client Secret não substituem tokens de vendedor. O painel não usa valores fictícios.</div>}
     {report.failedSources.length>0&&<div className="fh-notice error" role="status">Algumas consultas não responderam: {report.failedSources.join(", ")}. Verifique se o FastAPI está online e autenticado.</div>}
     <div className="fh-kpis fh-overview-kpis" id="resumo">
-      <Stat color="blue" icon={BadgeDollarSign} title="Faturamento" value={money(revenue)} help="Valor bruto dos pedidos não cancelados" spark={revenueSeries} change={halfPeriodChange(revenueSeries)}/>
+      <Stat color="blue" icon={BadgeDollarSign} title="Faturamento bruto" value={money(revenue)} help={report.paidRevenue?.partial_data?"Dados parciais: histórico de pedidos em sincronização":"Pedidos pagos no período selecionado"}/>
       <Stat color="purple" icon={ShoppingCart} title="Pedidos" value={number(totalOrders)} help="Pedidos registrados no período" spark={orderSeries} change={halfPeriodChange(orderSeries)}/>
       <Stat color="blue" icon={Eye} title="Visitas" value={number(visits)} help="Visitas informadas pelo Mercado Livre" spark={visitSeries} change={halfPeriodChange(visitSeries)}/>
       <Stat color="purple" icon={TrendingUp} title="Conversão" value={visits!==null&&visits>0&&totalOrders!==null?percent(totalOrders/visits*100):"—"} help="Pedidos ÷ visitas disponíveis" spark={conversionSeries} change={halfPeriodChange(conversionSeries)}/>
@@ -119,7 +96,6 @@ export default function SellerHome({report}:{report:SellerReport}){
         <div className="fh-alert-list">
           <Link href="/estoque" className="fh-overview-alert"><span className="fh-overview-alert-icon"><Boxes size={22}/></span><span><strong>{number(products.filter(p=>p.stock_qty===0).length)} produtos sem estoque</strong><small>Revise o estoque para evitar interrupções nos anúncios.</small></span><ArrowRight size={16}/></Link>
           <Link href="/pedidos" className="fh-overview-alert"><span className="fh-overview-alert-icon"><CircleAlert size={22}/></span><span><strong>{number(canceled)} cancelamentos registrados</strong><small>Acompanhe os pedidos do período selecionado.</small></span><ArrowRight size={16}/></Link>
-          <Link href="/integracoes" className="fh-overview-alert"><span className="fh-overview-alert-icon"><Zap size={22}/></span><span><strong>{pendingSync.length ? `${pendingSync.length} conta(s) aguardando sincronização` : "Integração Mercado Livre"}</strong><small>{pendingSync.length?"Confira a sincronização de dados.":"Veja o status e a atualização de seus dados."}</small></span><ArrowRight size={16}/></Link>
         </div>
       </Box>
     </div>
@@ -129,21 +105,8 @@ export default function SellerHome({report}:{report:SellerReport}){
       <div className="fh-kpis">
         <Stat color="green" icon={BadgeDollarSign} title="Lucro após Ads" value={money(profit)} help="Somente com custos e Ads completos"/>
         <Stat color="purple" icon={Percent} title="Margem estimada" value={percent(margin)} help="Sobre receita atribuída aos anúncios"/>
-        <Stat color="green" icon={Tag} title="Ticket médio" value={money(avgTicket)} help="Receita bruta ÷ pedidos registrados"/>
-        <Stat color="purple" icon={Boxes} title="Anúncios no Mercado Livre" value={number(report.liveListingsTotal)} help="Total consultado ao vivo"/>
-      </div>
-      <div className="fh-card fh-overview-account">
-        <div className="fh-card-head"><div><h2>Conta Mercado Livre</h2><p>Integração e sincronização</p></div></div>
-        <div className="fh-info-row"><span>Conta</span><strong>{account?.nickname || accounts[0]?.nickname || "Sem conta vinculada"}</strong></div>
-        <div className="fh-info-row"><span>Contas conectadas</span><strong>{accounts.length}</strong></div>
-        <div className="fh-info-row"><span>Anúncios armazenados no banco</span><strong>{number(accountId===null?report.listing?.total_listings??null:products.length)}</strong></div>
-        <div className="fh-info-row"><span>Última sincronização</span><strong>{lastSync?new Date(lastSync).toLocaleString("pt-BR"):"Ainda não sincronizada"}</strong></div>
-        <div className="fh-info-row"><span>Reputação</span><strong>{reputation?.level_id||"Não informada pela API"}</strong></div>
-        <div className="fh-info-row"><span>Nível MercadoLíder</span><strong>{reputation?.power_seller_status||"Não informado"}</strong></div>
-        <div className="fh-info-row"><span>Rentabilidade Ads</span><strong>{ads?.profit_complete?"Calculada":"Dados incompletos"}</strong></div>
-        <div className="fh-inline-actions" style={{marginTop:14}}>
-          <Link href="/integracoes" className="fh-info-action">Ver dados do Mercado Livre <ArrowRight size={15}/></Link>
-        </div>
+        <Stat color="green" icon={Tag} title="Ticket médio" value={money(avgTicket)} help="Receita bruta ÷ pedidos pagos"/>
+        <Stat color="purple" icon={Boxes} title="Anúncios armazenados" value={number(report.liveListingsTotal)} help="Total persistido no PostgreSQL"/>
       </div>
     </div>
     <div className="fh-split-grid">
@@ -161,7 +124,7 @@ export default function SellerHome({report}:{report:SellerReport}){
     <Box title={products.some(p=>p.sales_30d!==null)?"Produtos por vendas informadas":"Produtos do catálogo"} subtitle="Dados persistidos no PostgreSQL e custos cadastrados" href="/produtos">
       <div className="fh-table-wrap"><table className="fh-table"><thead><tr><th>Produto</th><th>Preço</th><th>Custo</th><th>Vendas (30 dias)</th><th>Estoque</th><th>Fabricante</th></tr></thead><tbody>
         {topProducts.map(p=>{const c=costIndex.get(p.external_id);return <tr key={p.external_id}><td className="fh-table-name"><strong>{p.title}</strong><small>{p.external_id} · {p.category}</small></td><td>{money(p.promotional_price)}</td><td>{money(c?.unit_cost??null)}</td><td>{number(p.sales_30d)}</td><td>{number(p.stock_qty)}</td><td>{c?.manufacturer||p.brand||"—"}</td></tr>})}
-        {!topProducts.length&&<tr><td colSpan={6} style={{padding:30,textAlign:"center"}}>Nenhum produto sincronizado. Conecte sua conta e sincronize para começar.</td></tr>}
+        {!topProducts.length&&<tr><td colSpan={6} style={{padding:30,textAlign:"center"}}>Nenhum produto disponível no catálogo.</td></tr>}
       </tbody></table></div>
       <p style={{fontSize:11,color:"#98a3b6",marginBottom:0}}>A sincronização em segundo plano atualiza os dados armazenados. Margens e lucros dependem de custos e relatórios reais de Ads.</p>
     </Box>
