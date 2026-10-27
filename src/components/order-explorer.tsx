@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { CalendarDays, ChevronLeft, ChevronRight, ClipboardList, Search,
   ShieldCheck, SlidersHorizontal, Wallet, X } from "lucide-react";
 import PricingCalculator, { type PricingSeed } from "./pricing-calculator";
@@ -212,7 +213,7 @@ export default function OrderExplorer({
       {error && <div className="fh-notice error" role="alert">{error}</div>}
       {loading && <p role="status" className="fh-orders-loading">Consultando pedidos sincronizados...</p>}
       {!loading && !error && page?.orders.length === 0 &&
-        <div className="fh-orders-empty">Nenhum pedido encontrado. Ajuste os filtros ou consulte a sincronização em Integrações.</div>}
+        <div className="fh-orders-empty">Nenhum pedido armazenado neste período. Ajuste os filtros ou <Link href="/integracoes">atualize pedidos e faturamento</Link>.</div>}
       <div className="fh-orders-list">
         {(page?.orders || []).map(order => <article className="fh-orders-card"
           key={order.seller_id + "-" + order.external_id}>
@@ -224,12 +225,17 @@ export default function OrderExplorer({
               {prettyStatus(order.status)}
             </button>
           </div>
-          {(order.items.length ? order.items : [{
-            item_id: "", title: "Itens ainda não sincronizados para este pedido",
-            thumbnail: null, quantity: 0, unit_price: 0, sku: null,
-            sale_fee: null, unit_cost: null, tax_percent: null,
-            configured_shipping: null, other_cost: null,
-          }]).map((item, index) => <div className="fh-orders-product"
+          {order.items.length === 0 && <div className="fh-orders-product">
+            <span className="fh-orders-image-fallback">—</span>
+            <span className="fh-orders-title">
+              <strong>Detalhes dos produtos ainda não importados</strong>
+              <small>O pedido está no banco, mas seus itens precisam de uma atualização.
+                {" "}<Link href="/integracoes">Atualizar pedidos e faturamento</Link>
+              </small>
+            </span>
+            <strong className="fh-orders-price">—</strong>
+          </div>}
+          {order.items.map((item, index) => <div className="fh-orders-product"
             key={order.external_id + "-" + index}>
             <button type="button" className="fh-orders-product-button"
               disabled={!item.item_id}
