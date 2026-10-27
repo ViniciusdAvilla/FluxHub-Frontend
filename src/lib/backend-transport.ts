@@ -4,6 +4,13 @@ import { SESSION_COOKIE, readSession } from "./auth";
 import { resolveBackendUrl } from "./backend-url";
 import { assertSecureBackendTransport, backendAuthHeaders } from "./backend-auth";
 
+export class BackendHttpError extends Error {
+  constructor(message: string, public readonly status: number, public readonly retryAfter: string | null) {
+    super(message);
+    this.name = "BackendHttpError";
+  }
+}
+
 function backendBase() {
   const base = new URL(process.env.BACKEND_URL || "http://127.0.0.1:8000");
   if (!/^https?:$/.test(base.protocol))
@@ -42,7 +49,7 @@ async function requestAbsolute(
       body && typeof body === "object" && "detail" in body
         ? String((body as Record<string, unknown>).detail)
         : `Falha na consulta (${response.status}).`;
-    throw new Error(detail);
+    throw new BackendHttpError(detail, response.status, response.headers.get("Retry-After"));
   }
   return body;
 }
