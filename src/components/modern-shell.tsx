@@ -17,9 +17,10 @@ const modules = [
     { label: "Desempenho", href: "/#desempenho" },
     { label: "Alertas", href: "/#alertas" },
   ] },
-  { label: "Vendas e pedidos", href: "/vendas", icon: ShoppingCart, paths: ["/vendas", "/pedidos"], tabs: [
+  { label: "Vendas e pedidos", href: "/vendas", icon: ShoppingCart, paths: ["/vendas", "/pedidos", "/clientes"], tabs: [
     { label: "Resumo de vendas", href: "/vendas" },
     { label: "Pedidos", href: "/pedidos" },
+    { label: "Clientes", href: "/clientes" },
   ] },
   { label: "Produtos e anúncios", href: "/produtos", icon: Package, paths: ["/produtos", "/anuncios", "/estoque"], tabs: [
     { label: "Meus produtos", href: "/produtos" },

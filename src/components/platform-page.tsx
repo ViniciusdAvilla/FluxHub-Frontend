@@ -62,6 +62,7 @@ import FinanceCategoryChart from "./finance-category-chart";
 import RaioXPanel from "./raio-x-panel";
 
 const FinanceDialog = dynamic(() => import("./finance-dialog"), { ssr: false });
+const PricingCalculator = dynamic(() => import("./pricing-calculator"), { ssr: false });
 
 export type View =
   | "overview"
@@ -199,10 +200,12 @@ function ProductTable({
   rows,
   onEdit,
   onInspect,
+  onPrice,
 }: {
   rows: ProductRow[];
   onEdit: (id: string) => void;
   onInspect?: (row: ProductRow) => void;
+  onPrice?: (row: ProductRow) => void;
 }) {
   const [page, setPage] = useState(0);
   useEffect(() => setPage(0), [rows.length]);
@@ -210,6 +213,28 @@ function ProductTable({
   const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
   const visiblePage = Math.min(page, totalPages - 1);
   const visibleRows = rows.slice(visiblePage * pageSize, (visiblePage + 1) * pageSize);
+  const [photos, setPhotos] = useState<Record<string, string>>({});
+  useEffect(() => {
+    const mlRows = visibleRows.filter(row =>
+      typeof row.raw?.source_key === "string" &&
+      /^ml:\d+$/.test(row.raw.source_key) && /^[A-Z0-9]{3,100}$/i.test(row.id));
+    const ids = [...new Set(mlRows.map(row => row.id))];
+    if (!ids.length) return;
+    const controller = new AbortController();
+    const q = new URLSearchParams({ ids: ids.join(",") });
+    fetch("/api/platform/product-photos?" + q, { cache: "no-store", signal: controller.signal })
+      .then(async response => response.ok ? await response.json() : [])
+      .then((data: unknown) => {
+        if (controller.signal.aborted || !Array.isArray(data)) return;
+        const map: Record<string, string> = {};
+        for (const row of data as { account_id: number; item_id: string; thumbnail: string | null }[]) {
+          if (row.thumbnail?.startsWith("https://"))
+            map[String(row.account_id) + ":" + row.item_id] = row.thumbnail;
+        }
+        setPhotos(map);
+      }).catch(() => {});
+    return () => controller.abort();
+  }, [visiblePage, rows]);
   return (
     <div>
       <div className="table-wrap">
@@ -230,11 +255,23 @@ function ProductTable({
           {visibleRows.map((row) => (
             <tr key={row.id}>
               <td>
-                {/^ML[A-Z]{1,2}\d{5,20}$/.test(row.id)
-                  ? <Link className="product-cell" href={`/produtos/${encodeURIComponent(row.id)}${typeof row.raw?.source_key === "string" && /^ml:\d+$/.test(row.raw.source_key) ? `?account=${row.raw.source_key.slice(3)}` : ""}`}>
-                      <strong>{row.title}</strong>
-                      <span>{row.id} · {row.brand} · {row.category}</span>
-                    </Link>
+                {typeof row.raw?.source_key === "string" && /^ml:\d+$/.test(row.raw.source_key)
+                  ? <div>
+                      <button className="fh-orders-product-button" type="button"
+                        onClick={() => onPrice?.(row)}>
+                        {photos[row.raw.source_key.slice(3) + ":" + row.id] ?
+                          <img alt="" width={54} height={54}
+                            src={photos[row.raw.source_key.slice(3) + ":" + row.id]}/> :
+                          <span className="fh-orders-image-fallback">Sem foto</span>}
+                        <span className="fh-orders-title"><strong>{row.title}</strong>
+                          <small>{row.id} · {row.brand} · {row.category}</small>
+                          <small className="fh-orders-calc-link">Abrir calculadora de lucro</small>
+                        </span>
+                      </button>
+                      <Link href={`/produtos/${encodeURIComponent(row.id)}?account=${row.raw.source_key.slice(3)}`}>
+                        <small>Ver ficha do anúncio</small>
+                      </Link>
+                    </div>
                   : <button className="product-cell" onClick={() => onInspect?.(row)}>
                       <strong>{row.title}</strong>
                       <span>{row.id} · {row.brand} · {row.category}</span>
@@ -501,6 +538,7 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
   const [stockTone, setStockTone] = useState("");
   const [editProduct, setEditProduct] = useState<string | null | undefined>(undefined);
   const [inspected, setInspected] = useState<ProductRow | null>(null);
+  const [pricingItem, setPricingItem] = useState<ProductRow | null>(null);
   const [desiredMargin, setDesiredMargin] = useState(20);
   const [coverageDays, setCoverageDays] = useState(30);
 
@@ -597,7 +635,7 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
                 <div><Status tone="good">Bom</Status><strong>{summary.healthy}</strong><span>estoque saudável</span></div>
               </div>
               <Section title="Produtos em destaque" subtitle="Ordenados pela maior receita estimada." action={<button className="button primary" onClick={() => setEditProduct(null)}><Pencil size={15} /> Cadastrar custos</button>}>
-                {filtered.length ? <ProductTable rows={[...filtered].sort((a, b) => (b.revenue ?? -1) - (a.revenue ?? -1)).slice(0, 8)} onEdit={setEditProduct} onInspect={setInspected} /> : <Empty title="Nenhum produto encontrado" text="Ajuste os filtros para visualizar o catálogo." />}
+                {filtered.length ? <ProductTable rows={[...filtered].sort((a, b) => (b.revenue ?? -1) - (a.revenue ?? -1)).slice(0, 8)} onEdit={setEditProduct} onInspect={setInspected} onPrice={setPricingItem} /> : <Empty title="Nenhum produto encontrado" text="Ajuste os filtros para visualizar o catálogo." />}
               </Section>
             </>
           )}
@@ -613,7 +651,7 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
                 </Section>
               </div>
               <Section title={`${filtered.length} produtos`} subtitle="Clique no nome para abrir a ficha completa." action={<button className="button primary" onClick={() => setEditProduct(null)}><Pencil size={15} /> Cadastrar custos</button>}>
-              {filtered.length ? <ProductTable rows={filtered} onEdit={setEditProduct} onInspect={setInspected} /> : <Empty title="Nenhum produto encontrado" text="Ajuste os filtros para visualizar o catálogo." />}
+              {filtered.length ? <ProductTable rows={filtered} onEdit={setEditProduct} onInspect={setInspected} onPrice={setPricingItem} /> : <Empty title="Nenhum produto encontrado" text="Ajuste os filtros para visualizar o catálogo." />}
               </Section>
             </>
           )}
@@ -674,7 +712,7 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
                 <FinanceCategoryChart rows={filtered} />
               </Section>
               <Section title="Resultado por produto" subtitle="Vermelho = prejuízo, amarelo = margem abaixo de 15%, verde = margem a partir de 15%." action={<button className="button primary" onClick={() => setEditProduct(null)}><Pencil size={15} /> Cadastrar custos</button>}>
-                <ProductTable rows={[...filtered].sort((a, b) => (a.margin ?? Infinity) - (b.margin ?? Infinity))} onEdit={setEditProduct} onInspect={setInspected} />
+                <ProductTable rows={[...filtered].sort((a, b) => (a.margin ?? Infinity) - (b.margin ?? Infinity))} onEdit={setEditProduct} onInspect={setInspected} onPrice={setPricingItem} />
               </Section>
             </>
           )}
@@ -784,6 +822,17 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
         </div>
       </ModernShell>
 
+      {pricingItem && typeof pricingItem.raw?.source_key === "string" &&
+        /^ml:\d+$/.test(pricingItem.raw.source_key) &&
+        <PricingCalculator accountId={Number(pricingItem.raw.source_key.slice(3))}
+          seed={{ item_id: pricingItem.id, title: pricingItem.title,
+            unit_price: pricingItem.price ?? 0,
+            unit_cost: pricingItem.finance?.unitCost ?? null,
+            tax_percent: pricingItem.finance?.taxPercent ?? null,
+            configured_shipping: pricingItem.finance?.shippingCost ?? null,
+            other_cost: pricingItem.finance?.otherCost ?? null,
+          }}
+          onClose={() => setPricingItem(null)}/>}
       {editProduct !== undefined && <FinanceDialog products={rows} selected={editProduct} onClose={() => setEditProduct(undefined)} onSaved={saved} />}
       {inspected && (
         <div className="drawer-backdrop" onClick={() => setInspected(null)}>
