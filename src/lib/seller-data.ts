@@ -20,6 +20,7 @@ export type SellerReport = {
   timeline: TimelinePoint[];
   listing: { total_listings: number; active_listings: number; by_status: Record<string,number> } | null;
   cancellations: { total_orders: number; cancelled_orders: number; cancellation_rate_percent: number | null } | null;
+  orderStatus: { total_orders: number; by_status: Record<string, number> } | null;
   ads: { has_ads_data: boolean; attributed_revenue: number | null; ad_spend: number | null; net_profit_after_ads: number | null; roas: number | null; profit_complete: boolean } | null;
   accountId: number | null;
   liveListingsTotal: number | null;
@@ -59,8 +60,8 @@ export async function getSellerReport(days: number, requestedAccount: number | n
   const timeQuery = new URLSearchParams({days:String(days)});
   if (accountId !== null) timeQuery.set("account_id",String(accountId));
   const profileAccount = accountId ?? (accounts?.length===1 ? accounts[0].account_id : null);
-  // Seller count is read live; the stored 3000-item sample is not the full catalog.
-  const [timelineData,profile,liveCounts] = await Promise.all([
+  // Live totals help compare the current seller catalog with persisted snapshots.
+  const [timelineData,profile,liveCounts,orderStatus,scopedListings] = await Promise.all([
     optional<{data: TimelinePoint[]}>("/api/v1/analytics/timeline",timeQuery),
     profileAccount===null ? Promise.resolve(null) : optional<SellerProfile>(
       "/api/v1/connectors/mercado-livre/profile",
@@ -69,6 +70,10 @@ export async function getSellerReport(days: number, requestedAccount: number | n
       .map(a=>optional<{paging?:{total?:number}}>(
         "/api/v1/connectors/mercado-livre/items",
         new URLSearchParams({account_id:String(a.account_id),limit:"1",offset:"0"}),30000))),
+    optional<{total_orders:number;by_status:Record<string,number>}>("/api/v1/analytics/order-status",timeQuery),
+    accountId === null ? Promise.resolve(listings) :
+      optional<SellerReport["listing"]>("/api/v1/analytics/ads-performance",
+        new URLSearchParams({account_id:String(accountId)})),
   ]);
   const liveListingsTotal = liveCounts.length && liveCounts.every(
     response=>typeof response?.paging?.total==="number" && Number.isSafeInteger(response.paging.total) && response.paging.total>=0
@@ -90,8 +95,9 @@ export async function getSellerReport(days: number, requestedAccount: number | n
     products,
     costs: Array.isArray(costs) ? costs : [],
     timeline: Array.isArray(timelineData?.data) ? timelineData.data : [],
-    listing: listings || null,
+    listing: scopedListings || null,
     cancellations: cancellations || null,
+    orderStatus: orderStatus || null,
     ads: ads || null,
     accountId, liveListingsTotal, days, failedSources,
   };

@@ -205,8 +205,15 @@ function ProductTable({
   onEdit: (id: string) => void;
   onInspect?: (row: ProductRow) => void;
 }) {
+  const [page, setPage] = useState(0);
+  useEffect(() => setPage(0), [rows.length]);
+  const pageSize = 100;
+  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+  const visiblePage = Math.min(page, totalPages - 1);
+  const visibleRows = rows.slice(visiblePage * pageSize, (visiblePage + 1) * pageSize);
   return (
-    <div className="table-wrap">
+    <div>
+      <div className="table-wrap">
       <table>
         <thead>
           <tr>
@@ -221,7 +228,7 @@ function ProductTable({
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => (
+          {visibleRows.map((row) => (
             <tr key={row.id}>
               <td>
                 {/^ML[A-Z]{1,2}\d{5,20}$/.test(row.id)
@@ -254,6 +261,14 @@ function ProductTable({
           ))}
         </tbody>
       </table>
+      </div>
+      {rows.length > pageSize && <div className="fh-inline-actions" style={{marginTop:12}}>
+        <button type="button" className="fh-control" disabled={visiblePage === 0}
+          onClick={() => setPage(visiblePage - 1)}>Anterior</button>
+        <span>Página {visiblePage + 1} de {totalPages} · {number(rows.length)} produtos</span>
+        <button type="button" className="fh-control" disabled={visiblePage + 1 >= totalPages}
+          onClick={() => setPage(visiblePage + 1)}>Próximos 100</button>
+      </div>}
     </div>
   );
 }

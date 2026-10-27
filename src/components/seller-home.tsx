@@ -51,7 +51,6 @@ export default function SellerHome({report}:{report:SellerReport}){
   const margin=profit!==null&&ads?.attributed_revenue&&ads.attributed_revenue>0?profit/ads.attributed_revenue*100:null;
   const countOrders=totalOrders??(orders.length?orders.length:null);
   const avgTicket=revenue!==null&&countOrders&&countOrders>0?revenue/countOrders:null;
-  const activeListings=accountId===null?report.listing?.active_listings??null:products.length?products.length:null;
   const canceled=timeline.length?timeline.reduce((a,p)=>a+p.cancelled_orders,0):null;
   const categories=new Map<string,number>();
   for(const p of products) categories.set(p.category||"Sem categoria",(categories.get(p.category||"Sem categoria")||0)+1);
@@ -63,9 +62,9 @@ export default function SellerHome({report}:{report:SellerReport}){
   const pendingSync = accounts.filter(a => !sources.some(s => s.account_key === `ml:${a.account_id}` && Boolean(s.last_synced_at)));
   const topProducts=[...products].sort((a,b)=>(b.sales_30d??-1)-(a.sales_30d??-1)).slice(0,8);
   const costIndex=new Map(costs.map(c=>[c.external_id,c]));
-  const ordersByStatus=new Map<string,number>();
-  for(const o of orders) ordersByStatus.set(o.status,(ordersByStatus.get(o.status)||0)+1);
-  const statusItems=[...ordersByStatus.entries()].map(([name,value],i)=>({name,value,color:["#20c58b","#488bfa","#ffbd46","#f2737a","#9878f6"][i%5]}));
+  const statusItems=Object.entries(report.orderStatus?.by_status||{}).map(([name,value],i)=>({
+    name,value,color:["#20c58b","#488bfa","#ffbd46","#f2737a","#9878f6"][i%5]
+  }));
   const orderedTimeline=[...timeline].sort((a,b)=>a.date.localeCompare(b.date));
   const revenueSeries=orderedTimeline.map(p=>p.gross_non_cancelled);
   const orderSeries=orderedTimeline.map(p=>p.orders);
@@ -76,7 +75,16 @@ export default function SellerHome({report}:{report:SellerReport}){
     {pendingSync.length>0&&<section className="fh-notice" aria-label="Primeira sincronização">
       <strong>Conta conectada: importando dados oficiais do Mercado Livre.</strong>
       <p>O primeiro carregamento pode levar mais tempo. As telas serão atualizadas quando a sincronização terminar.</p>
-      <div className="fh-inline-actions">{pendingSync.map(a=><SyncAction key={a.account_id} accountId={a.account_id} auto/>)}</div>
+    </section>}
+    {hasData&&<section className="fh-card" aria-label="Sincronização completa do Mercado Livre">
+      <div className="fh-card-head"><div><h2>Sincronização de todos os dados</h2>
+        <p>O trabalho continua no servidor. Acompanhe anúncios, pedidos, tentativas e conclusão por conta.</p>
+      </div></div>
+      <div className="fh-inline-actions">
+        {accounts.filter(a=>accountId===null||a.account_id===accountId).map(a=>
+          <SyncAction key={a.account_id} accountId={a.account_id} auto/>
+        )}
+      </div>
     </section>}
     {!hasData&&<div className="fh-notice"><strong>Nenhuma conta Mercado Livre conectada.</strong> Consulte o status da conta salva no backend em <Link href="/integracoes" style={{color:"#237af4",fontWeight:750}}>Mercado Livre</Link>. O Client ID e o Client Secret não substituem tokens de vendedor. O painel não usa valores fictícios.</div>}
     {report.failedSources.length>0&&<div className="fh-notice error" role="status">Algumas consultas não responderam: {report.failedSources.join(", ")}. Verifique se o FastAPI está online e autenticado.</div>}
@@ -128,14 +136,12 @@ export default function SellerHome({report}:{report:SellerReport}){
         <div className="fh-card-head"><div><h2>Conta Mercado Livre</h2><p>Integração e sincronização</p></div></div>
         <div className="fh-info-row"><span>Conta</span><strong>{account?.nickname || accounts[0]?.nickname || "Sem conta vinculada"}</strong></div>
         <div className="fh-info-row"><span>Contas conectadas</span><strong>{accounts.length}</strong></div>
-        <div className="fh-info-row"><span>Anúncios ativos na amostra salva</span><strong>{number(activeListings)}</strong></div>
+        <div className="fh-info-row"><span>Anúncios armazenados no banco</span><strong>{number(accountId===null?report.listing?.total_listings??null:products.length)}</strong></div>
         <div className="fh-info-row"><span>Última sincronização</span><strong>{lastSync?new Date(lastSync).toLocaleString("pt-BR"):"Ainda não sincronizada"}</strong></div>
         <div className="fh-info-row"><span>Reputação</span><strong>{reputation?.level_id||"Não informada pela API"}</strong></div>
         <div className="fh-info-row"><span>Nível MercadoLíder</span><strong>{reputation?.power_seller_status||"Não informado"}</strong></div>
         <div className="fh-info-row"><span>Rentabilidade Ads</span><strong>{ads?.profit_complete?"Calculada":"Dados incompletos"}</strong></div>
         <div className="fh-inline-actions" style={{marginTop:14}}>
-          {accounts.length===1&&accountId===null&&<SyncAction accountId={accounts[0].account_id}/>}
-          {accountId&&<SyncAction accountId={accountId}/>}
           <Link href="/integracoes" className="fh-info-action">Ver dados do Mercado Livre <ArrowRight size={15}/></Link>
         </div>
       </div>
@@ -157,7 +163,7 @@ export default function SellerHome({report}:{report:SellerReport}){
         {topProducts.map(p=>{const c=costIndex.get(p.external_id);return <tr key={p.external_id}><td className="fh-table-name"><strong>{p.title}</strong><small>{p.external_id} · {p.category}</small></td><td>{money(p.promotional_price)}</td><td>{money(c?.unit_cost??null)}</td><td>{number(p.sales_30d)}</td><td>{number(p.stock_qty)}</td><td>{c?.manufacturer||p.brand||"—"}</td></tr>})}
         {!topProducts.length&&<tr><td colSpan={6} style={{padding:30,textAlign:"center"}}>Nenhum produto sincronizado. Conecte sua conta e sincronize para começar.</td></tr>}
       </tbody></table></div>
-      <p style={{fontSize:11,color:"#98a3b6",marginBottom:0}}>Informações parciais: o backend sincroniza páginas de anúncios e pedidos. Margens e lucros dependem de custos e relatórios reais de Ads.</p>
+      <p style={{fontSize:11,color:"#98a3b6",marginBottom:0}}>A sincronização em segundo plano atualiza os dados armazenados. Margens e lucros dependem de custos e relatórios reais de Ads.</p>
     </Box>
   </ModernShell>;
 }
