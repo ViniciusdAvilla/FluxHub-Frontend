@@ -172,7 +172,7 @@ export default function SyncAction({ accountId }: {
         </div>}
         {job.phase === "listings" && total !== null && total !== undefined &&
           <p>{number(job.listings_saved)} de {number(total)} anúncios existentes na API.</p>}
-        {job.phase === "listings" && total !== null && total > 0 &&
+        {job.phase === "listings" && typeof total === "number" && total > 0 &&
           job.listings_saved >= total && job.orders_saved === 0 && <p>
           Os anúncios já estão armazenados. Pedidos e faturamento ainda
           precisam ser importados. Você pode priorizá-los sem apagar o catálogo.
