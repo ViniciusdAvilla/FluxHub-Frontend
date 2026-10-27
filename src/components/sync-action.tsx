@@ -25,7 +25,10 @@ const isRetryableStatus = (status: number) =>
   status === 429 || status === 500 || status === 502 || status === 503 || status === 504;
 
 async function fetchSyncPage(payload: SyncPayload, signal: AbortSignal): Promise<SyncResult> {
-  for (let attempt = 0; attempt < 4; attempt += 1) {
+  // A listing scan is stateful: retrying the same cursor can skip a page.
+  // The caller restarts the whole scan on failure, relying on database upserts.
+  const maxAttempts = payload.phase === "listings" ? 1 : 4;
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     try {
       const response = await fetch("/api/platform/sync", {
         method: "POST",
@@ -36,13 +39,13 @@ async function fetchSyncPage(payload: SyncPayload, signal: AbortSignal): Promise
       });
       const data = await response.json() as SyncResult;
       if (response.ok) return data;
-      if (!isRetryableStatus(response.status) || attempt === 3)
+      if (!isRetryableStatus(response.status) || attempt === maxAttempts - 1)
         throw new Error(data.error || "Falha na sincronização.");
     } catch (error) {
       if (signal.aborted) throw error;
       // A page may have been committed before a connection was interrupted.
       // Upserts on the backend make retransmission safe.
-      if (attempt === 3 || (error instanceof Error && error.message !== "Failed to fetch" && error.message !== "fetch failed"))
+      if (attempt === maxAttempts - 1 || (error instanceof Error && error.message !== "Failed to fetch" && error.message !== "fetch failed"))
         throw error;
     }
     // Gradual retry on overload without flooding Mercado Livre.
@@ -84,11 +87,26 @@ export default function SyncAction({
       // Scan/scroll has no artificial item-count ceiling. Its cursor expires
       // after five minutes, so consume pages continuously while the tab is open.
       let scrollId: string | undefined;
+      let scanRestarts = 0;
       while (true) {
-        const data = await fetchSyncPage(
-          { accountId, phase: "listings", ...(scrollId ? { scrollId } : {}) },
-          controller.signal,
-        );
+        let data: SyncResult;
+        try {
+          data = await fetchSyncPage(
+            { accountId, phase: "listings", ...(scrollId ? { scrollId } : {}) },
+            controller.signal,
+          );
+        } catch (error) {
+          if (controller.signal.aborted || scanRestarts >= 2) throw error;
+          scanRestarts += 1;
+          // If a scan page failed after the marketplace advanced its cursor,
+          // the only safe recovery is to restart from page one. Previously
+          // committed records will be updated (upsert), not duplicated.
+          scrollId = undefined;
+          listings = 0;
+          setMessage("Recuperando sincronização de anúncios (tentativa " + scanRestarts + " de 2)...");
+          await new Promise<void>((resolve) => setTimeout(resolve, 1200 * scanRestarts));
+          continue;
+        }
         listings += data.listings ?? 0;
         pages += 1;
         setMessage("Sincronizando anúncios... " + listings + " importados em " + pages + " lotes.");
