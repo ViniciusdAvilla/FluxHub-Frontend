@@ -1,4 +1,4 @@
-import { backendMutation } from "@/lib/backend-transport";
+import { BackendHttpError, backendMutation } from "@/lib/backend-transport";
 import { isTrustedRequestOrigin } from "@/lib/request-security";
 
 export const runtime = "nodejs";
@@ -49,8 +49,15 @@ export async function POST(request: Request) {
     );
     return Response.json(result, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
+    const rateLimited = error instanceof BackendHttpError && error.status === 429;
+    const retryAfter = rateLimited && error.retryAfter && /^\d{1,4}$/.test(error.retryAfter)
+      ? error.retryAfter : null;
     return Response.json({
-      error: error instanceof Error ? error.message : "Sincronização indisponível.",
-    }, { status: 502 });
+      error: rateLimited ? "O Mercado Livre limitou temporariamente as consultas. Aguarde e retome a sincronização."
+        : error instanceof Error ? error.message : "Sincronização indisponível.",
+    }, {
+      status: rateLimited ? 429 : 502,
+      headers: retryAfter ? { "Retry-After": retryAfter, "Cache-Control": "no-store" } : { "Cache-Control": "no-store" },
+    });
   }
 }
