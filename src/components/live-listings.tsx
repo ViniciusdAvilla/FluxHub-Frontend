@@ -82,7 +82,7 @@ export default function LiveListings({ accounts }: { accounts: AccountOption[] }
     <div className="fh-card-head">
       <div>
         <h2>Todos os anúncios · consulta ao vivo</h2>
-        <p>Inclui os anúncios que não ficam salvos no PostgreSQL. Consulta de 50 por página.</p>
+        <p>Consulta oficial ao vivo em páginas de 50; a sincronização em segundo plano também salva todos os anúncios no PostgreSQL.</p>
       </div>
       <label style={{ display: "grid", gap: 5, fontSize: 12 }}>
         Conta Mercado Livre
