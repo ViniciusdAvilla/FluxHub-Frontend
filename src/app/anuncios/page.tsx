@@ -22,7 +22,7 @@ export default async function ListingsPage(){
     <strong>Contas Mercado Livre conectadas:</strong> atualizar dados oficiais de anúncios e pedidos.
     <div className="fh-inline-actions" style={{marginTop:10}}>
       {r.accounts.map(a=><SyncAction key={a.account_id} accountId={a.account_id}
-        auto={!r.sources.some(s=>s.account_key===`ml:${a.account_id}`&&Boolean(s.last_synced_at))}/>)}
+        auto/>)}
     </div>
   </div>}
   <div className="fh-notice">O total de anúncios vem da API ao vivo. Os indicadores de status, estoque e fabricantes são recalculados com os registros persistidos; acompanhe o andamento da importação acima.</div>
