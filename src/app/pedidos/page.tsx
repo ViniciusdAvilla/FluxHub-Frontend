@@ -18,7 +18,7 @@ export default async function OrdersPage({
 }) {
   const query = await searchParams;
   const report = await getSellerReport(validDays(query.days), validAccount(query.account));
-  const { accounts, accountId, days, sources } = report;
+  const { accounts, accountId, days } = report;
   const offset = typeof query.offset === "string" && /^\d{1,8}$/.test(query.offset)
     ? Math.min(10_000_000, Number(query.offset)) : 0;
   const orderQuery = new URLSearchParams({ days: String(days), limit: "100", offset: String(offset) });
@@ -35,9 +35,6 @@ export default async function OrdersPage({
   const statusItems = Object.entries(report.orderStatus?.by_status || {})
     .map(([name, value], i) => ({ name, value,
       color: ["#347dff", "#23a9ef", "#81bdf7", "#adcff6"][i % 4] }));
-  const pendingSync = accounts.filter(account =>
-    !sources.some(source => source.account_key === `ml:${account.account_id}` && Boolean(source.last_synced_at))
-  );
   const pageLink = (nextOffset: number) => {
     const params = new URLSearchParams({ days: String(days), offset: String(nextOffset) });
     if (accountId !== null) params.set("account", String(accountId));
@@ -66,8 +63,7 @@ export default async function OrdersPage({
       <strong>Sincronização de anúncios e pedidos por conta.</strong>
       <div className="fh-inline-actions" style={{marginTop:10}}>
         {accounts.filter(a => accountId === null || a.account_id === accountId).map(account =>
-          <SyncAction key={account.account_id} accountId={account.account_id}
-            auto={pendingSync.some(p=>p.account_id===account.account_id)}/>)}
+          <SyncAction key={account.account_id} accountId={account.account_id} auto/>)}
       </div>
     </div>}
     {report.failedSources.length > 0 && <div className="fh-notice error">
