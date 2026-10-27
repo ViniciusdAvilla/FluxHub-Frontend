@@ -52,6 +52,15 @@ export type BackendSchema = {
 
 export type Snapshot = {
   products: Product[];
+  sales?: {
+    days: number;
+    total_orders: number;
+    paid_order_count: number;
+    gross_paid_order_amount: number | null;
+    data_complete: boolean;
+    partial_data: boolean;
+    note: string;
+  } | null;
   finance: Finance[];
   schema: BackendSchema;
   updatedAt: string | null;
