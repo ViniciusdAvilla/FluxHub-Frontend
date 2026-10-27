@@ -1644,3 +1644,7 @@ html, body { background: #f6f8fe; color: #1d3058; }
   .fh-buyer-order{flex-wrap:wrap}
   .fh-buyer-order .fh-control{width:100%;justify-content:center}
 }
+
+.fh-profit-paste{margin-bottom:18px}
+.fh-profit-paste summary{cursor:pointer;font-weight:750;color:#315779}
+.fh-profit-paste textarea{display:block;width:100%;min-height:88px;border:1px solid #d6e1ee;border-radius:10px;padding:12px;background:#fcfdff;color:#294462;font:inherit;margin-bottom:10px;resize:vertical}

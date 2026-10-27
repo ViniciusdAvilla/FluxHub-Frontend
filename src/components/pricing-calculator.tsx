@@ -72,6 +72,7 @@ export default function PricingCalculator({
   const [credit, setCredit] = useState(0);
   const [ir, setIr] = useState(34);
   const [target, setTarget] = useState(10);
+  const [pasted, setPasted] = useState("");
   const qty = seed.quantity || 1;
 
   useEffect(() => {
@@ -146,6 +147,27 @@ export default function PricingCalculator({
     return { fees, taxes, received, productCost, preIr, incomeTax, net, margin, recommended };
   }, [sale, fee, feePct, freight, reimburse, cost, qty, icms, difal, credit, otherCost, ir, target, knownCost]);
 
+  function applyPastedSale() {
+    const extract = (key: RegExp) => pasted.match(key)?.[1]?.trim() || "";
+    const readMoney = (raw: string) => {
+      if (!raw) return null;
+      const number = Number(raw.replace(/[R$\s]/g, "").replace(/\./g, "").replace(",", "."));
+      return Number.isFinite(number) ? number : null;
+    };
+    const saleText = extract(/(?:preço de venda|valor da venda|total da venda|valor pago)\s*[:=]\s*(?:R\$\s*)?([\d.,]+)/i);
+    const freightText = extract(/(?:frete|custo do envio)\s*[:=]\s*(?:R\$\s*)?([\d.,]+)/i);
+    const reimburseText = extract(/(?:estorno|reembolso ao vendedor)\s*[:=]\s*(?:R\$\s*)?([\d.,]+)/i);
+    const nextSale = readMoney(saleText);
+    const nextFreight = readMoney(freightText);
+    const nextReimburse = readMoney(reimburseText);
+    if (nextSale !== null) setSale(nextSale);
+    if (nextFreight !== null) setFreight(nextFreight);
+    if (nextReimburse !== null) setReimburse(nextReimburse);
+    setNotice(nextSale !== null || nextFreight !== null || nextReimburse !== null
+      ? "Dados reconhecidos foram preenchidos. Confira antes de calcular."
+      : "Nenhum valor identificado. Use linhas como Valor da venda: R$ 199,90.");
+  }
+
   async function reprice() {
     if (sale <= 0 || qty <= 0) return;
     setRefreshingFee(true); setNotice("");
@@ -218,6 +240,15 @@ export default function PricingCalculator({
           </div>
         </section>
         {notice && <div className="fh-notice" role="status">{notice}</div>}
+        <details className="fh-profit-card fh-profit-paste">
+          <summary>Colar dados do Mercado Livre (opcional)</summary>
+          <p className="fh-profit-hint">A integração preenche a venda automaticamente.
+            Se tiver um resumo copiado, cole abaixo para conferir os valores.</p>
+          <textarea rows={4} aria-label="Dados da venda copiados do Mercado Livre"
+            placeholder={"Valor da venda: R$ 199,90\nFrete: R$ 12,00\nEstorno: R$ 0,00"}
+            value={pasted} onChange={event => setPasted(event.target.value)}/>
+          <button className="fh-control" type="button" onClick={applyPastedSale}>Interpretar dados</button>
+        </details>
         <div className="fh-profit-columns">
           <div className="fh-profit-stack">
             <section className="fh-profit-card">
