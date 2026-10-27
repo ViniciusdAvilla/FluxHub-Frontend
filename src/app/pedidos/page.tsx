@@ -20,7 +20,8 @@ export default async function OrdersPage() {
     }));
   return <ModernShell title="Pedidos" eyebrow="Mercado Livre"
     isAdmin={Boolean(report.user?.is_admin)}>
-    <OrderExplorer mode="orders"/>
+    <OrderExplorer mode="orders" accounts={report.accounts.map(
+      account => ({account_id: account.account_id, nickname: account.nickname}))}/>
     <div className="fh-insight-grid" style={{marginTop:18}}>
       <section className="fh-card">
         <div className="fh-card-head"><h2>Valor dos pedidos por dia</h2></div>

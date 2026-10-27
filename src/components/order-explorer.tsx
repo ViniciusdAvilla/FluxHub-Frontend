@@ -61,12 +61,17 @@ const statusTabs = [
   { code: "payment_in_process", label: "Processando" },
 ];
 
-export default function OrderExplorer({ mode }: { mode: Mode }) {
+export default function OrderExplorer({
+  mode, accounts = [],
+}: { mode: Mode; accounts?: {account_id: number; nickname: string | null}[] }) {
   const [page, setPage] = useState<Page | null>(null);
   const [status, setStatus] = useState("");
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const [days, setDays] = useState("30");
+  const [accountId, setAccountId] = useState("");
+  const [minAmount, setMinAmount] = useState("");
+  const [maxAmount, setMaxAmount] = useState("");
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -81,11 +86,14 @@ export default function OrderExplorer({ mode }: { mode: Mode }) {
     const timer = setTimeout(() => setDebounced(search.trim()), 350);
     return () => clearTimeout(timer);
   }, [search]);
-  useEffect(() => { setOffset(0); }, [status, days, debounced]);
+  useEffect(() => { setOffset(0); }, [status, days, debounced, accountId, minAmount, maxAmount]);
   useEffect(() => {
     const controller = new AbortController();
     const q = new URLSearchParams({ action: "orders", days, status,
       search: debounced, offset: String(offset) });
+    if (accountId) q.set("accountId", accountId);
+    if (minAmount) q.set("min_amount", minAmount);
+    if (maxAmount) q.set("max_amount", maxAmount);
     setLoading(true); setError("");
     fetch("/api/platform/orders?" + q, {
       cache: "no-store", signal: controller.signal,
@@ -101,7 +109,7 @@ export default function OrderExplorer({ mode }: { mode: Mode }) {
         }
       }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [days, status, debounced, offset]);
+  }, [days, status, debounced, offset, accountId, minAmount, maxAmount]);
 
   const openBuyer = useCallback(async (order: Order) => {
     const requestNumber = ++buyerRequest.current;
@@ -170,7 +178,25 @@ export default function OrderExplorer({ mode }: { mode: Mode }) {
             <option value="all">Todo o histórico salvo</option>
           </select>
         </label>
+        {accounts.length > 1 && <label className="fh-orders-period">
+          <select aria-label="Conta do Mercado Livre" value={accountId}
+            onChange={event => setAccountId(event.target.value)}>
+            <option value="">Todas as contas</option>
+            {accounts.map(account => <option key={account.account_id}
+              value={String(account.account_id)}>{account.nickname || account.account_id}</option>)}
+          </select>
+        </label>}
       </div>
+      <details className="fh-orders-advanced"><summary>Filtros avançados de valor</summary>
+        <div>
+          <label>Venda mínima (R$)<input type="number" min="0" step="0.01"
+            value={minAmount} onChange={e => setMinAmount(e.target.value)}/></label>
+          <label>Venda máxima (R$)<input type="number" min="0" step="0.01"
+            value={maxAmount} onChange={e => setMaxAmount(e.target.value)}/></label>
+          <button className="fh-control" type="button"
+            onClick={() => { setMinAmount(""); setMaxAmount(""); }}>Limpar valores</button>
+        </div>
+      </details>
       <div className="fh-orders-status-tabs" aria-label="Filtrar por status">
         {statusTabs.map(tab => <button type="button" key={tab.code}
           className={tab.code === status ? "is-active" : ""}

@@ -20,7 +20,8 @@ export default async function SalesPage() {
   }
   return <ModernShell title="Vendas" eyebrow="Pedidos e receita"
     isAdmin={Boolean(report.user?.is_admin)}>
-    <OrderExplorer mode="sales"/>
+    <OrderExplorer mode="sales" accounts={report.accounts.map(
+      account => ({account_id: account.account_id, nickname: account.nickname}))}/>
     <div className="fh-hero-grid" style={{marginTop:18}}>
       <section className="fh-card">
         <div className="fh-card-head"><h2>Histórico sincronizado</h2></div>

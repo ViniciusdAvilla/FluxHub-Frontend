@@ -39,6 +39,15 @@ export async function GET(request: Request) {
         target.set("days", days);
       if (params.get("status")) target.set("status", params.get("status")!.slice(0, 40));
       if (params.get("search")) target.set("search", params.get("search")!.slice(0, 100));
+      for (const field of ["min_amount", "max_amount"]) {
+        const raw = params.get(field);
+        if (raw !== null && raw !== "") {
+          const value = Number(raw);
+          if (!Number.isFinite(value) || value < 0 || value > 1000000000)
+            return respond({ error: "Faixa de valor inválida." }, 422);
+          target.set(field, String(value));
+        }
+      }
       return respond(await backendRequest("/api/v1/orders/paged", target, 25000));
     }
     if (action === "buyers") {
