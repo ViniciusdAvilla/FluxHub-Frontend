@@ -58,7 +58,6 @@ import {
   abcRevenue, costCoverage, groupedInsights, pricingGaps,
   stockDistribution, topReplenishment,
 } from "@/lib/insight-series";
-import SyncAction from "./sync-action";
 import FinanceCategoryChart from "./finance-category-chart";
 import RaioXPanel from "./raio-x-panel";
 
@@ -490,7 +489,7 @@ function DataExplorer({
   );
 }
 
-export default function PlatformPage({ initial, view, syncAccounts = [], isAdmin = false }: { initial: Snapshot; view: View; syncAccounts?: { accountId: number; auto: boolean }[]; isAdmin?: boolean }) {
+export default function PlatformPage({ initial, view, isAdmin = false }: { initial: Snapshot; view: View; syncAccounts?: { accountId: number; auto: boolean }[]; isAdmin?: boolean }) {
   const [snapshot, setSnapshot] = useState(initial);
   useEffect(() => { setSnapshot(initial); }, [initial]);
   const [busy, setBusy] = useState(false);
@@ -566,12 +565,6 @@ export default function PlatformPage({ initial, view, syncAccounts = [], isAdmin
             {snapshot.updatedAt && <span><CircleCheck size={14}/> Consulta em {new Date(snapshot.updatedAt).toLocaleTimeString("pt-BR", {hour:"2-digit",minute:"2-digit"})}</span>}
           </div>
 
-          {syncAccounts.length > 0 && <div className="notice">
-            <strong>Mercado Livre conectado.</strong> Consulte anúncios, pedidos e estoque atualizados.
-            <div className="fh-inline-actions" style={{ marginTop: 10 }}>
-              {syncAccounts.map(account => <SyncAction key={account.accountId} accountId={account.accountId} auto={account.auto}/>)}
-            </div>
-          </div>}
           {(snapshot.error || notice) && <div className={`notice ${snapshot.error ? "warning" : "good"}`} role="status">{snapshot.error || notice}</div>}
 
           {!(["orders", "data"] as View[]).includes(view) && (
