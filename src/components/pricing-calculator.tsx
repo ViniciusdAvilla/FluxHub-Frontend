@@ -29,11 +29,12 @@ type Quote = {
     other_cost: number; marketplace_fee_percent: number | null;
   } | null;
 };
+// Referência do arquivo fornecido pelo usuário; ajuste fiscal sujeito à validação contábil.
 const states: Record<string, number> = {
-  AC: 12, AL: 11, AM: 12, AP: 12, BA: 13, CE: 13, DF: 13,
-  ES: 10, GO: 12, MA: 13, MG: 11, MS: 10, MT: 10, PA: 12,
-  PB: 13, PE: 13, PI: 13, PR: 12, RJ: 13, RN: 13, RO: 12,
-  RR: 12, RS: 12, SC: 10, SE: 13, SP: 11, TO: 12,
+  AC: 12, AL: 12, AM: 13, AP: 11, BA: 13.5, CE: 13, DF: 13,
+  ES: 10, GO: 12, MA: 15, MG: 6, MS: 10, MT: 10, PA: 12,
+  PB: 13, PE: 13.5, PI: 15.5, PR: 7.5, RJ: 6, RN: 11, RO: 12.5,
+  RR: 13, RS: 5, SC: 5, SE: 12, SP: 0, TO: 13,
 };
 const brazilian = new Intl.NumberFormat("pt-BR", {
   style: "currency", currency: "BRL",
@@ -67,8 +68,8 @@ export default function PricingCalculator({
   const [otherCost, setOtherCost] = useState(seed.other_cost ?? 0);
   const [reimburse, setReimburse] = useState(0);
   const [icms, setIcms] = useState(seed.tax_percent ?? 7);
-  const [destination, setDestination] = useState("PR");
-  const [difal, setDifal] = useState(states.PR);
+  const [destination, setDestination] = useState("");
+  const [difal, setDifal] = useState(0);
   const [credit, setCredit] = useState(0);
   const [ir, setIr] = useState(34);
   const [target, setTarget] = useState(10);
@@ -280,7 +281,7 @@ export default function PricingCalculator({
                 <label className="fh-profit-field"><span>UF de destino</span>
                   <select value={destination} onChange={(e) => {
                     setDestination(e.target.value); setDifal(states[e.target.value] ?? 0);
-                  }}>{Object.keys(states).sort().map(uf=><option value={uf} key={uf}>{uf}</option>)}</select>
+                  }}><option value="">Selecione a UF</option>{Object.keys(states).sort().map(uf=><option value={uf} key={uf}>{uf}</option>)}</select>
                 </label>
                 {numberInput("DIFAL (configurável)", difal, setDifal, "%")}
                 {numberInput("Crédito de ICMS na compra", credit, setCredit)}
