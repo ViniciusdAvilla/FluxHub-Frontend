@@ -8,6 +8,8 @@ type SyncPhase = "listings" | "orders";
 type SyncResult = {
   error?: string;
   listings?: number;
+  saved_listings?: number;
+  storage_limit?: number;
   orders?: number;
   next_scroll_id?: string | null;
   next_orders_offset?: number | null;
@@ -78,6 +80,7 @@ export default function SyncAction({
     setMessage("Consultando anúncios e pedidos do Mercado Livre...");
 
     let listings = 0;
+    let savedListings = 0;
     let orders = 0;
     let pages = 0;
     let complete = false;
@@ -103,13 +106,16 @@ export default function SyncAction({
           // committed records will be updated (upsert), not duplicated.
           scrollId = undefined;
           listings = 0;
+          savedListings = 0;
           setMessage("Recuperando sincronização de anúncios (tentativa " + scanRestarts + " de 2)...");
           await new Promise<void>((resolve) => setTimeout(resolve, 1200 * scanRestarts));
           continue;
         }
         listings += data.listings ?? 0;
+        savedListings += data.saved_listings ?? data.listings ?? 0;
         pages += 1;
-        setMessage("Sincronizando anúncios... " + listings + " importados em " + pages + " lotes.");
+        setMessage("Consultando anúncios... " + listings + " encontrados; " +
+          savedListings + " salvos/atualizados (limite de 3.000 no banco por conta).");
         if (firstPageOnly || data.next_scroll_id == null) break;
         if (typeof data.next_scroll_id !== "string" || data.next_scroll_id.length === 0)
           throw new Error("O Mercado Livre retornou um cursor inválido.");
@@ -126,7 +132,7 @@ export default function SyncAction({
         );
         orders += data.orders ?? 0;
         pages += 1;
-        setMessage("Sincronizando pedidos... " + listings + " anúncios e " + orders + " pedidos.");
+        setMessage("Sincronizando pedidos... " + listings + " anúncios consultados e " + orders + " pedidos.");
         if (data.orders_unavailable) {
           ordersUnavailable = true;
           break;
@@ -140,14 +146,14 @@ export default function SyncAction({
 
       complete = !firstPageOnly && !ordersUnavailable;
       setMessage(
-        listings + " anúncios e " + orders + " pedidos sincronizados em " + pages + " lotes." +
+        listings + " anúncios consultados (" + savedListings + " salvos/atualizados), e " + orders + " pedidos sincronizados em " + pages + " lotes." +
         (ordersUnavailable ? " Pedidos temporariamente indisponíveis: tente novamente." :
           firstPageOnly ? " Primeiras páginas importadas; use Atualizar dados para concluir." : " Sincronização concluída."),
       );
     } catch (error) {
       const cancelled = controller.signal.aborted;
       setMessage(
-        (pages ? "Sincronização parcial: " + listings + " anúncios e " + orders + " pedidos. " : "") +
+        (pages ? "Sincronização parcial: " + listings + " anúncios consultados, " + savedListings + " salvos/atualizados e " + orders + " pedidos. " : "") +
         (cancelled ? "Cancelada; o que já foi salvo permanece no banco." :
           error instanceof Error ? error.message : "Erro de sincronização."),
       );
