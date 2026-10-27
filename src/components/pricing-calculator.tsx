@@ -57,6 +57,7 @@ export default function PricingCalculator({
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
   const [saving, setSaving] = useState(false);
+  const [refreshingFee, setRefreshingFee] = useState(false);
   const [sale, setSale] = useState(seed.unit_price * (seed.quantity || 1));
   const [fee, setFee] = useState(seed.sale_fee ?? 0);
   const [feePct, setFeePct] = useState(0);
@@ -145,6 +146,27 @@ export default function PricingCalculator({
     return { fees, taxes, received, productCost, preIr, incomeTax, net, margin, recommended };
   }, [sale, fee, feePct, freight, reimburse, cost, qty, icms, difal, credit, otherCost, ir, target, knownCost]);
 
+  async function reprice() {
+    if (sale <= 0 || qty <= 0) return;
+    setRefreshingFee(true); setNotice("");
+    const q = new URLSearchParams({
+      itemId: seed.item_id, accountId: String(accountId),
+      price: String(sale / qty),
+    });
+    try {
+      const response = await fetch("/api/platform/pricing?" + q, { cache: "no-store" });
+      const data = await response.json() as Quote & { error?: string };
+      if (!response.ok || typeof data.fee_quote !== "number")
+        throw new Error(data.error || "Cotação não disponível para este valor.");
+      setQuote(data);
+      setFee(data.fee_quote * qty);
+      setFeePct(data.fee_quote / (sale / qty) * 100);
+      setNotice("Comissão atualizada conforme cotação do Mercado Livre para o preço informado.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Não foi possível recotar.");
+    } finally { setRefreshingFee(false); }
+  }
+
   async function saveCost() {
     setSaving(true); setNotice("");
     try {
@@ -207,6 +229,10 @@ export default function PricingCalculator({
                 {numberInput("Estornos e reembolsos ao vendedor", reimburse, setReimburse)}
                 {numberInput("Taxa equivalente para simulações", feePct, setFeePct, "%")}
               </div>
+              <button className="fh-control" type="button" disabled={refreshingFee}
+                onClick={() => void reprice()}>
+                {refreshingFee ? "Consultando tarifa..." : "Atualizar tarifa para este preço"}
+              </button>
               <p className="fh-profit-hint">
                 {seed.sale_fee !== null && seed.sale_fee !== undefined
                   ? "Comissão recebida no item do pedido pela API."
