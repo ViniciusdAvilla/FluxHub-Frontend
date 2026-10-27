@@ -82,6 +82,8 @@ export default function OrderExplorer({
   const [buyerError, setBuyerError] = useState("");
   const [buyer, setBuyer] = useState<BuyerDetail | null>(null);
   const buyerRequest = useRef(0);
+  const [refreshingItemOrder, setRefreshingItemOrder] = useState<string | null>(null);
+  const [itemRepairError, setItemRepairError] = useState<{ key: string; error: string } | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebounced(search.trim()), 350);
@@ -128,6 +130,39 @@ export default function OrderExplorer({
     } finally { if (buyerRequest.current === requestNumber) setBuyerLoading(false); }
   }, []);
   const closeBuyer = () => { buyerRequest.current++; setBuyer(null); setBuyerOrder(null); setBuyerError(""); };
+  const repairItems = useCallback(async (order: Order) => {
+    const key = order.seller_id + ":" + order.external_id;
+    setRefreshingItemOrder(key);
+    setItemRepairError(null);
+    try {
+      const response = await fetch("/api/platform/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "refresh-items",
+          accountId: order.seller_id,
+          orderId: order.external_id,
+        }),
+        cache: "no-store",
+      });
+      const data: Order & { error?: string } = await response.json();
+      if (!response.ok) throw new Error(data.error || "Não foi possível buscar os itens.");
+      setPage(previous => previous ? {
+        ...previous,
+        orders: previous.orders.map(saved =>
+          saved.seller_id === order.seller_id && saved.external_id === order.external_id
+            ? data : saved),
+      } : previous);
+    } catch (reason) {
+      setItemRepairError({
+        key,
+        error: reason instanceof Error ? reason.message : "Falha ao consultar os itens.",
+      });
+    } finally {
+      setRefreshingItemOrder(null);
+    }
+  }, []);
+
 
   function chooseProduct(item: OrderItem, order: Order) {
     setSelected({ account: order.seller_id, seed: {
@@ -229,9 +264,17 @@ export default function OrderExplorer({
             <span className="fh-orders-image-fallback">—</span>
             <span className="fh-orders-title">
               <strong>Detalhes dos produtos ainda não importados</strong>
-              <small>O pedido está no banco, mas seus itens precisam de uma atualização.
-                {" "}<Link href="/integracoes">Atualizar pedidos e faturamento</Link>
+              <small>O pedido está salvo, mas falta o detalhe dos produtos.
+                {" "}<Link href="/integracoes">Sincronizar pedidos</Link>
               </small>
+              <button type="button" className="fh-control"
+                disabled={refreshingItemOrder === order.seller_id + ":" + order.external_id}
+                onClick={() => void repairItems(order)}>
+                {refreshingItemOrder === order.seller_id + ":" + order.external_id
+                  ? "Buscando itens..." : "Buscar itens deste pedido"}
+              </button>
+              {itemRepairError?.key === order.seller_id + ":" + order.external_id &&
+                <small role="alert">{itemRepairError.error}</small>}
             </span>
             <strong className="fh-orders-price">—</strong>
           </div>}

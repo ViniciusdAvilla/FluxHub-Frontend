@@ -1,4 +1,5 @@
-import { BackendHttpError, backendRequest } from "@/lib/backend-transport";
+import { BackendHttpError, backendMutation, backendRequest } from "@/lib/backend-transport";
+import { isTrustedRequestOrigin } from "@/lib/request-security";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -67,5 +68,32 @@ export async function GET(request: Request) {
         new URLSearchParams({ account_id: String(accountId) }), 90000));
     }
     return respond({ error: "Consulta desconhecida." }, 422);
+  } catch (error) { return failed(error); }
+}
+
+export async function POST(request: Request) {
+  if (!request.headers.get("origin") || !isTrustedRequestOrigin(request))
+    return respond({ error: "Origem não autorizada." }, 403);
+  if (!request.headers.get("content-type")?.startsWith("application/json"))
+    return respond({ error: "Formato inválido." }, 415);
+  try {
+    const raw = await request.text();
+    if (raw.length > 1000) return respond({ error: "Requisição muito grande." }, 413);
+    const body: unknown = JSON.parse(raw);
+    if (!body || typeof body !== "object" || Array.isArray(body))
+      return respond({ error: "Parâmetros inválidos." }, 422);
+    const input = body as Record<string, unknown>;
+    if (input.action !== "refresh-items")
+      return respond({ error: "Ação inválida." }, 422);
+    const accountId = typeof input.accountId === "number" && Number.isSafeInteger(input.accountId)
+      ? validId(String(input.accountId)) : null;
+    const orderId = typeof input.orderId === "string" && /^\d{1,18}$/.test(input.orderId)
+      ? input.orderId : null;
+    if (!accountId || !orderId) return respond({ error: "Pedido ou conta inválida." }, 422);
+    return respond(await backendMutation(
+      "/api/v1/orders/" + orderId + "/refresh-items",
+      "POST", undefined, 30000,
+      new URLSearchParams({ account_id: String(accountId) }),
+    ));
   } catch (error) { return failed(error); }
 }
