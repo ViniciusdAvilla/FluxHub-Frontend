@@ -122,12 +122,13 @@ export default function SellerHome({report}:{report:SellerReport}){
         <Stat color="green" icon={BadgeDollarSign} title="Lucro após Ads" value={money(profit)} help="Somente com custos e Ads completos"/>
         <Stat color="purple" icon={Percent} title="Margem estimada" value={percent(margin)} help="Sobre receita atribuída aos anúncios"/>
         <Stat color="green" icon={Tag} title="Ticket médio" value={money(avgTicket)} help="Receita bruta ÷ pedidos registrados"/>
-        <Stat color="purple" icon={Boxes} title="Anúncios ativos" value={number(activeListings)} help="Últimos anúncios sincronizados"/>
+        <Stat color="purple" icon={Boxes} title="Anúncios no Mercado Livre" value={number(report.liveListingsTotal)} help="Total consultado ao vivo"/>
       </div>
       <div className="fh-card fh-overview-account">
         <div className="fh-card-head"><div><h2>Conta Mercado Livre</h2><p>Integração e sincronização</p></div></div>
         <div className="fh-info-row"><span>Conta</span><strong>{account?.nickname || accounts[0]?.nickname || "Sem conta vinculada"}</strong></div>
         <div className="fh-info-row"><span>Contas conectadas</span><strong>{accounts.length}</strong></div>
+        <div className="fh-info-row"><span>Anúncios ativos na amostra salva</span><strong>{number(activeListings)}</strong></div>
         <div className="fh-info-row"><span>Última sincronização</span><strong>{lastSync?new Date(lastSync).toLocaleString("pt-BR"):"Ainda não sincronizada"}</strong></div>
         <div className="fh-info-row"><span>Reputação</span><strong>{reputation?.level_id||"Não informada pela API"}</strong></div>
         <div className="fh-info-row"><span>Nível MercadoLíder</span><strong>{reputation?.power_seller_status||"Não informado"}</strong></div>
