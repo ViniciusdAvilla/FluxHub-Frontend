@@ -82,8 +82,7 @@ export default function SellerHome({report}:{report:SellerReport}){
       </div></div>
       <div className="fh-inline-actions">
         {accounts.filter(a=>accountId===null||a.account_id===accountId).map(a=>
-          <SyncAction key={a.account_id} accountId={a.account_id}
-            auto={pendingSync.some(p=>p.account_id===a.account_id)}/>
+          <SyncAction key={a.account_id} accountId={a.account_id} auto/>
         )}
       </div>
     </section>}
