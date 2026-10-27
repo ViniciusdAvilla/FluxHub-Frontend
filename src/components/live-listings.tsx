@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { money, number } from "@/lib/analytics";
+import PricingCalculator, { type PricingSeed } from "./pricing-calculator";
 
 type LiveItem = {
   id: string;
@@ -10,6 +11,7 @@ type LiveItem = {
   status: string;
   price: number | null;
   stock: number | null;
+  thumbnail?: string | null;
 };
 type LivePage = {
   items: LiveItem[];
@@ -17,6 +19,14 @@ type LivePage = {
   total: number | null;
 };
 type AccountOption = { account_id: number; nickname: string | null };
+const trustedPhoto = (src: string | null | undefined) => {
+  if (!src) return false;
+  try {
+    const url = new URL(src);
+    return url.protocol === "https:" &&
+      (url.hostname === "mlstatic.com" || url.hostname.endsWith(".mlstatic.com"));
+  } catch { return false; }
+};
 
 async function loadPage(accountId: number, cursor?: string, signal?: AbortSignal): Promise<LivePage> {
   const query = new URLSearchParams({ accountId: String(accountId) });
@@ -36,6 +46,7 @@ export default function LiveListings({ accounts }: { accounts: AccountOption[] }
   const [pageIndex, setPageIndex] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [selectedPrice, setSelectedPrice] = useState<PricingSeed | null>(null);
 
   useEffect(() => {
     if (!accountId) return;
@@ -102,10 +113,20 @@ export default function LiveListings({ accounts }: { accounts: AccountOption[] }
       <tbody>
         {(current?.items || []).map((item) => <tr key={item.id}>
           <td className="fh-table-name">
+            <button type="button" className="fh-orders-product-button"
+              onClick={() => setSelectedPrice({
+                item_id: item.id, title: item.title || item.id,
+                thumbnail: item.thumbnail, unit_price: item.price ?? 0,
+              })}>
+              {trustedPhoto(item.thumbnail) ?
+                <img src={item.thumbnail} width={58} height={58} alt=""/> :
+                <span className="fh-orders-image-fallback">Sem foto</span>}
+              <span className="fh-orders-title"><strong>{item.title || item.id}</strong>
+                <small>Precificar e calcular lucro</small></span>
+            </button>
             <Link href={`/produtos/${encodeURIComponent(item.id)}?account=${accountId}`}>
-              <strong>{item.title || item.id}</strong>
+              <small>Ver ficha · {item.id}</small>
             </Link>
-            <small>{item.id}</small>
           </td>
           <td>{item.status}</td><td>{money(item.price)}</td><td>{number(item.stock)}</td>
         </tr>)}
@@ -126,5 +147,7 @@ export default function LiveListings({ accounts }: { accounts: AccountOption[] }
       As páginas são mantidas somente na memória desta tela. O cursor da API expira
       em aproximadamente cinco minutos; reabra a conta para iniciar nova consulta.
     </p>
+    {selectedPrice && <PricingCalculator seed={selectedPrice} accountId={accountId}
+      onClose={() => setSelectedPrice(null)}/>}
   </section>;
 }
