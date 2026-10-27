@@ -119,7 +119,7 @@ export default function LiveListings({ accounts }: { accounts: AccountOption[] }
                 thumbnail: item.thumbnail, unit_price: item.price ?? 0,
               })}>
               {trustedPhoto(item.thumbnail) ?
-                <img src={item.thumbnail} width={58} height={58} alt=""/> :
+                <img src={item.thumbnail!} width={58} height={58} alt=""/> :
                 <span className="fh-orders-image-fallback">Sem foto</span>}
               <span className="fh-orders-title"><strong>{item.title || item.id}</strong>
                 <small>Precificar e calcular lucro</small></span>
