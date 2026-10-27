@@ -22,6 +22,7 @@ export type SellerReport = {
   cancellations: { total_orders: number; cancelled_orders: number; cancellation_rate_percent: number | null } | null;
   ads: { has_ads_data: boolean; attributed_revenue: number | null; ad_spend: number | null; net_profit_after_ads: number | null; roas: number | null; profit_complete: boolean } | null;
   accountId: number | null;
+  liveListingsTotal: number | null;
   days: number;
   failedSources: string[];
 };
@@ -58,12 +59,20 @@ export async function getSellerReport(days: number, requestedAccount: number | n
   const timeQuery = new URLSearchParams({days:String(days)});
   if (accountId !== null) timeQuery.set("account_id",String(accountId));
   const profileAccount = accountId ?? (accounts?.length===1 ? accounts[0].account_id : null);
-  const [timelineData,profile] = await Promise.all([
+  // Seller count is read live; the stored 3000-item sample is not the full catalog.
+  const [timelineData,profile,liveCounts] = await Promise.all([
     optional<{data: TimelinePoint[]}>("/api/v1/analytics/timeline",timeQuery),
     profileAccount===null ? Promise.resolve(null) : optional<SellerProfile>(
       "/api/v1/connectors/mercado-livre/profile",
       new URLSearchParams({account_id:String(profileAccount)}), 60000),
+    Promise.all((accounts || []).filter(a=>accountId===null || a.account_id===accountId)
+      .map(a=>optional<{paging?:{total?:number}}>(
+        "/api/v1/connectors/mercado-livre/items",
+        new URLSearchParams({account_id:String(a.account_id),limit:"1",offset:"0"}),30000))),
   ]);
+  const liveListingsTotal = liveCounts.length && liveCounts.every(
+    response=>typeof response?.paging?.total==="number" && Number.isSafeInteger(response.paging.total) && response.paging.total>=0
+  ) ? liveCounts.reduce((sum,response)=>sum+(response?.paging?.total ?? 0),0) : null;
   const products = Array.isArray(allProducts) ? allProducts.filter(p=>accountId === null || p.source_key === `ml:${accountId}`) : [];
   const records = Array.isArray(orders) ? orders.filter(o=>accountId === null || o.seller_id === accountId) : [];
   const failedSources = [
@@ -84,6 +93,6 @@ export async function getSellerReport(days: number, requestedAccount: number | n
     listing: listings || null,
     cancellations: cancellations || null,
     ads: ads || null,
-    accountId, days, failedSources,
+    accountId, liveListingsTotal, days, failedSources,
   };
 }
