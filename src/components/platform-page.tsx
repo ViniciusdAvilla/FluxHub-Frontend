@@ -59,7 +59,7 @@ import {
   stockDistribution, topReplenishment,
 } from "@/lib/insight-series";
 import FinanceCategoryChart from "./finance-category-chart";
-import RaioXPanel from "./raio-x-panel";
+const RaioXPanel = dynamic(() => import("./raio-x-panel"));
 
 const FinanceDialog = dynamic(() => import("./finance-dialog"), { ssr: false });
 const PricingCalculator = dynamic(() => import("./pricing-calculator"), { ssr: false });

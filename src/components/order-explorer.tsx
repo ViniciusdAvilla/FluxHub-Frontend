@@ -1,10 +1,14 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { CalendarDays, ChevronLeft, ChevronRight, ClipboardList, Search,
   ShieldCheck, SlidersHorizontal, Wallet, X } from "lucide-react";
-import PricingCalculator, { type PricingSeed } from "./pricing-calculator";
+import type { PricingSeed } from "./pricing-calculator";
+import { orderStatusLabel } from "@/lib/order-status";
+
+const PricingCalculator = dynamic(() => import("./pricing-calculator"), { ssr: false });
 
 type OrderItem = {
   item_id: string; title: string; sku: string | null; quantity: number;
@@ -28,15 +32,6 @@ type BuyerDetail = {
 };
 type Mode = "sales" | "orders";
 const currency = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
-const labels: Record<string, string> = {
-  paid: "Pago", cancelled: "Cancelado", confirmed: "Confirmado",
-  payment_required: "Aguardando pagamento",
-  payment_in_process: "Pagamento em processamento",
-  partially_paid: "Parcialmente pago", refunded: "Reembolsado",
-  invalid: "Inválido",
-};
-const prettyStatus = (value: string) =>
-  labels[value] || (value ? "Outro: " + value.replaceAll("_", " ") : "Não informado");
 const photoAllowed = (url: string | null) => {
   if (!url) return false;
   try {
@@ -257,7 +252,7 @@ export default function OrderExplorer({
             <button type="button" onClick={() => { setStatus(order.status); setOffset(0); }}
               className={"fh-orders-pill " + (order.status === "paid" ? "success" :
                 order.status === "cancelled" ? "danger" : "neutral")}>
-              {prettyStatus(order.status)}
+              {orderStatusLabel(order.status)}
             </button>
           </div>
           {order.items.length === 0 && <div className="fh-orders-product">
