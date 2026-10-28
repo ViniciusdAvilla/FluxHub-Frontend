@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 test("pedidos e vendas não carregam o catálogo completo para exibir gráficos", () => {
   const seller = readFileSync("src/lib/seller-data.ts", "utf8");
   const overview = seller.split("export async function getOrdersOverview")[1]
-    ?.split("export async function getSellerReport")[0] ?? "";
+    ?.split("export type ListingsOverview")[0] ?? "";
   assert.ok(overview.includes("/api/v1/analytics/timeline"));
   assert.ok(overview.includes("/api/v1/analytics/order-status"));
   assert.ok(!overview.includes("/api/v1/products/"));
