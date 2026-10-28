@@ -51,6 +51,53 @@ export function validAccount(value: unknown): number | null {
 export async function sellerIdentity(): Promise<SellerIdentity | null> {
   return optional<SellerIdentity>("/api/v1/auth/me");
 }
+/**
+ * Pedidos e vendas usam apenas os agregados e as contas autorizadas.
+ * Não carregamos o catálogo inteiro (11 mil+ anúncios), custos nem pedidos
+ * duplicados: o OrderExplorer já consulta sua própria página de pedidos.
+ */
+export type OrdersOverview = Pick<SellerReport, "user" | "accounts" | "timeline" | "orderStatus">;
+
+export async function getOrdersOverview(days: 7 | 30 | 90 = 30): Promise<OrdersOverview> {
+  const period = new URLSearchParams({ days: String(days) });
+  const [user, accounts, timeline, orderStatus] = await Promise.all([
+    sellerIdentity(),
+    optional<Account[]>("/api/v1/connectors/mercado-livre"),
+    optional<{ data: TimelinePoint[] }>("/api/v1/analytics/timeline", period),
+    optional<SellerReport["orderStatus"]>("/api/v1/analytics/order-status", period),
+  ]);
+
+  return {
+    user,
+    accounts: Array.isArray(accounts) ? accounts : [],
+    timeline: Array.isArray(timeline?.data) ? timeline.data : [],
+    orderStatus,
+  };
+}
+
+/**
+ * Anúncios precisam do catálogo e dos status, sem carregar pedidos,
+ * custos detalhados, cancelamentos ou indicadores financeiros.
+ */
+export type ListingsOverview = Pick<SellerReport, "user" | "accounts" | "products" | "listing" | "liveListingsTotal">;
+
+export async function getListingsOverview(): Promise<ListingsOverview> {
+  const [user, accounts, products, listing] = await Promise.all([
+    sellerIdentity(),
+    optional<Account[]>("/api/v1/connectors/mercado-livre"),
+    optional<SellerProduct[]>("/api/v1/products/", undefined, 30000),
+    optional<SellerReport["listing"]>("/api/v1/analytics/ads-performance"),
+  ]);
+
+  return {
+    user,
+    accounts: Array.isArray(accounts) ? accounts : [],
+    products: Array.isArray(products) ? products : [],
+    listing,
+    liveListingsTotal: listing?.total_listings ?? null,
+  };
+}
+
 export async function getSellerReport(days: number, requestedAccount: number | null): Promise<SellerReport> {
   const [user, accounts, allProducts, listings, orders, cancellations, ads, costs] = await Promise.all([
     sellerIdentity(),
