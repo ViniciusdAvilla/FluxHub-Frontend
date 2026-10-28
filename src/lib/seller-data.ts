@@ -8,6 +8,18 @@ export type SellerOrder = { external_id: string; seller_id: number | null; statu
 export type SellerProduct = { id: number; external_id: string; title: string; brand: string; category: string; promotional_price: number | null; stock_qty: number | null; sales_30d: number | null; rating: number | null; source_key: string | null };
 export type TimelinePoint = { date: string; orders: number; cancelled_orders: number; gross_non_cancelled: number; visits: number | null };
 export type SourceStatus = { provider: string; account_key: string; connected: boolean; enabled: boolean; display_name: string; last_synced_at: string | null };
+export type CatalogCost = Pick<SellerCost, "external_id" | "unit_cost" | "manufacturer">;
+export type CatalogMetrics = {
+  days: number;
+  account_id: number | null;
+  sales_by_item: Record<string, number>;
+  paid_orders: number;
+  enriched_paid_orders: number;
+  orders_complete: boolean;
+  costs: CatalogCost[];
+  ads_by_item: Record<string, { ad_spend: number; attributed_revenue: number }>;
+  ads_source: "imported_reports_only";
+};
 export type PaidOrdersRevenue = {
   days: number;
   paid_order_count: number;
@@ -23,7 +35,8 @@ export type SellerReport = {
   sources: SourceStatus[];
   orders: SellerOrder[];
   products: SellerProduct[];
-  costs: SellerCost[];
+  costs: CatalogCost[];
+  catalogMetrics: CatalogMetrics | null;
   timeline: TimelinePoint[];
   listing: { total_listings: number; active_listings: number; by_status: Record<string,number> } | null;
   cancellations: { total_orders: number; cancelled_orders: number; cancellation_rate_percent: number | null } | null;
@@ -99,7 +112,7 @@ export async function getListingsOverview(): Promise<ListingsOverview> {
 }
 
 export async function getSellerReport(days: number, requestedAccount: number | null): Promise<SellerReport> {
-  const [user, accounts, allProducts, listings, orders, cancellations, ads, costs] = await Promise.all([
+  const [user, accounts, allProducts, listings, orders, cancellations, ads] = await Promise.all([
     sellerIdentity(),
     optional<Account[]>("/api/v1/connectors/mercado-livre"),
     optional<SellerProduct[]>("/api/v1/products/", undefined, 30000),
@@ -107,7 +120,6 @@ export async function getSellerReport(days: number, requestedAccount: number | n
     optional<SellerOrder[]>("/api/v1/orders/", new URLSearchParams({limit:"100",offset:"0"})),
     optional<SellerReport["cancellations"]>("/api/v1/analytics/cancellations",new URLSearchParams({days:String(days)})),
     optional<SellerReport["ads"]>("/api/v1/analytics/ads-profitability",new URLSearchParams({days:String(days)})),
-    optional<SellerCost[]>("/api/v1/analytics/product-costs",new URLSearchParams({limit:"1000"})),
   ]);
   const authorizedIds = new Set((accounts || []).map(a=>a.account_id));
   const accountId = requestedAccount !== null && authorizedIds.has(requestedAccount) ? requestedAccount : null;
@@ -115,13 +127,14 @@ export async function getSellerReport(days: number, requestedAccount: number | n
   if (accountId !== null) timeQuery.set("account_id",String(accountId));
   // The overview reads persisted snapshots only. Live marketplace requests
   // belong to Integrações and must not block the main dashboard.
-  const [timelineData, orderStatus, scopedListings, paidRevenue] = await Promise.all([
+  const [timelineData, orderStatus, scopedListings, paidRevenue, catalogMetrics] = await Promise.all([
     optional<{data: TimelinePoint[]}>("/api/v1/analytics/timeline",timeQuery),
     optional<{total_orders:number;by_status:Record<string,number>}>("/api/v1/analytics/order-status",timeQuery),
     accountId === null ? Promise.resolve(listings) :
       optional<SellerReport["listing"]>("/api/v1/analytics/ads-performance",
         new URLSearchParams({account_id:String(accountId)})),
     optional<PaidOrdersRevenue>("/api/v1/sales/",timeQuery),
+    optional<CatalogMetrics>("/api/v1/analytics/catalog-metrics",new URLSearchParams({days:"30",...(accountId===null?{}:{account_id:String(accountId)})})),
   ]);
   const liveListingsTotal = (scopedListings ?? listings)?.total_listings ?? null;
   const products = Array.isArray(allProducts) ? allProducts.filter(p=>accountId === null || p.source_key === `ml:${accountId}`) : [];
@@ -132,6 +145,7 @@ export async function getSellerReport(days: number, requestedAccount: number | n
     ...(!Array.isArray(orders) ? ["Pedidos"] : []),
     ...(!timelineData ? ["Histórico"] : []),
     ...(!paidRevenue ? ["Faturamento"] : []),
+    ...(!catalogMetrics ? ["Vendas por produto"] : []),
   ];
   return {
     user,
@@ -140,7 +154,8 @@ export async function getSellerReport(days: number, requestedAccount: number | n
     sources: [],
     orders: records,
     products,
-    costs: Array.isArray(costs) ? costs : [],
+    costs: Array.isArray(catalogMetrics?.costs) ? catalogMetrics.costs : [],
+    catalogMetrics: catalogMetrics || null,
     timeline: Array.isArray(timelineData?.data) ? timelineData.data : [],
     listing: scopedListings || null,
     cancellations: cancellations || null,

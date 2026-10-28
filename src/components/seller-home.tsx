@@ -53,7 +53,13 @@ export default function SellerHome({report}:{report:SellerReport}){
   const categories=new Map<string,number>();
   for(const p of products) categories.set(p.category||"Sem categoria",(categories.get(p.category||"Sem categoria")||0)+1);
   const sortedCategories=[...categories.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5);
-  const topProducts=[...products].sort((a,b)=>(b.sales_30d??-1)-(a.sales_30d??-1)).slice(0,8);
+  const catalogMetrics=report.catalogMetrics;
+  const salesByItem=catalogMetrics?.sales_by_item??{};
+  const adsByItem=catalogMetrics?.ads_by_item??{};
+  const ordersComplete=Boolean(catalogMetrics?.orders_complete);
+  const topProducts=[...products].sort((a,b)=>
+    (salesByItem[b.external_id]??-1)-(salesByItem[a.external_id]??-1)
+  ).slice(0,8);
   const costIndex=new Map(costs.map(c=>[c.external_id,c]));
   const statusItems=Object.entries(report.orderStatus?.by_status||{}).map(([name,value],i)=>({
     name,value,color:["#20c58b","#488bfa","#ffbd46","#f2737a","#9878f6"][i%5]
@@ -121,12 +127,32 @@ export default function SellerHome({report}:{report:SellerReport}){
       <div className="fh-alert green"><span>Gasto em publicidade</span><strong>{accountId===null?money(ads?.ad_spend??null):"—"}</strong></div>
       <div className="fh-alert"><span>Produtos cadastrados</span><strong>{number(products.length)}</strong></div>
     </div>
-    <Box title={products.some(p=>p.sales_30d!==null)?"Produtos por vendas informadas":"Produtos do catálogo"} subtitle="Dados persistidos no PostgreSQL e custos cadastrados" href="/produtos">
-      <div className="fh-table-wrap"><table className="fh-table"><thead><tr><th>Produto</th><th>Preço</th><th>Custo</th><th>Vendas (30 dias)</th><th>Estoque</th><th>Fabricante</th></tr></thead><tbody>
-        {topProducts.map(p=>{const c=costIndex.get(p.external_id);return <tr key={p.external_id}><td className="fh-table-name"><strong>{p.title}</strong><small>{p.external_id} · {p.category}</small></td><td>{money(p.promotional_price)}</td><td>{money(c?.unit_cost??null)}</td><td>{number(p.sales_30d)}</td><td>{number(p.stock_qty)}</td><td>{c?.manufacturer||p.brand||"—"}</td></tr>})}
-        {!topProducts.length&&<tr><td colSpan={6} style={{padding:30,textAlign:"center"}}>Nenhum produto disponível no catálogo.</td></tr>}
+    <Box title={Object.keys(salesByItem).length?"Produtos mais vendidos":"Produtos do catálogo"} subtitle="Vendas de pedidos pagos, custos cadastrados e Ads reportados" href="/produtos">
+      <div className="fh-table-wrap"><table className="fh-table"><thead><tr><th>Produto</th><th>Preço</th><th>Custo de compra</th><th>Unid. vendidas (30 dias)</th><th>Ads (30 dias)</th><th>Estoque</th><th>Fabricante</th></tr></thead><tbody>
+        {topProducts.map(p=>{
+          const c=costIndex.get(p.external_id);
+          const units=salesByItem[p.external_id];
+          const ad=adsByItem[p.external_id];
+          return <tr key={p.external_id}>
+            <td className="fh-table-name"><strong>{p.title}</strong><small>{p.external_id} · {p.category}</small></td>
+            <td>{money(p.promotional_price)}</td>
+            <td>{c?.unit_cost===undefined?<Link href="/produtos" style={{color:"#2563eb",fontWeight:600}}>Cadastrar custo</Link>:money(c.unit_cost)}</td>
+            <td title={!ordersComplete?"Dados parciais: a importação de pedidos ou de seus itens ainda está em andamento.":undefined}>{units!==undefined?`${number(units)}${ordersComplete?"":" *"}`:ordersComplete?"0":"Em apuração"}</td>
+            <td title={ad?"Gasto publicitário presente em relatório importado.":"Sem relatório Product Ads importado para este anúncio."}>{ad?money(ad.ad_spend):"Sem relatório"}</td>
+            <td>{number(p.stock_qty)}</td>
+            <td>{c?.manufacturer||p.brand||"Não informado"}</td>
+          </tr>;
+        })}
+        {!topProducts.length&&<tr><td colSpan={7} style={{padding:30,textAlign:"center"}}>Nenhum produto disponível no catálogo.</td></tr>}
       </tbody></table></div>
-      <p style={{fontSize:11,color:"#98a3b6",marginBottom:0}}>A sincronização em segundo plano atualiza os dados armazenados. Margens e lucros dependem de custos e relatórios reais de Ads.</p>
+      <p style={{fontSize:11,color:"#66758b",marginBottom:0}}>
+        {catalogMetrics?(ordersComplete?
+          "Vendas calculadas pelos itens dos pedidos pagos sincronizados.":
+          `* Dados parciais: ${number(catalogMetrics.enriched_paid_orders)} de ${number(catalogMetrics.paid_orders)} pedidos pagos têm itens detalhados; a sincronização precisa concluir.`
+        ):"Não foi possível consultar o detalhamento de vendas; tente novamente após atualizar o backend."}
+        {" "}O custo de compra precisa ser cadastrado; o gasto Ads só aparece quando há relatórios reais importados.{" "}
+        <Link href="/integracoes" style={{color:"#2563eb",fontWeight:600}}>Consultar integrações</Link>.
+      </p>
     </Box>
   </ModernShell>;
 }
