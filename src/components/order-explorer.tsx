@@ -171,6 +171,10 @@ export default function OrderExplorer({
       sku: item.sku, order_id: order.external_id, order_date: order.created_at,
     } });
   }
+  const setOrderSort = (column: "date" | "amount" | "status") => {
+    if (sortBy === column) setSortDir(current => current === "asc" ? "desc" : "asc");
+    else { setSortBy(column); setSortDir("desc"); }
+  };
   const count = (key: string) => page?.status_counts[key] || 0;
   const allCount = Object.values(page?.status_counts || {}).reduce((sum, n) => sum + n, 0);
   return <>
@@ -260,6 +264,7 @@ export default function OrderExplorer({
         </button>
       </div>
       {error && <div className="fh-notice error" role="alert">{error}</div>}
+      {itemRepairError && <div className="fh-notice error" role="alert">{itemRepairError.error}</div>}
       {loading && <p role="status" className="fh-orders-loading">Consultando pedidos sincronizados...</p>}
       {!loading && !error && page?.orders.length === 0 &&
         <div className="fh-orders-empty">Nenhum pedido armazenado neste período. Ajuste os filtros ou <Link href="/integracoes">atualize pedidos e faturamento</Link>.</div>}
@@ -325,9 +330,18 @@ export default function OrderExplorer({
           <thead><tr>
             <th>Produto vendido</th>
             <th>Qtd.</th>
-            <th>Valor bruto</th>
-            <th>Status</th>
-            <th>Data</th>
+            <th aria-sort={sortBy === "amount" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
+              <button type="button" className={"fh-smart-column " + (sortBy === "amount" ? "is-active" : "")}
+                onClick={() => setOrderSort("amount")}>Valor bruto<span aria-hidden="true">{sortBy === "amount" ? (sortDir === "asc" ? " ↑" : " ↓") : " ↕"}</span></button>
+            </th>
+            <th aria-sort={sortBy === "status" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
+              <button type="button" className={"fh-smart-column " + (sortBy === "status" ? "is-active" : "")}
+                onClick={() => setOrderSort("status")}>Status<span aria-hidden="true">{sortBy === "status" ? (sortDir === "asc" ? " ↑" : " ↓") : " ↕"}</span></button>
+            </th>
+            <th aria-sort={sortBy === "date" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
+              <button type="button" className={"fh-smart-column " + (sortBy === "date" ? "is-active" : "")}
+                onClick={() => setOrderSort("date")}>Data<span aria-hidden="true">{sortBy === "date" ? (sortDir === "asc" ? " ↑" : " ↓") : " ↕"}</span></button>
+            </th>
             <th>Ações</th>
           </tr></thead>
           <tbody>{page.orders.flatMap(order => order.items.length
