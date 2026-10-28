@@ -68,6 +68,8 @@ export default function OrderExplorer({
   const [accountId, setAccountId] = useState("");
   const [minAmount, setMinAmount] = useState("");
   const [maxAmount, setMaxAmount] = useState("");
+  const [sortBy, setSortBy] = useState<"date" | "amount" | "status">("date");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -84,11 +86,11 @@ export default function OrderExplorer({
     const timer = setTimeout(() => setDebounced(search.trim()), 350);
     return () => clearTimeout(timer);
   }, [search]);
-  useEffect(() => { setOffset(0); }, [status, days, debounced, accountId, minAmount, maxAmount]);
+  useEffect(() => { setOffset(0); }, [status, days, debounced, accountId, minAmount, maxAmount, sortBy, sortDir]);
   useEffect(() => {
     const controller = new AbortController();
     const q = new URLSearchParams({ action: "orders", days, status,
-      search: debounced, offset: String(offset) });
+      search: debounced, offset: String(offset), sort_by: sortBy, sort_dir: sortDir });
     if (accountId) q.set("accountId", accountId);
     if (minAmount) q.set("min_amount", minAmount);
     if (maxAmount) q.set("max_amount", maxAmount);
@@ -107,7 +109,7 @@ export default function OrderExplorer({
         }
       }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [days, status, debounced, offset, accountId, minAmount, maxAmount]);
+  }, [days, status, debounced, offset, accountId, minAmount, maxAmount, sortBy, sortDir]);
 
   const openBuyer = useCallback(async (order: Order) => {
     const requestNumber = ++buyerRequest.current;
@@ -169,6 +171,10 @@ export default function OrderExplorer({
       sku: item.sku, order_id: order.external_id, order_date: order.created_at,
     } });
   }
+  const setOrderSort = (column: "date" | "amount" | "status") => {
+    if (sortBy === column) setSortDir(current => current === "asc" ? "desc" : "asc");
+    else { setSortBy(column); setSortDir("desc"); }
+  };
   const count = (key: string) => page?.status_counts[key] || 0;
   const allCount = Object.values(page?.status_counts || {}).reduce((sum, n) => sum + n, 0);
   return <>
@@ -218,6 +224,23 @@ export default function OrderExplorer({
           </select>
         </label>}
       </div>
+      <div className="fh-smart-order-toolbar">
+        <span><SlidersHorizontal size={15} aria-hidden="true"/> Ordenar resultados</span>
+        <label>Coluna
+          <select value={sortBy} aria-label="Ordenar pedidos por"
+            onChange={event => setSortBy(event.target.value as "date" | "amount" | "status")}>
+            <option value="date">Data da compra</option>
+            <option value="amount">Valor da venda</option>
+            <option value="status">Situação do pedido</option>
+          </select>
+        </label>
+        <button type="button" className="fh-smart-order-dir"
+          aria-label={sortDir === "desc" ? "Ordenar crescente" : "Ordenar decrescente"}
+          onClick={() => setSortDir(dir => dir === "asc" ? "desc" : "asc")}>
+          {sortDir === "desc" ? "↓ Maior primeiro" : "↑ Menor primeiro"}
+        </button>
+        <span className="fh-smart-order-hint">Ordenação aplicada a todos os pedidos do período.</span>
+      </div>
       <details className="fh-orders-advanced"><summary>Filtros avançados de valor</summary>
         <div>
           <label>Venda mínima (R$)<input type="number" min="0" step="0.01"
@@ -241,10 +264,11 @@ export default function OrderExplorer({
         </button>
       </div>
       {error && <div className="fh-notice error" role="alert">{error}</div>}
+      {itemRepairError && <div className="fh-notice error" role="alert">{itemRepairError.error}</div>}
       {loading && <p role="status" className="fh-orders-loading">Consultando pedidos sincronizados...</p>}
       {!loading && !error && page?.orders.length === 0 &&
         <div className="fh-orders-empty">Nenhum pedido armazenado neste período. Ajuste os filtros ou <Link href="/integracoes">atualize pedidos e faturamento</Link>.</div>}
-      <div className="fh-orders-list">
+      <div className={mode === "sales" ? "fh-orders-list fh-orders-cards-mobile" : "fh-orders-list"}>
         {(page?.orders || []).map(order => <article className="fh-orders-card"
           key={order.seller_id + "-" + order.external_id}>
           <div className="fh-orders-card-top">
@@ -301,6 +325,59 @@ export default function OrderExplorer({
           </div>
         </article>)}
       </div>
+      {mode === "sales" && !!page?.orders.length && <div className="fh-smart-sales-table table-wrap">
+        <table>
+          <thead><tr>
+            <th>Produto vendido</th>
+            <th>Qtd.</th>
+            <th aria-sort={sortBy === "amount" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
+              <button type="button" className={"fh-smart-column " + (sortBy === "amount" ? "is-active" : "")}
+                onClick={() => setOrderSort("amount")}>Valor bruto<span aria-hidden="true">{sortBy === "amount" ? (sortDir === "asc" ? " ↑" : " ↓") : " ↕"}</span></button>
+            </th>
+            <th aria-sort={sortBy === "status" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
+              <button type="button" className={"fh-smart-column " + (sortBy === "status" ? "is-active" : "")}
+                onClick={() => setOrderSort("status")}>Status<span aria-hidden="true">{sortBy === "status" ? (sortDir === "asc" ? " ↑" : " ↓") : " ↕"}</span></button>
+            </th>
+            <th aria-sort={sortBy === "date" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
+              <button type="button" className={"fh-smart-column " + (sortBy === "date" ? "is-active" : "")}
+                onClick={() => setOrderSort("date")}>Data<span aria-hidden="true">{sortBy === "date" ? (sortDir === "asc" ? " ↑" : " ↓") : " ↕"}</span></button>
+            </th>
+            <th>Ações</th>
+          </tr></thead>
+          <tbody>{page.orders.flatMap(order => order.items.length
+            ? order.items.map((item, index) => <tr key={order.seller_id + ":" + order.external_id + ":" + index}>
+              <td><button className="fh-orders-product-button" type="button"
+                disabled={!item.item_id} onClick={() => chooseProduct(item, order)}>
+                {photoAllowed(item.thumbnail) ? <img src={item.thumbnail!} alt="" width={54} height={54}/> :
+                  <span className="fh-orders-image-fallback">Sem foto</span>}
+                <span className="fh-orders-title"><strong>{item.title}</strong>
+                  <small>SKU: {item.sku || "—"}</small>
+                  <small className="fh-orders-calc-link">Ver precificação e lucro</small>
+                </span>
+              </button></td>
+              <td>{item.quantity.toLocaleString("pt-BR")}</td>
+              <td><strong>{currency.format(item.unit_price * item.quantity)}</strong></td>
+              <td><button className={"fh-orders-pill " + (order.status === "paid" ? "success" :
+                order.status === "cancelled" ? "danger" : "neutral")}
+                onClick={() => setStatus(order.status)}>{orderStatusLabel(order.status)}</button></td>
+              <td>{new Date(order.created_at).toLocaleDateString("pt-BR")}</td>
+              <td><button type="button" className="fh-control" onClick={() => void openBuyer(order)}>
+                <ShieldCheck size={14}/> Comprador
+              </button></td>
+            </tr>)
+            : [<tr key={order.seller_id + ":" + order.external_id + ":missing"}>
+              <td><span className="fh-orders-title"><strong>Produtos ainda não importados</strong>
+                <small>Pedido salvo, itens pendentes</small></span></td>
+              <td>—</td><td>{currency.format(order.total_amount)}</td>
+              <td>{orderStatusLabel(order.status)}</td>
+              <td>{new Date(order.created_at).toLocaleDateString("pt-BR")}</td>
+              <td><button className="fh-control" disabled={refreshingItemOrder === order.seller_id + ":" + order.external_id}
+                onClick={() => void repairItems(order)}>
+                {refreshingItemOrder === order.seller_id + ":" + order.external_id ? "Buscando..." : "Buscar produtos"}
+              </button></td>
+            </tr>])}</tbody>
+        </table>
+      </div>}
       <div className="fh-inline-actions fh-orders-pagination">
         <button className="fh-control" disabled={loading || offset === 0}
           onClick={() => setOffset(Math.max(0, offset - 30))}>

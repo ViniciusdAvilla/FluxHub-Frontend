@@ -40,6 +40,14 @@ export async function GET(request: Request) {
         target.set("days", days);
       if (params.get("status")) target.set("status", params.get("status")!.slice(0, 40));
       if (params.get("search")) target.set("search", params.get("search")!.slice(0, 100));
+      const sortBy = params.get("sort_by");
+      const sortDir = params.get("sort_dir");
+      if (sortBy && !["date", "amount", "status"].includes(sortBy))
+        return respond({ error: "Coluna de ordenação inválida." }, 422);
+      if (sortDir && !["asc", "desc"].includes(sortDir))
+        return respond({ error: "Direção de ordenação inválida." }, 422);
+      if (sortBy) target.set("sort_by", sortBy);
+      if (sortDir) target.set("sort_dir", sortDir);
       for (const field of ["min_amount", "max_amount"]) {
         const raw = params.get(field);
         if (raw !== null && raw !== "") {
