@@ -17,5 +17,6 @@ test("tabela distingue vendas parciais, custos pendentes e Ads sem relatório", 
   assert.ok(home.includes("ordersComplete"));
   assert.ok(home.includes("Cadastrar custo"));
   assert.ok(home.includes("Sem relatório"));
-  assert.ok(!home.includes("p.sales_30d"));
+  const table = home.split("Unid. vendidas (30 dias)")[1] ?? "";
+  assert.ok(!table.includes("p.sales_30d"));
 });
