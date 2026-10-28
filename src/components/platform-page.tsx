@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 import {
   Activity,
   BadgeDollarSign,
@@ -59,6 +60,9 @@ import {
   stockDistribution, topReplenishment,
 } from "@/lib/insight-series";
 import FinanceCategoryChart from "./finance-category-chart";
+import SmartProductFilters from "./smart-product-filters";
+import { defaultAdvancedProductFilters, filterCatalogProducts, sortCatalogProducts, purchaseUrgency } from "@/lib/product-filters";
+import type { ProductSortKey, ProductSortDirection } from "@/lib/product-filters";
 const RaioXPanel = dynamic(() => import("./raio-x-panel"));
 
 const FinanceDialog = dynamic(() => import("./finance-dialog"), { ssr: false });
@@ -196,23 +200,45 @@ function Section({
   );
 }
 
+function SortableColumn({
+  label, field, selected, direction, onSelect,
+}: {
+  label: string; field: ProductSortKey; selected: ProductSortKey;
+  direction: ProductSortDirection; onSelect: (field: ProductSortKey) => void;
+}) {
+  return <th aria-sort={selected === field ? (direction === "asc" ? "ascending" : "descending") : "none"}>
+    <button type="button" className={"fh-smart-column " + (selected === field ? "is-active" : "")}
+      onClick={() => onSelect(field)}
+      aria-label={"Ordenar " + label + (selected === field ? (direction === "asc" ? " decrescente" : " crescente") : "")}>
+      {label}<span aria-hidden="true">{selected === field ? (direction === "asc" ? " ↑" : " ↓") : " ↕"}</span>
+    </button>
+  </th>;
+}
+
 function ProductTable({
   rows,
   onEdit,
   onInspect,
   onPrice,
+  sortKey = "title",
+  sortDirection = "asc",
+  onSort,
 }: {
   rows: ProductRow[];
   onEdit: (id: string) => void;
   onInspect?: (row: ProductRow) => void;
   onPrice?: (row: ProductRow) => void;
+  sortKey?: ProductSortKey;
+  sortDirection?: ProductSortDirection;
+  onSort?: (field: ProductSortKey) => void;
 }) {
   const [page, setPage] = useState(0);
-  useEffect(() => setPage(0), [rows.length]);
+  const sortedRows = useMemo(() => onSort ? rows : sortCatalogProducts(rows, sortKey, sortDirection), [rows, sortKey, sortDirection, onSort]);
+  useEffect(() => setPage(0), [rows, sortKey, sortDirection]);
   const pageSize = 100;
   const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
   const visiblePage = Math.min(page, totalPages - 1);
-  const visibleRows = rows.slice(visiblePage * pageSize, (visiblePage + 1) * pageSize);
+  const visibleRows = sortedRows.slice(visiblePage * pageSize, (visiblePage + 1) * pageSize);
   const [photos, setPhotos] = useState<Record<string, string>>({});
   useEffect(() => {
     const mlRows = visibleRows.filter(row =>
@@ -234,20 +260,20 @@ function ProductTable({
         setPhotos(map);
       }).catch(() => {});
     return () => controller.abort();
-  }, [visiblePage, rows]);
+  }, [visiblePage, sortedRows]);
   return (
     <div>
       <div className="table-wrap">
       <table>
         <thead>
           <tr>
-            <th>Produto</th>
-            <th>Preço</th>
-            <th>Vendidos</th>
-            <th>Estoque</th>
-            <th>Receita estimada</th>
-            <th>Lucro</th>
-            <th>Margem</th>
+            <SortableColumn label="Produto" field="title" selected={sortKey} direction={sortDirection} onSelect={onSort ?? (() => {})}/>
+            <SortableColumn label="Preço" field="price" selected={sortKey} direction={sortDirection} onSelect={onSort ?? (() => {})}/>
+            <SortableColumn label="Vendidos" field="sales" selected={sortKey} direction={sortDirection} onSelect={onSort ?? (() => {})}/>
+            <SortableColumn label="Estoque" field="stock" selected={sortKey} direction={sortDirection} onSelect={onSort ?? (() => {})}/>
+            <SortableColumn label="Receita estimada" field="revenue" selected={sortKey} direction={sortDirection} onSelect={onSort ?? (() => {})}/>
+            <SortableColumn label="Lucro" field="profit" selected={sortKey} direction={sortDirection} onSelect={onSort ?? (() => {})}/>
+            <SortableColumn label="Margem" field="margin" selected={sortKey} direction={sortDirection} onSelect={onSort ?? (() => {})}/>
             <th aria-label="Ações" />
           </tr>
         </thead>
@@ -298,6 +324,34 @@ function ProductTable({
         </tbody>
       </table>
       </div>
+      <div className="fh-smart-mobile-cards" aria-label="Produtos do catálogo">
+        {visibleRows.map(row => {
+          const source = typeof row.raw?.source_key === "string" ? row.raw.source_key : "";
+          const account = /^ml:\d+$/.test(source) ? source.slice(3) : "";
+          const photo = account ? photos[account + ":" + row.id] : null;
+          return <article key={row.id} className="fh-smart-mobile-card">
+            <button type="button" className="fh-smart-mobile-title"
+              onClick={() => account ? onPrice?.(row) : onInspect?.(row)}>
+              {photo ? <img src={photo} alt="" width={60} height={60}/> :
+                <span className="fh-orders-image-fallback">Sem foto</span>}
+              <span><strong>{row.title}</strong><small>{row.id} · {row.brand}</small></span>
+            </button>
+            <div className="fh-smart-mobile-stats">
+              <div><small>Preço</small><strong>{money(row.price)}</strong></div>
+              <div><small>Vendidos</small><strong>{number(row.sales)}</strong></div>
+              <div><small>Estoque</small><strong>{number(row.stock)}</strong></div>
+              <div><small>Receita</small><strong>{money(row.revenue)}</strong></div>
+            </div>
+            <footer>
+              <Status tone={row.stockTone}>{row.stockLabel}</Status>
+              <span className={"text-" + marginTone(row.margin)}>Margem: {percent(row.margin)}</span>
+              <button type="button" className="fh-smart-edit" onClick={() => onEdit(row.id)}>
+                <Pencil size={14}/> Custos
+              </button>
+            </footer>
+          </article>;
+        })}
+      </div>
       {rows.length > pageSize && <div className="fh-inline-actions" style={{marginTop:12}}>
         <button type="button" className="fh-control" disabled={visiblePage === 0}
           onClick={() => setPage(visiblePage - 1)}>Anterior</button>
@@ -307,6 +361,81 @@ function ProductTable({
       </div>}
     </div>
   );
+}
+
+function PurchasePlanTable({ rows, coverageDays }: { rows: ProductRow[]; coverageDays: number }) {
+  const [page, setPage] = useState(0);
+  const [sortKey, setSortKey] = useState<ProductSortKey>("stockDays");
+  const [sortDirection, setSortDirection] = useState<ProductSortDirection>("asc");
+  const sorted = useMemo(() => sortCatalogProducts(rows, sortKey, sortDirection), [rows, sortKey, sortDirection]);
+  useEffect(() => setPage(0), [rows, sortKey, sortDirection]);
+  const size = 50;
+  const totalPages = Math.max(1, Math.ceil(sorted.length / size));
+  const current = Math.min(page, totalPages - 1);
+  const show = sorted.slice(current * size, (current + 1) * size);
+  const sort = (key: ProductSortKey) => {
+    if (sortKey === key) setSortDirection(previous => previous === "asc" ? "desc" : "asc");
+    else { setSortKey(key); setSortDirection(key === "title" || key === "brand" ? "asc" : "desc"); }
+  };
+  return <>
+    <div className="table-wrap">
+      <table>
+        <thead><tr>
+          <SortableColumn label="Produto" field="title" selected={sortKey} direction={sortDirection} onSelect={sort}/>
+          <SortableColumn label="Fabricante" field="brand" selected={sortKey} direction={sortDirection} onSelect={sort}/>
+          <SortableColumn label="Saldo" field="stock" selected={sortKey} direction={sortDirection} onSelect={sort}/>
+          <SortableColumn label="Vendas 30d" field="sales" selected={sortKey} direction={sortDirection} onSelect={sort}/>
+          <SortableColumn label="Cobertura" field="stockDays" selected={sortKey} direction={sortDirection} onSelect={sort}/>
+          <th>Comprar</th><th>Investimento</th><th>Prioridade</th>
+        </tr></thead>
+        <tbody>{show.map(row => {
+          const plan = replenishment(row, coverageDays);
+          const investment = plan.quantity !== null && row.finance ? plan.quantity * row.finance.unitCost : null;
+          const urgency = purchaseUrgency(row);
+          return <tr key={row.id}>
+            <td><strong>{row.title}</strong><small className="cell-sub">{row.id}</small></td>
+            <td>{row.brand !== "Sem marca" ? row.brand : "—"}</td>
+            <td>{number(row.stock)}</td><td>{number(row.sales)}</td>
+            <td>{row.stockDays === null ? "Sem dados" : Math.round(row.stockDays) + " dias"}</td>
+            <td>{plan.quantity === null ? "—" : <strong>{number(plan.quantity)}</strong>}</td>
+            <td>{money(investment)}</td>
+            <td><span className={"fh-smart-priority " + (urgency || "unknown")}>
+              {urgency === "critical" ? "Urgente" : urgency === "warning" ? "Atenção" :
+                urgency === "healthy" ? "Saudável" : "Sem dados"}
+            </span></td>
+          </tr>;
+        })}</tbody>
+      </table>
+    </div>
+    <TablePager page={current} totalPages={totalPages} totalItems={rows.length} pageSize={size}
+      onChange={setPage}/>
+  </>;
+}
+
+function TablePager({ page, totalPages, totalItems, pageSize, onChange }: {
+  page: number; totalPages: number; totalItems: number; pageSize: number; onChange: (page: number) => void;
+}) {
+  if (totalItems <= pageSize) return null;
+  return <nav className="fh-inline-actions fh-smart-pagination" aria-label="Paginação da tabela">
+    <button type="button" className="fh-control" disabled={page === 0} onClick={() => onChange(page - 1)}>Anterior</button>
+    <span>Página {page + 1} de {totalPages} · {number(totalItems)} itens</span>
+    <button type="button" className="fh-control" disabled={page + 1 >= totalPages}
+      onClick={() => onChange(page + 1)}>Próximos {pageSize}</button>
+  </nav>;
+}
+
+function PagedTableRows<T>({ items, render, pageSize = 100 }: {
+  items: T[]; render: (visible: T[]) => ReactNode; pageSize?: number;
+}) {
+  const [page, setPage] = useState(0);
+  useEffect(() => setPage(0), [items]);
+  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+  const current = Math.min(page, totalPages - 1);
+  return <>
+    {render(items.slice(current * pageSize, (current + 1) * pageSize))}
+    <TablePager page={current} totalPages={totalPages} totalItems={items.length} pageSize={pageSize}
+      onChange={setPage}/>
+  </>;
 }
 
 function Empty({ title, text }: { title: string; text: string }) {
@@ -536,6 +665,7 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
   const [category, setCategory] = useState("");
   const [manufacturer, setManufacturer] = useState("");
   const [stockTone, setStockTone] = useState("");
+  const [advanced, setAdvanced] = useState(defaultAdvancedProductFilters);
   const [editProduct, setEditProduct] = useState<string | null | undefined>(undefined);
   const [inspected, setInspected] = useState<ProductRow | null>(null);
   const [pricingItem, setPricingItem] = useState<ProductRow | null>(null);
@@ -547,11 +677,23 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
   const manufacturers = useMemo(() => [...new Set(rows.filter((row) => row.brand !== "Sem marca").map((row) => row.brand))].sort((a, b) => a.localeCompare(b, "pt-BR")), [rows]);
   const filtered = useMemo(() => {
     const term = deferredQuery.trim().toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    return rows.filter((row) => {
-      const searchable = `${row.title} ${row.id} ${row.brand} ${row.category}`.toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      return (!term || searchable.includes(term)) && (!category || row.category === category) && (!manufacturer || row.brand === manufacturer || (manufacturer === "__missing" && row.brand === "Sem marca")) && (!stockTone || row.stockTone === stockTone);
+    const matches = rows.filter(row => {
+      const searchable = (row.title + " " + row.id + " " + row.brand + " " + row.category)
+        .toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      return (!term || searchable.includes(term)) &&
+        (!category || row.category === category) &&
+        (!manufacturer || row.brand === manufacturer || (manufacturer === "__missing" && row.brand === "Sem marca")) &&
+        (!stockTone || row.stockTone === stockTone);
     });
-  }, [rows, deferredQuery, category, manufacturer, stockTone]);
+    return sortCatalogProducts(filterCatalogProducts(matches, advanced),
+      advanced.sortKey, advanced.sortDirection);
+  }, [rows, deferredQuery, category, manufacturer, stockTone, advanced]);
+  const setSort = (key: ProductSortKey) => setAdvanced(current => ({
+    ...current, sortKey: key, quick: "",
+    sortDirection: key === current.sortKey
+      ? (current.sortDirection === "asc" ? "desc" : "asc")
+      : (key === "title" || key === "brand" ? "asc" : "desc"),
+  }));
   const summary = useMemo(() => summarize(filtered), [filtered]);
   const paidRevenue = snapshot.sales?.gross_paid_order_amount ?? null;
   const paidRevenueNote = !snapshot.sales
@@ -586,7 +728,6 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
   }
 
   const current = titles[view];
-  const hasFilters = Boolean(query || category || manufacturer || stockTone);
   const orderEndpoints = snapshot.schema.endpoints.filter((endpoint) => /order|pedido|sale|venda/i.test(`${endpoint.path} ${endpoint.tag} ${endpoint.summary}`));
 
   return (
@@ -606,13 +747,15 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
           {(snapshot.error || notice) && <div className={`notice ${snapshot.error ? "warning" : "good"}`} role="status">{snapshot.error || notice}</div>}
 
           {!(["orders", "data"] as View[]).includes(view) && (
-            <div className="filterbar">
-              <label className="search-field"><Search size={17} /><input aria-label="Buscar produto, código ou fabricante" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar produto, código, fabricante ou categoria" /></label>
-              <select aria-label="Filtrar por categoria" value={category} onChange={(event) => setCategory(event.target.value)}><option value="">Todas as categorias</option>{categories.map((item) => <option key={item}>{item}</option>)}</select>
-              <select aria-label="Filtrar por fabricante" value={manufacturer} onChange={(event) => setManufacturer(event.target.value)}><option value="">Todos os fabricantes</option><option value="__missing">Sem fabricante</option>{manufacturers.map((item) => <option key={item}>{item}</option>)}</select>
-              <select aria-label="Filtrar por situação do estoque" value={stockTone} onChange={(event) => setStockTone(event.target.value)}><option value="">Todo estoque</option><option value="bad">Ruim</option><option value="warning">Atenção</option><option value="good">Bom</option></select>
-              {hasFilters && <button className="button small" onClick={() => { setQuery(""); setCategory(""); setManufacturer(""); setStockTone(""); }}><SlidersHorizontal size={15} /> Limpar</button>}
-            </div>
+            <SmartProductFilters
+              query={query} onQueryChange={setQuery}
+              category={category} onCategoryChange={setCategory}
+              manufacturer={manufacturer} onManufacturerChange={setManufacturer}
+              stockTone={stockTone} onStockToneChange={setStockTone}
+              categories={categories} manufacturers={manufacturers}
+              advanced={advanced} onAdvancedChange={setAdvanced}
+              count={filtered.length} total={rows.length}
+              purchaseMode={view === "replenishment"}/>
           )}
 
           {view === "overview" && (
@@ -635,7 +778,7 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
                 <div><Status tone="good">Bom</Status><strong>{summary.healthy}</strong><span>estoque saudável</span></div>
               </div>
               <Section title="Produtos em destaque" subtitle="Ordenados pela maior receita estimada." action={<button className="button primary" onClick={() => setEditProduct(null)}><Pencil size={15} /> Cadastrar custos</button>}>
-                {filtered.length ? <ProductTable rows={[...filtered].sort((a, b) => (b.revenue ?? -1) - (a.revenue ?? -1)).slice(0, 8)} onEdit={setEditProduct} onInspect={setInspected} onPrice={setPricingItem} /> : <Empty title="Nenhum produto encontrado" text="Ajuste os filtros para visualizar o catálogo." />}
+                {filtered.length ? <ProductTable rows={[...filtered].sort((a, b) => (b.revenue ?? -1) - (a.revenue ?? -1)).slice(0, 8)} onEdit={setEditProduct} onInspect={setInspected} onPrice={setPricingItem} sortKey={advanced.sortKey} sortDirection={advanced.sortDirection} onSort={setSort} /> : <Empty title="Nenhum produto encontrado" text="Ajuste os filtros para visualizar o catálogo." />}
               </Section>
             </>
           )}
@@ -651,7 +794,7 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
                 </Section>
               </div>
               <Section title={`${filtered.length} produtos`} subtitle="Clique no nome para abrir a ficha completa." action={<button className="button primary" onClick={() => setEditProduct(null)}><Pencil size={15} /> Cadastrar custos</button>}>
-              {filtered.length ? <ProductTable rows={filtered} onEdit={setEditProduct} onInspect={setInspected} onPrice={setPricingItem} /> : <Empty title="Nenhum produto encontrado" text="Ajuste os filtros para visualizar o catálogo." />}
+              {filtered.length ? <ProductTable rows={filtered} onEdit={setEditProduct} onInspect={setInspected} onPrice={setPricingItem} sortKey={advanced.sortKey} sortDirection={advanced.sortDirection} onSort={setSort} /> : <Empty title="Nenhum produto encontrado" text="Ajuste os filtros para visualizar o catálogo." />}
               </Section>
             </>
           )}
@@ -687,7 +830,7 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
                 </Section>
               </div>
               <Section title="Controle de estoque" subtitle="Cobertura calculada a partir das vendas informadas nos últimos 30 dias.">
-                <div className="table-wrap"><table><thead><tr><th>Produto</th><th>Saldo</th><th>Vendas 30d</th><th>Cobertura</th><th>Situação</th></tr></thead><tbody>{filtered.map((row) => <tr key={row.id}><td><strong>{row.title}</strong><small className="cell-sub">{row.id}</small></td><td>{number(row.stock)}</td><td>{number(row.sales)}</td><td>{row.stockDays === null ? "—" : `${Math.round(row.stockDays)} dias`}</td><td><Status tone={row.stockTone}>{row.stockLabel}</Status></td></tr>)}</tbody></table></div>
+                <PagedTableRows items={filtered} render={(pagedRows) => <div className="table-wrap"><table><thead><tr><th>Produto</th><th>Saldo</th><th>Vendas 30d</th><th>Cobertura</th><th>Situação</th></tr></thead><tbody>{pagedRows.map((row) => <tr key={row.id}><td><strong>{row.title}</strong><small className="cell-sub">{row.id}</small></td><td>{number(row.stock)}</td><td>{number(row.sales)}</td><td>{row.stockDays === null ? "—" : `${Math.round(row.stockDays)} dias`}</td><td><Status tone={row.stockTone}>{row.stockLabel}</Status></td></tr>)}</tbody></table></div>}/>
               </Section>
             </>
           )}
@@ -712,7 +855,7 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
                 <FinanceCategoryChart rows={filtered} />
               </Section>
               <Section title="Resultado por produto" subtitle="Vermelho = prejuízo, amarelo = margem abaixo de 15%, verde = margem a partir de 15%." action={<button className="button primary" onClick={() => setEditProduct(null)}><Pencil size={15} /> Cadastrar custos</button>}>
-                <ProductTable rows={[...filtered].sort((a, b) => (a.margin ?? Infinity) - (b.margin ?? Infinity))} onEdit={setEditProduct} onInspect={setInspected} onPrice={setPricingItem} />
+                <ProductTable rows={filtered} onEdit={setEditProduct} onInspect={setInspected} onPrice={setPricingItem} sortKey={advanced.sortKey} sortDirection={advanced.sortDirection} onSort={setSort} />
               </Section>
             </>
           )}
@@ -751,7 +894,7 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
                 </Section>
               </div>
               <Section title="Simulador de preço" subtitle="Considera custo, comissão, imposto, frete e outras despesas cadastradas.">
-                <div className="table-wrap"><table><thead><tr><th>Produto</th><th>Preço atual</th><th>Margem atual</th><th>Preço para meta</th><th>Diferença</th><th>Situação</th></tr></thead><tbody>{filtered.map((row) => { const target = idealPrice(row.finance, desiredMargin); const diff = target !== null && row.price !== null ? target - row.price : null; const projection = projectedAtPrice(row.finance, row.price); return <tr key={row.id}><td><strong>{row.title}</strong><small className="cell-sub">{row.brand !== "Sem marca" ? row.brand : "Sem fabricante"}</small></td><td>{money(row.price)}</td><td className={`text-${marginTone(projection.margin)}`}>{percent(projection.margin)}</td><td><strong>{money(target)}</strong></td><td className={diff !== null && diff > 0 ? "text-warning" : "text-good"}>{diff === null ? "—" : `${diff > 0 ? "+" : ""}${money(diff)}`}</td><td>{target === null || row.price === null ? <Status tone="neutral">Sem base</Status> : row.price >= target ? <Status tone="good">Meta atendida</Status> : <Status tone="warning">Revisar preço</Status>}</td></tr>; })}</tbody></table></div>
+                <PagedTableRows items={filtered} render={(pagedRows) => <div className="table-wrap"><table><thead><tr><th>Produto</th><th>Preço atual</th><th>Margem atual</th><th>Preço para meta</th><th>Diferença</th><th>Situação</th></tr></thead><tbody>{pagedRows.map((row) => { const target = idealPrice(row.finance, desiredMargin); const diff = target !== null && row.price !== null ? target - row.price : null; const projection = projectedAtPrice(row.finance, row.price); return <tr key={row.id}><td><strong>{row.title}</strong><small className="cell-sub">{row.brand !== "Sem marca" ? row.brand : "Sem fabricante"}</small></td><td>{money(row.price)}</td><td className={`text-${marginTone(projection.margin)}`}>{percent(projection.margin)}</td><td><strong>{money(target)}</strong></td><td className={diff !== null && diff > 0 ? "text-warning" : "text-good"}>{diff === null ? "—" : `${diff > 0 ? "+" : ""}${money(diff)}`}</td><td>{target === null || row.price === null ? <Status tone="neutral">Sem base</Status> : row.price >= target ? <Status tone="good">Meta atendida</Status> : <Status tone="warning">Revisar preço</Status>}</td></tr>; })}</tbody></table></div>}/>
               </Section>
             </>
           )}
@@ -768,7 +911,7 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
                 </Section>
               </div>
               <Section title="Plano de compras" subtitle="A sugestão usa somente saldo e venda de 30 dias já disponíveis.">
-                <div className="table-wrap"><table><thead><tr><th>Produto</th><th>Fabricante</th><th>Saldo</th><th>Venda/dia</th><th>Estoque alvo</th><th>Comprar</th><th>Investimento</th></tr></thead><tbody>{filtered.map((row) => { const plan = replenishment(row, coverageDays); const investment = plan.quantity !== null && row.finance ? plan.quantity * row.finance.unitCost : null; return <tr key={row.id}><td><strong>{row.title}</strong><small className="cell-sub">{row.id}</small></td><td>{row.brand !== "Sem marca" ? row.brand : "—"}</td><td>{number(row.stock)}</td><td>{plan.dailySales === null ? "—" : plan.dailySales.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}</td><td>{number(plan.targetStock)}</td><td>{plan.quantity === null ? "—" : <strong>{number(plan.quantity)}</strong>}</td><td>{money(investment)}</td></tr>; })}</tbody></table></div>
+                <PurchasePlanTable rows={filtered} coverageDays={coverageDays}/>
               </Section>
             </>
           )}
@@ -785,7 +928,7 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
                 </Section>
               </div>
               <Section title="Classificação ABC" subtitle="A até ~80% da receita acumulada, B até ~95% e C no restante.">
-                <div className="table-wrap"><table><thead><tr><th>Classe</th><th>Produto</th><th>Receita</th><th>Participação</th><th>Acumulado</th><th>Margem</th></tr></thead><tbody>{abc.map((row) => <tr key={row.id}><td>{row.abcClass ? <span className={`abc-badge ${row.abcClass.toLowerCase()}`}>{row.abcClass}</span> : "—"}</td><td><strong>{row.title}</strong><small className="cell-sub">{row.id}</small></td><td>{money(row.revenue)}</td><td>{percent(row.revenueShare)}</td><td>{percent(row.cumulativeShare)}</td><td className={`text-${marginTone(row.margin)}`}>{percent(row.margin)}</td></tr>)}</tbody></table></div>
+                <PagedTableRows items={abc} render={(pagedRows) => <div className="table-wrap"><table><thead><tr><th>Classe</th><th>Produto</th><th>Receita</th><th>Participação</th><th>Acumulado</th><th>Margem</th></tr></thead><tbody>{pagedRows.map((row) => <tr key={row.id}><td>{row.abcClass ? <span className={`abc-badge ${row.abcClass.toLowerCase()}`}>{row.abcClass}</span> : "—"}</td><td><strong>{row.title}</strong><small className="cell-sub">{row.id}</small></td><td>{money(row.revenue)}</td><td>{percent(row.revenueShare)}</td><td>{percent(row.cumulativeShare)}</td><td className={`text-${marginTone(row.margin)}`}>{percent(row.margin)}</td></tr>)}</tbody></table></div>}/>
               </Section>
             </>
           )}
