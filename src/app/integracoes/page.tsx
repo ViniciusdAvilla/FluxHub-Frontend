@@ -157,7 +157,7 @@ export default async function IntegracoesPage({
         <div className="fh-integration-brand">
           <span className="fh-integration-provider-icon neutral"><Layers3 size={20}/></span>
           <div><h2>Outros marketplaces</h2>
-            <p>Mercado Pago, Shopee e TikTok Shop em preparação.</p></div>
+            <p>Conexão Shopee em preparação; Mercado Pago e TikTok Shop em estudo.</p></div>
         </div>
       </div>
       <div className="fh-marketplace-catalog">
@@ -175,7 +175,8 @@ export default async function IntegracoesPage({
                 ? <div className="fh-marketplace-logo"><Image src={logo} alt={`Logo ${provider.name}`} width={144} height={132} unoptimized /></div>
                 : <span className="fh-integration-provider-icon neutral"><ShoppingBag size={34}/></span>}
               <h3>{provider.name}</h3>
-              <p>Conector em preparação</p>
+              <p>{provider.id === "shopee" ? "Prepare o acesso oficial do vendedor pela Open Platform." : "Conector em preparação"}</p>
+              {provider.id === "shopee" && <Link className="fh-control fh-shopee-cta" href="/integracoes/shopee">Preparar conexão <ArrowRight size={15}/></Link>}
             </div>
           </article>;
         })}

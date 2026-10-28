@@ -61,6 +61,7 @@ import {
 } from "@/lib/insight-series";
 import FinanceCategoryChart from "./finance-category-chart";
 import SmartProductFilters from "./smart-product-filters";
+import { abcStrategy, highVolumeThreshold } from "@/lib/abc-strategy";
 import { defaultAdvancedProductFilters, filterCatalogProducts, sortCatalogProducts, purchaseUrgency } from "@/lib/product-filters";
 import type { ProductSortKey, ProductSortDirection } from "@/lib/product-filters";
 const RaioXPanel = dynamic(() => import("./raio-x-panel"));
@@ -702,6 +703,7 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
       ? `Parcial: ${number(snapshot.sales.paid_order_count)} pedidos pagos importados`
       : `${number(snapshot.sales.paid_order_count)} pedidos pagos em 30 dias`;
   const abc = useMemo(() => classifyAbc(filtered), [filtered]);
+  const abcThreshold = useMemo(() => highVolumeThreshold(abc), [abc]);
 
   async function refresh() {
     setBusy(true);
@@ -734,10 +736,16 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
     <>
       <ModernShell title={current.title} eyebrow={current.eyebrow}
         isAdmin={isAdmin}
-        action={<button className="fh-control fh-module-refresh" type="button" onClick={refresh} disabled={busy}>
-          <RefreshCw className={busy ? "spin" : ""} size={16} />
-          {busy ? "Atualizando..." : "Atualizar dados"}
-        </button>}>
+        action={<div className="fh-inline-actions">
+          <a className="fh-control" href={"/api/platform/export?report=" +
+            (view === "finance" ? "costs" : view === "overview" ? "complete" : "products")}>
+            <Download size={16}/> Exportar Excel
+          </a>
+          <button className="fh-control fh-module-refresh" type="button" onClick={refresh} disabled={busy}>
+            <RefreshCw className={busy ? "spin" : ""} size={16} />
+            {busy ? "Atualizando..." : "Atualizar dados"}
+          </button>
+        </div>}>
         <div className="fh-legacy-module">
           <div className="fh-module-intro">
             <p>{current.text}</p>
@@ -927,8 +935,15 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
                   <RankedBarChart values={groupedInsights(filtered, "category", "count")}/>
                 </Section>
               </div>
-              <Section title="Classificação ABC" subtitle="A até ~80% da receita acumulada, B até ~95% e C no restante.">
-                <PagedTableRows items={abc} render={(pagedRows) => <div className="table-wrap"><table><thead><tr><th>Classe</th><th>Produto</th><th>Receita</th><th>Participação</th><th>Acumulado</th><th>Margem</th></tr></thead><tbody>{pagedRows.map((row) => <tr key={row.id}><td>{row.abcClass ? <span className={`abc-badge ${row.abcClass.toLowerCase()}`}>{row.abcClass}</span> : "—"}</td><td><strong>{row.title}</strong><small className="cell-sub">{row.id}</small></td><td>{money(row.revenue)}</td><td>{percent(row.revenueShare)}</td><td>{percent(row.cumulativeShare)}</td><td className={`text-${marginTone(row.margin)}`}>{percent(row.margin)}</td></tr>)}</tbody></table></div>}/>
+              <Section title="Classificação ABC" subtitle="Classes por participação da receita; metas de margem A 10%, B 15%, C 20% são orientativas e não substituem lucro líquido fiscal.">
+                <PagedTableRows items={abc} render={(pagedRows) => <div className="table-wrap"><table><thead><tr><th>Classe</th><th>Produto</th><th>Receita</th><th>Participação</th><th>Acumulado</th><th>Margem estimada</th><th>Meta da classe</th><th>Estratégia</th></tr></thead><tbody>{pagedRows.map((row) => <tr key={row.id}><td>{row.abcClass ? <span className={`abc-badge ${row.abcClass.toLowerCase()}`}>{row.abcClass}</span> : "—"}</td><td><strong>{row.title}</strong><small className="cell-sub">{row.id}</small></td><td>{money(row.revenue)}</td><td>{percent(row.revenueShare)}</td><td>{percent(row.cumulativeShare)}</td><td className={`text-${marginTone(row.margin)}`}>{percent(row.margin)}</td>
+                  <td>{abcStrategy(row, abcThreshold).target === null ? "—" : abcStrategy(row, abcThreshold).target + "%"}</td>
+                  <td>{abcStrategy(row, abcThreshold).attraction
+                    ? <span className="fh-abc-attraction">Boi de Piranha</span>
+                    : abcStrategy(row, abcThreshold).state === "loss" ? "Prejuízo"
+                    : abcStrategy(row, abcThreshold).state === "below-target" ? "Abaixo da meta"
+                    : abcStrategy(row, abcThreshold).state === "healthy" ? "Meta atingida"
+                    : "Sem base"}</td></tr>)}</tbody></table></div>}/>
               </Section>
             </>
           )}

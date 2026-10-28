@@ -3,6 +3,7 @@ import { Boxes, Package, Tag } from "lucide-react";
 import ModernShell from "@/components/modern-shell";
 import SyncAction from "@/components/sync-action";
 import LiveListings from "@/components/live-listings";
+import ListingHealthPanel from "@/components/listing-health-panel";
 import { DonutStats } from "@/components/modern-charts";
 import RankedBarChart from "@/components/ranked-bar-chart";
 import { getListingsOverview } from "@/lib/seller-data";
@@ -41,11 +42,17 @@ export default async function ListingsPage(){
     <Link href="/integracoes" className="fh-info-action" style={{marginTop:15}}>Sincronizar anúncios →</Link>
    </section>
   </div>
+  <div className="fh-inline-actions" style={{marginBottom:16}}>
+    <a href="/api/platform/export?report=listings" className="fh-control">
+      Exportar anúncios em Excel
+    </a>
+  </div>
   <section className="fh-card" style={{marginBottom:15}}>
     <div className="fh-card-head"><div><h2>Produtos por fabricante</h2>
       <p>Quantidade de produtos sincronizados com identificação do fabricante.</p></div></div>
     <RankedBarChart values={topBrands}/>
   </section>
+  <ListingHealthPanel/>
   <LiveListings accounts={r.accounts.map(a=>({account_id:a.account_id,nickname:a.nickname}))}/>
  </ModernShell>;
 }

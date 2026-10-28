@@ -78,6 +78,32 @@ export async function backendMutation(
   return requestAbsolute(resolveBackendUrl(backendBase(), path, query), method, payload, true, timeoutMs);
 }
 
+/** Streams an authenticated XLSX without parsing binary as JSON. */
+export async function backendDownload(
+  path: string, query?: URLSearchParams, timeoutMs = 120000,
+): Promise<Response> {
+  if (!path.startsWith("/api/v1/exports/"))
+    throw new Error("Relatório não autorizado.");
+  const url = resolveBackendUrl(backendBase(), path, query);
+  const session = readSession((await cookies()).get(SESSION_COOKIE)?.value);
+  if (!session) throw new BackendHttpError("Faça login para exportar.", 401, null);
+  const response = await fetch(url, {
+    headers: {
+      ...backendAuthHeaders(process.env.BACKEND_TOKEN),
+      Authorization: "Bearer " + session.accessToken,
+    },
+    cache: "no-store", redirect: "error", signal: AbortSignal.timeout(timeoutMs),
+  });
+  if (!response.ok) {
+    throw new BackendHttpError("Não foi possível gerar o relatório.", response.status,
+      response.headers.get("Retry-After"));
+  }
+  if (!response.headers.get("content-type")?.includes(
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+    throw new Error("Formato inesperado do relatório.");
+  return response;
+}
+
 export async function serviceLogin(email: string, password: string) {
   const url = resolveBackendUrl(backendBase(), "/api/v1/auth/login");
   return requestAbsolute(url, "POST", { email, password }, false) as Promise<{
