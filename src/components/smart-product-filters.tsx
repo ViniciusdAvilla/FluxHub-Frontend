@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { ArrowDownUp, Check, Search, SlidersHorizontal, X } from "lucide-react";
 import type { ProductSortDirection, ProductSortKey, ProductQuickFilter, AdvancedProductFilters } from "@/lib/product-filters";
 import { activeAdvancedCount, defaultAdvancedProductFilters } from "@/lib/product-filters";
@@ -56,6 +57,16 @@ export default function SmartProductFilters(props: Props) {
       document.removeEventListener("keydown", closeOnEscape);
       triggerRef.current?.focus();
     };
+  }, [open]);
+
+  // The filter card uses backdrop-filter (liquid glass), which creates a
+  // containing block for position:fixed children. Render the dialog at the
+  // document root instead, so it always occupies the full desktop viewport.
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previousOverflow; };
   }, [open]);
 
   const update = (changes: Partial<AdvancedProductFilters>) =>
@@ -123,7 +134,8 @@ export default function SmartProductFilters(props: Props) {
           <X size={14} aria-hidden="true"/> Limpar filtros
         </button>}
       </div>
-      {open && <div className="fh-smart-overlay" role="presentation"
+      {open && typeof document !== "undefined" && createPortal(
+        <div className="fh-smart-overlay" role="presentation"
         onMouseDown={event => { if (event.target === event.currentTarget) setOpen(false); }}>
         <section className="fh-smart-drawer" role="dialog" aria-modal="true"
           aria-label="Filtros avançados de produtos" tabIndex={-1} ref={panelRef}>
@@ -234,7 +246,7 @@ export default function SmartProductFilters(props: Props) {
             </button>
           </footer>
         </section>
-      </div>}
+      </div>, document.body)}
     </div>
   );
 }
