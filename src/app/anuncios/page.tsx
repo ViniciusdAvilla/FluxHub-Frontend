@@ -5,11 +5,11 @@ import SyncAction from "@/components/sync-action";
 import LiveListings from "@/components/live-listings";
 import { DonutStats } from "@/components/modern-charts";
 import RankedBarChart from "@/components/ranked-bar-chart";
-import { getSellerReport } from "@/lib/seller-data";
+import { getListingsOverview } from "@/lib/seller-data";
 import { money,number } from "@/lib/analytics";
 export const dynamic="force-dynamic";export const runtime="nodejs";
 export default async function ListingsPage(){
- const r=await getSellerReport(30,null);
+ const r=await getListingsOverview();
  const total=r.liveListingsTotal,active=r.listing?.active_listings??null;
  const brandCounts=new Map<string,number>();
  for(const product of r.products) if(product.brand) {

@@ -75,6 +75,29 @@ export async function getOrdersOverview(days: 7 | 30 | 90 = 30): Promise<OrdersO
   };
 }
 
+/**
+ * Anúncios precisam do catálogo e dos status, sem carregar pedidos,
+ * custos detalhados, cancelamentos ou indicadores financeiros.
+ */
+export type ListingsOverview = Pick<SellerReport, "user" | "accounts" | "products" | "listing" | "liveListingsTotal">;
+
+export async function getListingsOverview(): Promise<ListingsOverview> {
+  const [user, accounts, products, listing] = await Promise.all([
+    sellerIdentity(),
+    optional<Account[]>("/api/v1/connectors/mercado-livre"),
+    optional<SellerProduct[]>("/api/v1/products/", undefined, 30000),
+    optional<SellerReport["listing"]>("/api/v1/analytics/ads-performance"),
+  ]);
+
+  return {
+    user,
+    accounts: Array.isArray(accounts) ? accounts : [],
+    products: Array.isArray(products) ? products : [],
+    listing,
+    liveListingsTotal: listing?.total_listings ?? null,
+  };
+}
+
 export async function getSellerReport(days: number, requestedAccount: number | null): Promise<SellerReport> {
   const [user, accounts, allProducts, listings, orders, cancellations, ads, costs] = await Promise.all([
     sellerIdentity(),

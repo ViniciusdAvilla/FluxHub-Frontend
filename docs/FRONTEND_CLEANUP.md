@@ -4,6 +4,7 @@
 
 - Preservado Next.js App Router, layout Liquid Glass, sessão FluxHub, OAuth Mercado Livre, API routes, telas e navegação.
 - **Vendas e pedidos**: criada leitura dedicada `getOrdersOverview` com quatro consultas (identidade, contas, histórico, status); o relatório geral anterior efetuava **11 chamadas** para `account=null` e transferia todos os produtos. Dados de itens e compradores seguem sendo consultados sob demanda pelo `OrderExplorer`.
+- **Anúncios**: usa leitura dedicada com quatro consultas (identidade, contas, catálogo e status), sem buscar pedidos ou faturamento desnecessariamente.
 - O gráfico de status em **Vendas** agora usa o agregado de pedidos armazenados (`order-status`), em vez de contar somente os primeiros 100 pedidos.
 - Traduções de status unificadas em `src/lib/order-status.ts` e testadas.
 - Calculadora de precificação e painel de Raio-X carregados sob demanda, para não entrar no bundle inicial de telas que não os usam.
