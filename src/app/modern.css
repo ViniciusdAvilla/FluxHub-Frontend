@@ -1831,3 +1831,36 @@ html, body { background: #f6f8fe; color: #1d3058; }
 .fh-smart-drawer{height:100dvh;max-height:100dvh;min-height:0}
 .fh-smart-drawer-content{min-height:0;overflow-y:auto;scrollbar-gutter:stable}
 @media(max-width:800px){.fh-smart-drawer{height:auto;max-height:91dvh}}
+
+/* Sales/order summary: four equal, full-width cards like the overview KPIs.
+   Scoped to this module so other dashboards keep their own grid density. */
+.fh-kpis.fh-orders-summary-kpis,
+.fh-liquid-glass .fh-kpis.fh-orders-summary-kpis{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  width:100%;
+  gap:14px;
+}
+.fh-liquid-glass .fh-orders-summary-kpis>.fh-kpi,
+.fh-orders-summary-kpis>.fh-kpi{
+  min-width:0;
+  height:auto;
+  min-height:134px;
+  padding:17px 19px;
+}
+.fh-orders-summary-kpis .fh-kpi-value{
+  font-size:clamp(22px,2vw,31px);
+  overflow-wrap:anywhere;
+}
+@media(max-width:1200px){
+  .fh-kpis.fh-orders-summary-kpis,
+  .fh-liquid-glass .fh-kpis.fh-orders-summary-kpis{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+}
+@media(max-width:600px){
+  .fh-kpis.fh-orders-summary-kpis,
+  .fh-liquid-glass .fh-kpis.fh-orders-summary-kpis{
+    grid-template-columns:minmax(0,1fr);
+  }
+}

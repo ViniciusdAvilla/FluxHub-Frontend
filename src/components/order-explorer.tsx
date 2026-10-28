@@ -223,7 +223,7 @@ export default function OrderExplorer({
   const count = (key: string) => page?.status_counts[key] || 0;
   const allCount = Object.values(page?.status_counts || {}).reduce((sum, n) => sum + n, 0);
   return <>
-    <div className="fh-kpis">
+    <div className="fh-kpis fh-orders-summary-kpis">
       <article className="fh-kpi green">
         <div className="fh-kpi-top"><Wallet size={18}/> Faturamento bruto pago</div>
         <strong className="fh-kpi-value">{page ? currency.format(page.gross_paid_amount) : "—"}</strong>
