@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Calculator, Save, X } from "lucide-react";
+import { comparePurchaseOrigins, priceForNetMargin, simulateTaxProfit } from "@/lib/tax-engine";
 
 export type PricingSeed = {
   item_id: string;
@@ -24,18 +25,15 @@ type Quote = {
   price?: number;
   fee_quote?: number | null;
   fee_estimate_unavailable?: boolean;
+  listing_type_id?: string | null;
+  fee_source?: string;
   cost?: {
     unit_cost: number; tax_percent: number; shipping_cost: number;
     other_cost: number; marketplace_fee_percent: number | null;
   } | null;
 };
-// Referência do arquivo fornecido pelo usuário; ajuste fiscal sujeito à validação contábil.
-const states: Record<string, number> = {
-  AC: 12, AL: 12, AM: 13, AP: 11, BA: 13.5, CE: 13, DF: 13,
-  ES: 10, GO: 12, MA: 15, MG: 6, MS: 10, MT: 10, PA: 12,
-  PB: 13, PE: 13.5, PI: 15.5, PR: 7.5, RJ: 6, RN: 11, RO: 12.5,
-  RR: 13, RS: 5, SC: 5, SE: 12, SP: 0, TO: 13,
-};
+// UF is context only; no fixed DIFAL is assumed from an address alone.
+const brazilStates = "AC AL AM AP BA CE DF ES GO MA MG MS MT PA PB PE PI PR RJ RN RO RR RS SC SE SP TO".split(" ");
 const brazilian = new Intl.NumberFormat("pt-BR", {
   style: "currency", currency: "BRL",
 });
@@ -67,11 +65,16 @@ export default function PricingCalculator({
   const [freight, setFreight] = useState(seed.configured_shipping ?? 0);
   const [otherCost, setOtherCost] = useState(seed.other_cost ?? 0);
   const [reimburse, setReimburse] = useState(0);
-  const [icms, setIcms] = useState(seed.tax_percent ?? 7);
+  const [icms, setIcms] = useState(seed.tax_percent ?? 0);
   const [destination, setDestination] = useState("");
   const [difal, setDifal] = useState(0);
   const [credit, setCredit] = useState(0);
-  const [ir, setIr] = useState(34);
+  const [corporateTax, setCorporateTax] = useState<"none" | "lucro-real-projection">("none");
+  const [monthlyProfit, setMonthlyProfit] = useState(0);
+  const [spCost, setSpCost] = useState("");
+  const [esCost, setEsCost] = useState("");
+  const [spCreditRate, setSpCreditRate] = useState(0);
+  const [esCreditRate, setEsCreditRate] = useState(0);
   const [target, setTarget] = useState(10);
   const [pasted, setPasted] = useState("");
   const qty = seed.quantity || 1;
@@ -87,7 +90,7 @@ export default function PricingCalculator({
     setKnownCost(seed.unit_cost !== null && seed.unit_cost !== undefined);
     setFreight(seed.configured_shipping ?? 0);
     setOtherCost(seed.other_cost ?? 0);
-    setIcms(seed.tax_percent ?? 7);
+    setIcms(seed.tax_percent ?? 0);
     const q = new URLSearchParams({
       itemId: seed.item_id, accountId: String(accountId),
     });
@@ -130,23 +133,37 @@ export default function PricingCalculator({
   }, [onClose]);
 
   const result = useMemo(() => {
-    const fees = positive(fee);
-    const taxes = sale * (positive(icms) + positive(difal)) / 100;
-    const productCost = positive(cost) * qty;
-    const received = sale - fees - positive(freight) + positive(reimburse);
-    const preIr = received - productCost - taxes + positive(credit) - positive(otherCost);
-    const incomeTax = Math.max(0, preIr) * positive(ir) / 100;
-    const net = preIr - incomeTax;
-    const margin = sale > 0 ? net / sale * 100 : 0;
-    const commissionPct = positive(feePct) || (sale > 0 ? fees / sale * 100 : 0);
-    const combined = (commissionPct + positive(icms) + positive(difal)) / 100;
-    const factor = 1 - positive(ir) / 100;
-    const fixed = positive(freight) + productCost + positive(otherCost) -
-      positive(credit) - positive(reimburse);
-    const denominator = factor * (1 - combined) - positive(target) / 100;
-    const recommended = denominator > 0 && knownCost ? Math.max(0, factor * fixed / denominator) : null;
-    return { fees, taxes, received, productCost, preIr, incomeTax, net, margin, recommended };
-  }, [sale, fee, feePct, freight, reimburse, cost, qty, icms, difal, credit, otherCost, ir, target, knownCost]);
+    const input = {
+      grossSale: sale, quantity: qty, feeAmount: fee, freight,
+      sellerReimbursements: reimburse, unitCost: cost,
+      otherCosts: otherCost, icmsRate: icms, difalRate: difal,
+      icmsCredit: credit, corporateTax,
+      monthlyTaxableProfitBeforeSale: monthlyProfit,
+      irpjRate: 15, irpjAdditionalRate: 10, csllRate: 9,
+      additionalIrpjMonthlyThreshold: 20000,
+    } as const;
+    const summary = simulateTaxProfit(input);
+    const commissionPct = feePct || (sale > 0 ? fee * 100 / sale : 0);
+    const recommended = knownCost ? priceForNetMargin(input, target, commissionPct) : null;
+    return {
+      fees: summary.feeAmount,
+      taxes: summary.icms + summary.difal, received: summary.afterMarketplace,
+      productCost: summary.productCost, preIr: summary.beforeCorporate,
+      incomeTax: summary.corporateTaxes, net: summary.netProfit,
+      margin: summary.netMargin ?? 0, recommended, irpj: summary.irpj,
+      irpjAdditional: summary.irpjAdditional, csll: summary.csll,
+    };
+  }, [sale, fee, feePct, freight, reimburse, cost, qty, icms, difal, credit,
+    otherCost, corporateTax, monthlyProfit, target, knownCost]);
+  const purchaseComparison = useMemo(() => comparePurchaseOrigins({
+    quantity: qty, spUnitCost: spCost === "" ? null : Number(spCost),
+    esUnitCost: esCost === "" ? null : Number(esCost),
+    spCreditRate, esCreditRate,
+  }), [qty, spCost, esCost, spCreditRate, esCreditRate]);
+  const officialFeeAvailable = seed.sale_fee != null || quote?.fee_quote != null;
+  const hasFee = officialFeeAvailable || feePct > 0;
+  const status = !knownCost || !hasFee ? "Dados incompletos" :
+    result.net < 0 ? "Prejuízo" : result.margin < 10 ? "Atenção" : "Saudável";
 
   function applyPastedSale() {
     const extract = (key: RegExp) => pasted.match(key)?.[1]?.trim() || "";
@@ -265,6 +282,17 @@ export default function PricingCalculator({
                 onClick={() => void reprice()}>
                 {refreshingFee ? "Consultando tarifa..." : "Atualizar tarifa para este preço"}
               </button>
+              <div className="fh-inline-actions">
+                <button type="button" className="fh-control" onClick={() => {
+                  setFeePct(12); setFee(sale * 0.12);
+                }}>Simular Clássico 12%</button>
+                <button type="button" className="fh-control" onClick={() => {
+                  setFeePct(17); setFee(sale * 0.17);
+                }}>Simular Premium 17%</button>
+              </div>
+              <p className="fh-profit-hint">12%/17% são cenários manuais de referência;
+                a tarifa oficial varia por categoria, preço e modalidade.
+                Prefira sempre a cotação atualizada pela API.</p>
               <p className="fh-profit-hint">
                 {seed.sale_fee !== null && seed.sale_fee !== undefined
                   ? "Comissão recebida no item do pedido pela API."
@@ -279,16 +307,32 @@ export default function PricingCalculator({
                 {numberInput("Custo de compra (por unidade)", cost, setCost)}
                 {numberInput("ICMS próprio", icms, setIcms, "%")}
                 <label className="fh-profit-field"><span>UF de destino</span>
-                  <select value={destination} onChange={(e) => {
-                    setDestination(e.target.value); setDifal(states[e.target.value] ?? 0);
-                  }}><option value="">Selecione a UF</option>{Object.keys(states).sort().map(uf=><option value={uf} key={uf}>{uf}</option>)}</select>
+                  <select value={destination} onChange={(e) => setDestination(e.target.value)}>
+                    <option value="">Selecione a UF</option>{brazilStates.map(uf => <option value={uf} key={uf}>{uf}</option>)}
+                  </select>
                 </label>
                 {numberInput("DIFAL (configurável)", difal, setDifal, "%")}
                 {numberInput("Crédito de ICMS na compra", credit, setCredit)}
                 {numberInput("Outros custos", otherCost, setOtherCost)}
-                {numberInput("IRPJ + CSLL sobre resultado positivo", ir, setIr, "%")}
+                <label className="fh-profit-field"><span>Tributação sobre lucro (projeção)</span>
+                  <select value={corporateTax} onChange={event =>
+                    setCorporateTax(event.target.value as "none" | "lucro-real-projection")}>
+                    <option value="none">Não configurada — excluir IRPJ/CSLL</option>
+                    <option value="lucro-real-projection">Lucro Real — projeção</option>
+                  </select>
+                </label>
+                {corporateTax === "lucro-real-projection" && numberInput(
+                  "Lucro tributável mensal prévio (estimado)", monthlyProfit, setMonthlyProfit)}
+                <p className="fh-profit-hint">No Lucro Real projetamos IRPJ 15%,
+                  adicional de 10% apenas sobre a parcela acima de R$ 20 mil/mês,
+                  e CSLL 9%. Não use esta simulação como apuração fiscal oficial.</p>
                 {numberInput("Meta de lucro líquido", target, setTarget, "%")}
               </div>
+              <p className="fh-profit-hint">
+                A UF selecionada não determina sozinha o DIFAL: o cálculo depende de origem,
+                destino, NCM, contribuinte, FCP e benefício fiscal. Preencha a alíquota
+                efetiva validada pelo seu contador.
+              </p>
               <p className="fh-profit-hint">Percentuais fiscais são parâmetros editáveis e
                 precisam ser validados para o regime da sua empresa. O Mercado Livre não
                 fornece o custo de compra nem a apuração tributária completa.</p>
@@ -312,16 +356,43 @@ export default function PricingCalculator({
                 <div><dt>Créditos fiscais</dt><dd>+ {format(credit)}</dd></div>
                 <div><dt>Outros custos</dt><dd>- {format(otherCost)}</dd></div>
                 <div><dt>Lucro antes de IRPJ/CSLL</dt><dd>{format(result.preIr)}</dd></div>
-                <div><dt>IRPJ/CSLL projetados</dt><dd>- {format(result.incomeTax)}</dd></div>
+                <div><dt>IRPJ estimado (15%)</dt><dd>- {format(result.irpj)}</dd></div>
+                <div><dt>Adicional IRPJ (faixa mensal)</dt><dd>- {format(result.irpjAdditional)}</dd></div>
+                <div><dt>CSLL estimada (9%)</dt><dd>- {format(result.csll)}</dd></div>
+              </dl>
+            </section>
+            <section className="fh-profit-card">
+              <h3>Comparar compras SP × ES</h3>
+              <p className="fh-profit-hint">Simulação comercial por fornecedor; custos e
+                créditos de ICMS precisam ser informados e validados.</p>
+              <div className="fh-profit-grid">
+                <label className="fh-profit-field"><span>Custo por unidade em SP</span>
+                  <span className="fh-profit-input-wrap"><input type="number" min="0" step="0.01"
+                    value={spCost} onChange={e => setSpCost(e.target.value)}/><small>R$</small></span>
+                </label>
+                <label className="fh-profit-field"><span>Custo por unidade no ES</span>
+                  <span className="fh-profit-input-wrap"><input type="number" min="0" step="0.01"
+                    value={esCost} onChange={e => setEsCost(e.target.value)}/><small>R$</small></span>
+                </label>
+                {numberInput("Crédito estimado na compra SP", spCreditRate, setSpCreditRate, "%")}
+                {numberInput("Crédito estimado na compra ES", esCreditRate, setEsCreditRate, "%")}
+              </div>
+              <dl className="fh-profit-totals">
+                <div><dt>Custo líquido simulado SP</dt><dd>{format(purchaseComparison.spTotal)}</dd></div>
+                <div><dt>Custo líquido simulado ES</dt><dd>{format(purchaseComparison.esTotal)}</dd></div>
+                <div><dt>Melhor origem nesta simulação</dt>
+                  <dd>{purchaseComparison.cheaper ?
+                    purchaseComparison.cheaper + " (diferença de " + format(purchaseComparison.difference) + ")"
+                    : "Dados insuficientes ou empate"}</dd></div>
               </dl>
             </section>
             <section className="fh-profit-card fh-profit-results">
-              <div><span>Lucro líquido calculado</span><strong className={result.net >= 0 ? "positive" : "negative"}>
+              <div><span>{corporateTax === "none" ? "Resultado antes de IRPJ/CSLL" : "Lucro líquido projetado"}</span><strong className={result.net >= 0 ? "positive" : "negative"}>
                 {knownCost ? format(result.net) : "Informe o custo"}
               </strong></div>
-              <div><span>Margem líquida</span><strong>{knownCost ? result.margin.toFixed(2).replace(".", ",") + "%" : "—"}</strong></div>
-              <div><span>Preço para {target}% líquido</span><strong>{format(result.recommended)}</strong></div>
-              <p>Simulação financeira. O preço-alvo usa a tarifa proporcional
+              <div><span>Margem {corporateTax === "none" ? "antes IRPJ/CSLL" : "líquida projetada"}</span><strong>{knownCost ? result.margin.toFixed(2).replace(".", ",") + "%" : "—"}</strong></div>
+              <div><span>Preço projetado para {target}% de margem</span><strong>{format(result.recommended)}</strong></div>
+              <p>Saúde do anúncio: <strong>{status}</strong>. Simulação financeira: o preço-alvo usa a tarifa proporcional
                 informada; confirme a tarifa oficial para o novo preço.
                 Lucro efetivamente realizado exige frete, impostos, custo
                 e eventuais devoluções conciliados.</p>

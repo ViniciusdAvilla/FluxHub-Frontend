@@ -25,6 +25,22 @@ type Page = {
   orders: Order[]; total: number; status_counts: Record<string, number>;
   gross_paid_amount: number; is_complete: boolean;
 };
+type FinancialLine = {
+  item_id: string; title: string; quantity: number; gross: number;
+  fee: number | null; fee_source: string; product_cost: number | null;
+  taxes_configured: number | null; shipping_configured: number | null;
+  other_costs: number | null; estimated_profit: number | null;
+  estimated_margin: number | null;
+};
+type FinancialDetails = {
+  order_id: string; seller_id: number; status: string;
+  gross_order_amount: number | null; gross_item_amount: number;
+  marketplace_fees: number | null; product_cost: number | null;
+  taxes_configured: number | null; shipping_configured: number | null;
+  other_costs: number | null; estimated_profit: number | null;
+  estimated_margin: number | null; complete: boolean; fees_are_estimated: boolean;
+  note: string; items: FinancialLine[];
+};
 type BuyerDetail = {
   buyer: Record<string, unknown>; delivery_address: Record<string, unknown> | null;
   fiscal: Record<string, unknown> | null;
@@ -75,6 +91,11 @@ export default function OrderExplorer({
   const [error, setError] = useState("");
   const [selected, setSelected] = useState<{ seed: PricingSeed; account: number } | null>(null);
   const [buyerOrder, setBuyerOrder] = useState<Order | null>(null);
+  const [financialOrder, setFinancialOrder] = useState<Order | null>(null);
+  const [financialDetails, setFinancialDetails] = useState<FinancialDetails | null>(null);
+  const [financialLoading, setFinancialLoading] = useState(false);
+  const [financialError, setFinancialError] = useState("");
+  const financialRequest = useRef(0);
   const [buyerLoading, setBuyerLoading] = useState(false);
   const [buyerError, setBuyerError] = useState("");
   const [buyer, setBuyer] = useState<BuyerDetail | null>(null);
@@ -110,6 +131,30 @@ export default function OrderExplorer({
       }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [days, status, debounced, offset, accountId, minAmount, maxAmount, sortBy, sortDir]);
+
+  const openFinancial = useCallback(async (order: Order) => {
+    const request = ++financialRequest.current;
+    setFinancialOrder(order); setFinancialDetails(null);
+    setFinancialLoading(true); setFinancialError("");
+    const q = new URLSearchParams({ action: "details",
+      orderId: order.external_id, accountId: String(order.seller_id) });
+    try {
+      const response = await fetch("/api/platform/orders?" + q, { cache: "no-store" });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Detalhamento indisponível.");
+      if (financialRequest.current === request) setFinancialDetails(data as FinancialDetails);
+    } catch (reason) {
+      if (financialRequest.current === request)
+        setFinancialError(reason instanceof Error ? reason.message : "Consulta indisponível.");
+    } finally {
+      if (financialRequest.current === request) setFinancialLoading(false);
+    }
+  }, []);
+  const closeFinancial = () => {
+    financialRequest.current++;
+    setFinancialOrder(null); setFinancialDetails(null); setFinancialError("");
+  };
+  const formatOptional = (amount: number | null) => amount === null ? "Não disponível" : currency.format(amount);
 
   const openBuyer = useCallback(async (order: Order) => {
     const requestNumber = ++buyerRequest.current;
@@ -202,6 +247,10 @@ export default function OrderExplorer({
         <div><h2>{mode === "sales" ? "Produtos vendidos" : "Todos os pedidos"}</h2>
           <p>Foto e nome do produto em destaque. Clique para precificar e apurar lucro.</p>
         </div>
+        <a className="fh-control" href={"/api/platform/export?report=orders&days=" + days +
+          (accountId ? "&accountId=" + accountId : "")}>
+          Exportar Excel
+        </a>
       </div>
       <div className="fh-orders-filters">
         <label className="fh-orders-search">
@@ -319,6 +368,9 @@ export default function OrderExplorer({
           </div>)}
           <div className="fh-orders-bottom">
             <span>Venda: {currency.format(order.total_amount)}</span>
+            <button type="button" className="fh-control" onClick={() => void openFinancial(order)}>
+              <Wallet size={15}/> Detalhe financeiro
+            </button>
             <button type="button" className="fh-control" onClick={() => void openBuyer(order)}>
               <ShieldCheck size={15}/> Dados do comprador
             </button>
@@ -361,9 +413,14 @@ export default function OrderExplorer({
                 order.status === "cancelled" ? "danger" : "neutral")}
                 onClick={() => setStatus(order.status)}>{orderStatusLabel(order.status)}</button></td>
               <td>{new Date(order.created_at).toLocaleDateString("pt-BR")}</td>
-              <td><button type="button" className="fh-control" onClick={() => void openBuyer(order)}>
-                <ShieldCheck size={14}/> Comprador
-              </button></td>
+              <td><div className="fh-inline-actions">
+                <button type="button" className="fh-control" onClick={() => void openFinancial(order)}>
+                  <Wallet size={14}/> Custos
+                </button>
+                <button type="button" className="fh-control" onClick={() => void openBuyer(order)}>
+                  <ShieldCheck size={14}/> Comprador
+                </button>
+              </div></td>
             </tr>)
             : [<tr key={order.seller_id + ":" + order.external_id + ":missing"}>
               <td><span className="fh-orders-title"><strong>Produtos ainda não importados</strong>
@@ -397,6 +454,57 @@ export default function OrderExplorer({
     </section>
     {selected && <PricingCalculator seed={selected.seed} accountId={selected.account}
       onClose={() => setSelected(null)}/>}
+    {financialOrder && <div className="fh-profit-backdrop" role="presentation"
+      onMouseDown={event => { if (event.target === event.currentTarget) closeFinancial(); }}>
+      <section className="fh-buyer-panel" role="dialog" aria-modal="true"
+        aria-label="Detalhamento financeiro do pedido">
+        <header className="fh-profit-head">
+          <div><span className="fh-profit-eyebrow">FLUXHUB · RECEITA E CUSTOS</span>
+            <h2>Detalhe do pedido</h2>
+            <p>Pedido {financialOrder.external_id} · {orderStatusLabel(financialOrder.status)}</p></div>
+          <button type="button" className="fh-control" onClick={closeFinancial}
+            aria-label="Fechar detalhamento"><X size={18}/></button>
+        </header>
+        <div className="fh-profit-body">
+          {financialLoading && <p role="status">Calculando indicadores do pedido...</p>}
+          {financialError && <div className="fh-notice error" role="alert">{financialError}</div>}
+          {financialDetails && <>
+            <section className="fh-profit-card fh-profit-results">
+              <div><span>Venda bruta</span><strong>{formatOptional(financialDetails.gross_order_amount)}</strong></div>
+              <div><span>Lucro estimado</span><strong>{formatOptional(financialDetails.estimated_profit)}</strong></div>
+              <div><span>Margem estimada</span><strong>{financialDetails.estimated_margin === null
+                ? "Indisponível" : financialDetails.estimated_margin.toFixed(2) + "%"}</strong></div>
+            </section>
+            <section className="fh-profit-card">
+              <h3>Composição de custos</h3>
+              <dl className="fh-profit-totals">
+                <div><dt>Comissões do marketplace</dt><dd>{formatOptional(financialDetails.marketplace_fees)}</dd></div>
+                <div><dt>Custo de mercadorias</dt><dd>{formatOptional(financialDetails.product_cost)}</dd></div>
+                <div><dt>Tributos cadastrados</dt><dd>{formatOptional(financialDetails.taxes_configured)}</dd></div>
+                <div><dt>Frete cadastrado</dt><dd>{formatOptional(financialDetails.shipping_configured)}</dd></div>
+                <div><dt>Outros custos</dt><dd>{formatOptional(financialDetails.other_costs)}</dd></div>
+              </dl>
+              {financialDetails.fees_are_estimated &&
+                <p className="fh-profit-hint">Uma ou mais comissões vieram da porcentagem cadastrada, não da tarifa realizada.</p>}
+            </section>
+            <section className="fh-profit-card"><h3>Produtos desta venda</h3>
+              <div className="fh-financial-lines">
+                {financialDetails.items.map((item, index) =>
+                  <article key={item.item_id + ":" + index}>
+                    <strong>{item.title}</strong><small>{item.quantity} un. · Bruto: {currency.format(item.gross)}</small>
+                    <dl>
+                      <div><dt>Comissão</dt><dd>{formatOptional(item.fee)}</dd></div>
+                      <div><dt>Custo</dt><dd>{formatOptional(item.product_cost)}</dd></div>
+                      <div><dt>Lucro estimado</dt><dd>{formatOptional(item.estimated_profit)}</dd></div>
+                    </dl>
+                  </article>)}
+              </div>
+            </section>
+            <p className="fh-profit-hint">{financialDetails.note}</p>
+          </>}
+        </div>
+      </section>
+    </div>}
     {buyerOrder && <div className="fh-profit-backdrop" role="presentation"
       onMouseDown={e => { if (e.target === e.currentTarget) closeBuyer(); }}>
       <section className="fh-buyer-panel" role="dialog" aria-modal="true"

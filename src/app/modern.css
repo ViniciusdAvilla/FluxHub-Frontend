@@ -1779,3 +1779,42 @@ html, body { background: #f6f8fe; color: #1d3058; }
 .fh-smart-order-toolbar button:focus-visible,.fh-smart-order-toolbar select:focus-visible{
   outline:3px solid #4090ef;outline-offset:3px
 }
+
+
+/* Read-only Claude agents, financial health and marketplace integration setup. */
+.fh-claude-layout {display:grid;grid-template-columns:minmax(0,1.35fr) minmax(300px,1fr);gap:18px;align-items:start}
+.fh-claude-layout .fh-card {min-width:0}
+.fh-claude-agent-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin:20px 0}
+.fh-claude-agent {display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:8px;padding:17px;border:1px solid var(--fh-line);background:#fff;border-radius:15px;color:var(--fh-ink);min-height:138px}
+.fh-claude-agent svg {color:#3d72e8}
+.fh-claude-agent small {line-height:1.5;color:#64748b}
+.fh-claude-agent.is-active {background:#eaf2ff;border-color:#6b9aff;box-shadow:inset 0 0 0 1px #a9c6ff}
+.fh-claude-agent:focus-visible,.fh-control:focus-visible {outline:3px solid #83b1ff;outline-offset:2px}
+.fh-claude-instruction {display:flex;flex-direction:column;gap:10px;font-size:13px;font-weight:700}
+.fh-claude-instruction textarea {width:100%;resize:vertical;padding:12px;border-radius:12px;border:1px solid #d4deef;background:#fff;line-height:1.5;color:#25385a}
+.fh-claude-output {padding:18px;border-radius:14px;background:#f3f7ff;color:#243756;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7;font-size:14px}
+.fh-claude-empty {display:flex;align-items:center;flex-direction:column;justify-content:center;min-height:220px;gap:10px;text-align:center;color:#65758e}
+.fh-claude-empty strong {color:#25385a}
+.fh-claude-security {display:flex;gap:8px;align-items:flex-start;color:#53708a;font-size:12px;line-height:1.6}
+.fh-listing-health {margin-top:20px}
+.fh-listing-health-summary {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}
+.fh-listing-health-summary>div {border:1px solid #e3eaf5;border-radius:14px;padding:14px;background:#f8faff;display:flex;flex-direction:column;gap:10px}
+.fh-listing-health-summary span {color:#64748b;font-size:12px}
+.fh-listing-health-summary strong {font-size:23px;color:#1e3260;font-variant-numeric:tabular-nums}
+.fh-listing-health-badge {display:inline-flex;padding:6px 9px;border-radius:20px;font-size:12px;font-weight:700;background:#eef2f7;color:#52677a}
+.fh-listing-health-badge.healthy {background:#dff9ea;color:#146542}
+.fh-listing-health-badge.attention {background:#fff1c5;color:#966100}
+.fh-listing-health-badge.loss {background:#ffe8e8;color:#a12e39}
+.fh-abc-attraction {display:inline-flex;padding:5px 9px;border-radius:20px;background:#fff2ce;color:#7c5600;font-size:12px;font-weight:700}
+.fh-financial-lines {display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px 20px;font-size:13px;line-height:1.5}
+.fh-financial-lines dt {color:#64748b}.fh-financial-lines dd {margin:0;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.fh-financial-lines .fh-total {border-top:1px solid #dbe4f2;padding-top:10px;font-size:15px;color:#1c4dab}
+.fh-shopee-cta {display:inline-flex;margin-top:12px;gap:5px}
+.fh-shopee-setup {max-width:960px;padding:24px;display:flex;flex-direction:column;gap:20px}
+.fh-shopee-steps {list-style:none;padding:0;display:grid;gap:12px}
+.fh-shopee-steps li {display:flex;gap:16px;padding:18px;background:#f6f9ff;border:1px solid #e6ecf6;border-radius:14px}
+.fh-shopee-steps li svg {flex-shrink:0;color:#4b79db}
+.fh-shopee-steps p {margin:7px 0 0;color:#65758e;line-height:1.55}
+.fh-inline-back {display:inline-flex;align-items:center;gap:7px;color:#4272ce;font-size:13px;font-weight:650}
+@media(max-width:980px){.fh-claude-layout{grid-template-columns:1fr}.fh-listing-health-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.fh-claude-agent-grid,.fh-listing-health-summary{grid-template-columns:1fr}.fh-claude-agent{min-height:110px}.fh-shopee-setup{padding:16px}}

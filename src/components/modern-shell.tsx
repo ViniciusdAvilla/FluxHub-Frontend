@@ -8,7 +8,7 @@ import {
   Activity, BadgeDollarSign, Bell, Boxes, ChartNoAxesCombined,
   CircleHelp, ClipboardList, LayoutDashboard, Link2, LogOut, Menu,
   Package, Settings2, ShieldCheck, ShoppingCart, Users, X, Zap,
-  MessagesSquare,
+  MessagesSquare, Bot,
 } from "lucide-react";
 
 const modules = [
@@ -41,6 +41,9 @@ const modules = [
   { label: "Atendimento", href: "/mensagens", icon: MessagesSquare, paths: ["/mensagens"], tabs: [
     { label: "Mensagens e sugestões de IA", href: "/mensagens" },
   ] },
+  { label: "Agentes Claude", href: "/agentes-claude", icon: Bot, paths: ["/agentes-claude"], tabs: [
+    { label: "Agentes inteligentes", href: "/agentes-claude" },
+  ] },
   { label: "Configurações", href: "/dados", icon: Settings2, paths: ["/dados", "/integracoes"], tabs: [
     { label: "Central de dados", href: "/dados" },
     { label: "Integrações", href: "/integracoes" },
@@ -59,6 +62,7 @@ const descriptions: Record<string,string> = {
   "/financeiro": "Acompanhe custos, receita e rentabilidade da loja.",
   "/mensagens": "Converse com seus clientes e revise sugestões de IA.",
   "/dados": "Gerencie dados e conexões da sua operação.",
+  "/agentes-claude": "Análises inteligentes sob demanda, baseadas nos seus indicadores.",
 };
 
 export default function ModernShell({

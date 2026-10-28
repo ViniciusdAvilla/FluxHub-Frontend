@@ -68,6 +68,13 @@ export async function GET(request: Request) {
       return respond(await backendRequest(
         "/api/v1/orders/buyers/" + buyerId, target, 25000));
     }
+    if (action === "details") {
+      const orderId = validId(params.get("orderId"));
+      if (!orderId || !accountId) return respond({ error: "Pedido ou conta inválido." }, 422);
+      return respond(await backendRequest(
+        "/api/v1/orders/" + orderId + "/financial-details",
+        new URLSearchParams({ account_id: String(accountId) }), 25000));
+    }
     if (action === "buyer") {
       const orderId = validId(params.get("orderId"));
       if (!orderId || !accountId) return respond({ error: "Pedido ou conta inválida." }, 422);
