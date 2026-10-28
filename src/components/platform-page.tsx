@@ -263,7 +263,7 @@ function ProductTable({
   }, [visiblePage, sortedRows]);
   return (
     <div>
-      <div className="table-wrap">
+      <div className="table-wrap fh-smart-product-table">
       <table>
         <thead>
           <tr>

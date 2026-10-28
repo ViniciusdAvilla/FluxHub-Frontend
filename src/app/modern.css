@@ -1746,6 +1746,7 @@ html, body { background: #f6f8fe; color: #1d3058; }
   .fh-smart-drawer-header h2{font-size:20px}
   .fh-smart-drawer-content{padding:0 18px 15px}
   .fh-smart-drawer-footer{padding:12px 18px 18px}
+  .fh-smart-product-table{display:none}
   .fh-smart-mobile-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
   .fh-smart-mobile-card{border:1px solid #dce8f5;border-radius:15px;padding:13px;background:#fff;box-shadow:0 6px 18px rgba(42,91,144,.04)}
   .fh-smart-mobile-title{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:transparent;border:0;cursor:pointer;color:#234669;padding:0}
