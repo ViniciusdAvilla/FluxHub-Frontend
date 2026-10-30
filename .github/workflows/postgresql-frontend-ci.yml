@@ -7,7 +7,7 @@ on:
       - ".github/workflows/postgresql-frontend-ci.yml"
       - "package.json"
   push:
-    branches: [migration/postgresql-backend-session-20261020]
+    branches: [main, migration/postgresql-backend-session-20261020]
 jobs:
   validate:
     runs-on: ubuntu-latest

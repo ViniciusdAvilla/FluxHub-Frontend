@@ -24,21 +24,28 @@ export async function POST(request: Request) {
     return Response.json({ error: "Formato inválido." }, { status: 415 });
   try {
     const raw = await request.text();
-    if (raw.length > 2000) return Response.json({ error: "Solicitação muito longa." }, { status: 413 });
+    if (raw.length > 32000) return Response.json({ error: "Solicitação muito longa." }, { status: 413 });
     const payload: unknown = JSON.parse(raw);
     if (!payload || typeof payload !== "object" || Array.isArray(payload))
       return Response.json({ error: "Solicitação inválida." }, { status: 422 });
     const data = payload as Record<string, unknown>;
     if (typeof data.agent !== "string" || !modes.has(data.agent) ||
-        typeof data.instruction !== "string" || data.instruction.length > 1200)
+        typeof data.instruction !== "string" || data.instruction.length > 1200 ||
+        (data.history !== undefined &&
+          (!Array.isArray(data.history) || data.history.length > 8 ||
+            data.history.some((turn: unknown) => !turn || typeof turn !== "object" ||
+              !["user", "assistant"].includes((turn as { role?: string }).role || "") ||
+              typeof (turn as { content?: unknown }).content !== "string" ||
+              !(turn as { content: string }).content.length ||
+              (turn as { content: string }).content.length > 6000))))
       return Response.json({ error: "Modo ou instrução inválidos." }, { status: 422 });
     const result = await backendMutation("/api/v1/agents/claude/run",
-      "POST", { agent: data.agent, instruction: data.instruction }, 60000);
+      "POST", { agent: data.agent, instruction: data.instruction, history: data.history ?? [] }, 60000);
     return Response.json(result, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     return Response.json({ error: error instanceof BackendHttpError
       ? error.message : "Não foi possível consultar Claude." }, {
-      status: error instanceof BackendHttpError && [401, 403, 422, 429, 503].includes(error.status)
+      status: error instanceof BackendHttpError && [401, 403, 422, 429, 503, 504].includes(error.status)
         ? error.status : 502,
       headers: { "Cache-Control": "private, no-store" },
     });
