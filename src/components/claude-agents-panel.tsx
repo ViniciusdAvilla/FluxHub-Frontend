@@ -265,3 +265,4 @@ export default function ClaudeAgentsPanel() {
         Apenas indicadores consolidados são enviados. Nenhuma ação na sua conta é executada automaticamente.</p>
     </section>
   </div>;
+}
