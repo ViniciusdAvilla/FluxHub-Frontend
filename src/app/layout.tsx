@@ -3,6 +3,8 @@ import "./globals.css";
 import "./modern.css";
 import "./dark-theme.css";
 import "./route-loading.css";
+import "./polished-glass.css";
+import { PersistentDashboardFrame } from "@/components/modern-shell";
 
 export const metadata: Metadata = {
   title: "FluxHub | Gestão Mercado Livre",
@@ -15,5 +17,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="pt-BR"><body>{children}</body></html>;
+  return <html lang="pt-BR"><body><PersistentDashboardFrame>{children}</PersistentDashboardFrame></body></html>;
 }
