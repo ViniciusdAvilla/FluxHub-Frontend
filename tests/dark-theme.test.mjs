@@ -9,6 +9,7 @@ test("tema escuro respeita os mesmos componentes em todas as rotas", () => {
   const shell = readFileSync("src/components/modern-shell.tsx", "utf8");
   assert.match(layout, /import "\.\/dark-theme\.css"/);
   assert.match(layout, /import "\.\/route-loading\.css"/);
+  assert.match(layout, /<PersistentDashboardFrame>/);
   assert.match(shell, /document\.documentElement\.dataset\.fluxhubTheme = stored/);
   assert.match(shell, /document\.documentElement\.dataset\.fluxhubTheme = next/);
   for (const token of [
@@ -19,7 +20,7 @@ test("tema escuro respeita os mesmos componentes em todas as rotas", () => {
   ]) assert.ok(style.includes(token), "Falta cobertura no tema escuro: " + token);
 });
 
-test("skeleton aparece apenas se a navegação ultrapassar 240 ms e mantém o tema", async () => {
+test("skeleton só aparece após atraso e herda o tema do painel persistente", async () => {
   const dom = new JSDOM("<!doctype html><html><body></body></html>", {url:"http://localhost:3000"});
   Object.assign(globalThis, {
     window: dom.window,
@@ -28,18 +29,20 @@ test("skeleton aparece apenas se a navegação ultrapassar 240 ms e mantém o te
     MutationObserver: dom.window.MutationObserver,
     IS_REACT_ACT_ENVIRONMENT: true,
   });
-  dom.window.localStorage.setItem("fluxhub-theme", "dark");
+  document.documentElement.dataset.fluxhubTheme = "dark";
   const React = await import("react");
   const { render, waitFor, cleanup } = await import("@testing-library/react");
   const { default: Loading } = await import("../src/app/loading");
 
   try {
-    const view = render(React.createElement(Loading));
+    const view = render(React.createElement("div",
+      { className: "fh-app fh-liquid-glass fh-theme-dark" }, React.createElement(Loading)));
     assert.equal(view.container.querySelector(".fh-route-loading"), null);
     await waitFor(() => assert.ok(view.container.querySelector(".fh-route-loading")),
       {timeout:1500});
-    assert.ok(view.container.querySelector(".fh-route-loading.fh-theme-dark"));
+    assert.ok(view.container.querySelector(".fh-theme-dark .fh-route-loading"));
     assert.equal(document.documentElement.dataset.fluxhubTheme, "dark");
+    assert.equal(view.container.querySelector(".fh-route-loading .fh-sidebar"), null);
     assert.ok(view.getByRole("status", {name:/Carregando informações da página/}));
     view.unmount();
   } finally {
