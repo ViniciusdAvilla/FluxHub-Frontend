@@ -8,7 +8,7 @@ import {
   Activity, BadgeDollarSign, Bell, Boxes, ChartNoAxesCombined,
   CircleHelp, ClipboardList, LayoutDashboard, Link2, LogOut, Menu,
   Package, Settings2, ShieldCheck, ShoppingCart, Users, X, Zap,
-  MessagesSquare, Bot,
+  MessagesSquare, Bot, Moon, Sun,
 } from "lucide-react";
 
 const modules = [
@@ -78,6 +78,17 @@ export default function ModernShell({
   const path = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [hash, setHash] = useState("");
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem("fluxhub-theme") === "dark") setTheme("dark");
+    } catch { /* Preferências locais desabilitadas: usar tema claro. */ }
+  }, []);
+  function toggleTheme() {
+    const next = theme === "light" ? "dark" : "light";
+    setTheme(next);
+    try { window.localStorage.setItem("fluxhub-theme", next); } catch { /* Não impedir a troca. */ }
+  }
   useEffect(() => {
     const update = () => setHash(window.location.hash);
     update();
@@ -90,7 +101,7 @@ export default function ModernShell({
   const currentTab = activeModule.tabs.find(t => t.href === path + (path === "/" ? hash : "")) ??
     activeModule.tabs.find(t => t.href === path) ?? activeModule.tabs[0];
 
-  return <div className={`fh-app fh-liquid-glass${path === "/" ? " fh-expo-glass-controls" : ""}`}>
+  return <div data-theme={theme} className={`fh-app fh-liquid-glass fh-theme-${theme}${path === "/" ? " fh-expo-glass-controls" : ""}`}>
     <div className="fh-glass-atmosphere" aria-hidden="true"><i/><i/><i/></div>
     <aside className={`fh-sidebar ${mobileOpen ? "fh-open" : ""}`}>
       <div className="fh-logo">
@@ -112,6 +123,13 @@ export default function ModernShell({
         {adminMode && <Link href="/" className="fh-admin-link" onClick={()=>setMobileOpen(false)}><LayoutDashboard size={19}/> Painel do vendedor</Link>}
       </nav>
       <div className="fh-sidebar-bottom">
+        <button className="fh-theme-toggle" type="button" onClick={toggleTheme}
+          aria-label={theme === "light" ? "Ativar tema escuro" : "Ativar tema claro"}
+          aria-pressed={theme === "dark"}>
+          {theme === "light" ? <Moon size={17}/> : <Sun size={17}/>}
+          <span>{theme === "light" ? "Tema escuro" : "Tema claro"}</span>
+          <span className="fh-theme-toggle-state" aria-hidden="true">{theme === "light" ? "○" : "●"}</span>
+        </button>
         <div className="fh-help"><CircleHelp size={17}/> {adminMode ? "Administrador Master" : "Central FluxHub"}</div>
         <form method="post" action="/api/auth/logout"><button className="fh-signout" type="submit"><LogOut size={16}/> Sair da conta</button></form>
       </div>

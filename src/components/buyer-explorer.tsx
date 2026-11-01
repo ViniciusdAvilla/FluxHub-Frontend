@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { orderStatusLabel } from "@/lib/order-status";
 import { Search, ShieldCheck, ShoppingBag, Users } from "lucide-react";
 
 type Buyer = {
@@ -128,7 +129,7 @@ export default function BuyerExplorer() {
       {orders.map(order=><div className="fh-buyer-order" key={order.external_id}>
         <div><strong>{order.items.map(i=>i.title).filter(Boolean).join(", ")||"Itens não indexados"}</strong>
           <small>Pedido {order.external_id} · {new Date(order.created_at).toLocaleDateString("pt-BR")}
-            {" · "}{order.status==="paid"?"Pago":order.status==="cancelled"?"Cancelado":order.status}</small></div>
+            {" · "}{orderStatusLabel(order.status)}</small></div>
         <strong>{money.format(order.total_amount)}</strong>
         <button className="fh-control" disabled={detailLoading} onClick={()=>void loadContact(order)}>
           <ShieldCheck size={15}/> Dados do comprador
