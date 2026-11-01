@@ -4,7 +4,10 @@ import { useMemo, useState } from "react";
 import { BarChart3 } from "lucide-react";
 import type { TimelinePoint } from "@/lib/seller-data";
 
-function compactMoney(v: number) {return new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL",maximumFractionDigits:0}).format(v);}
+const compactMoneyFormatter = new Intl.NumberFormat("pt-BR", {
+  style: "currency", currency: "BRL", maximumFractionDigits: 0,
+});
+function compactMoney(value: number) { return compactMoneyFormatter.format(value); }
 function pathFor(points: number[], max: number, width:number,height:number) {
   return points.map((v,i)=>`${i===0?"M":"L"} ${(i/(Math.max(1,points.length-1))*width).toFixed(2)} ${(height-(v/Math.max(1,max))*height).toFixed(2)}`).join(" ");
 }

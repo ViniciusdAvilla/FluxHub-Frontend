@@ -139,10 +139,38 @@ async function ordersRevenueSnapshot(): Promise<Snapshot["sales"]> {
   }
 }
 
-export async function getSnapshot(): Promise<Snapshot> {
+/**
+ * O formato enviado às páginas deve refletir o que elas realmente usam:
+ * - catalog: catálogo/custos, sem relatório de pedidos ou OpenAPI serializado;
+ * - data: somente contrato OpenAPI para a Central de Dados;
+ * - full: compatibilidade com consumidores que precisam do contrato completo.
+ *
+ * O schema continua sendo consultado internamente no catálogo para descobrir
+ * caminhos e enriquecimento de marcas, preservando integrações existentes.
+ */
+export type SnapshotScope = "catalog" | "data" | "full";
+
+export async function getSnapshot(scope: SnapshotScope = "catalog"): Promise<Snapshot> {
+  if (scope === "data") {
+    const schema = await getBackendSchema();
+    return {
+      products: [],
+      finance: [],
+      sales: null,
+      schema,
+      updatedAt: schema.error ? null : new Date().toISOString(),
+      error: schema.error,
+    };
+  }
+
   const [schema, finance, sales] = await Promise.all([
-    getBackendSchema(), financeSnapshot(), ordersRevenueSnapshot(),
+    getBackendSchema(),
+    financeSnapshot(),
+    scope === "full" ? ordersRevenueSnapshot() : Promise.resolve(null),
   ]);
+  // Somente a Central de Dados precisa da lista de endpoints no navegador.
+  const clientSchema = scope === "full" ? schema : { ...schema, endpoints: [] };
+
   try {
     const baseProducts = normalizeProducts(
       await backendRequest(chooseProductsPath(schema), undefined, 30000),
@@ -152,7 +180,7 @@ export async function getSnapshot(): Promise<Snapshot> {
       products,
       finance,
       sales,
-      schema,
+      schema: clientSchema,
       updatedAt: new Date().toISOString(),
       error: null,
     };
@@ -165,7 +193,7 @@ export async function getSnapshot(): Promise<Snapshot> {
       products: [],
       finance,
       sales,
-      schema,
+      schema: clientSchema,
       updatedAt: null,
       error:
         "Não foi possível atualizar os produtos. Verifique se o serviço local está em execução e tente novamente.",
