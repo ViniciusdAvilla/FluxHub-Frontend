@@ -1960,3 +1960,14 @@ html, body { background: #f6f8fe; color: #1d3058; }
   .fh-claude-chat-compose{margin:0 12px}
   .fh-claude-chat-safety{margin:10px 15px 13px}
 }
+
+
+/* Claude external MCP card. Uses the existing glass tokens and responsive column. */
+.fh-claude-mcp { margin-top:14px; display:flex; flex-direction:column; gap:12px; min-width:0; }
+.fh-claude-mcp-url { display:flex; align-items:center; min-width:0; gap:8px; }
+.fh-claude-mcp-url input { min-width:0; flex:1; border:1px solid #e5eaf5; background:#f8faff;
+  border-radius:10px; padding:11px 12px; color:#425577; font-size:12px; }
+.fh-claude-mcp-url button { flex:0 0 42px; display:grid; place-items:center; min-height:42px;
+  border:1px solid #e5eaf5; background:white; border-radius:10px; }
+.fh-claude-mcp button:focus-visible { outline:2px solid #347dff; outline-offset:2px; }
+.fh-claude-mcp .fh-claude-secondary { display:flex; align-items:center; gap:8px; justify-content:center; }
