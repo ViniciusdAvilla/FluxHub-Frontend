@@ -152,7 +152,7 @@ export default function CostImportPanel() {
             {labels[status]} ({preview.summary[status]})
           </option>)}
         </select>
-        {preview.preview_limited && <small>Exibindo as primeiras 100 linhas; totais consideram todo o arquivo.</small>}
+        {preview.preview_limited && <small>Até 100 exemplos por situação; totais consideram todo o arquivo.</small>}
       </div>
 
       <div className="table-wrap">
