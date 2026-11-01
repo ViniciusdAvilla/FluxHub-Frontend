@@ -62,7 +62,7 @@ import {
 import FinanceCategoryChart from "./finance-category-chart";
 import SmartProductFilters from "./smart-product-filters";
 import { abcStrategy, highVolumeThreshold } from "@/lib/abc-strategy";
-import { defaultAdvancedProductFilters, filterCatalogProducts, sortCatalogProducts, purchaseUrgency } from "@/lib/product-filters";
+import { defaultAdvancedProductFilters, filterCatalogProducts, sortCatalogProducts, purchaseUrgency, normalizeCatalogSearch, matchesCatalogSearch } from "@/lib/product-filters";
 import type { ProductSortKey, ProductSortDirection } from "@/lib/product-filters";
 const RaioXPanel = dynamic(() => import("./raio-x-panel"));
 
@@ -678,11 +678,9 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
   const categories = useMemo(() => [...new Set(rows.map((row) => row.category))].sort((a, b) => a.localeCompare(b, "pt-BR")), [rows]);
   const manufacturers = useMemo(() => [...new Set(rows.filter((row) => row.brand !== "Sem marca").map((row) => row.brand))].sort((a, b) => a.localeCompare(b, "pt-BR")), [rows]);
   const filtered = useMemo(() => {
-    const term = deferredQuery.trim().toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const term = normalizeCatalogSearch(deferredQuery.trim());
     const matches = rows.filter(row => {
-      const searchable = (row.title + " " + row.id + " " + row.brand + " " + row.category)
-        .toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      return (!term || searchable.includes(term)) &&
+      return matchesCatalogSearch(row, term) &&
         (!category || row.category === category) &&
         (!manufacturer || row.brand === manufacturer || (manufacturer === "__missing" && row.brand === "Sem marca")) &&
         (!stockTone || row.stockTone === stockTone);
@@ -710,7 +708,10 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
     setBusy(true);
     setNotice("");
     try {
-      const response = await fetch("/api/dashboard", { cache: "no-store", signal: AbortSignal.timeout(20000) });
+      const scope = view === "data" ? "data" : "catalog";
+      const response = await fetch("/api/dashboard?scope=" + scope, {
+        cache: "no-store", signal: AbortSignal.timeout(20000),
+      });
       const next = (await response.json()) as Snapshot;
       if (!response.ok || next.error) throw new Error(next.error || "Falha na atualização.");
       setSnapshot(next);

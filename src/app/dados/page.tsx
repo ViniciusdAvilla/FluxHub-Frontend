@@ -5,6 +5,6 @@ import { sellerIdentity } from "@/lib/seller-data";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export default async function Page() {
-  const [snapshot, identity] = await Promise.all([getSnapshot(), sellerIdentity()]);
+  const [snapshot, identity] = await Promise.all([getSnapshot("data"), sellerIdentity()]);
   return <PlatformPage initial={snapshot} isAdmin={Boolean(identity?.is_admin)} view="data" />;
 }

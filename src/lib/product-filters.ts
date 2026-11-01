@@ -27,9 +27,20 @@ export const defaultAdvancedProductFilters: AdvancedProductFilters = {
 
 const collator = new Intl.Collator("pt-BR", { sensitivity: "base", numeric: true });
 
-function value(row: ProductRow, key: ProductSortKey): string | number | null {
-  if (key === "title" || key === "brand") return row[key];
-  return row[key];
+/** Uma única regra de busca para preservar acentos e resultados entre telas. */
+export function normalizeCatalogSearch(value: string): string {
+  return value.toLocaleLowerCase("pt-BR").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+/** No estado inicial não aloca nem normaliza milhares de nomes desnecessariamente. */
+export function matchesCatalogSearch(
+  row: Pick<ProductRow, "id" | "title" | "brand" | "category">,
+  normalizedTerm: string,
+): boolean {
+  if (!normalizedTerm) return true;
+  return normalizeCatalogSearch(
+    row.title + " " + row.id + " " + row.brand + " " + row.category,
+  ).includes(normalizedTerm);
 }
 
 export function sortCatalogProducts(
@@ -37,8 +48,8 @@ export function sortCatalogProducts(
 ): ProductRow[] {
   const multiplier = direction === "asc" ? 1 : -1;
   return [...products].sort((a, b) => {
-    const av = value(a, key);
-    const bv = value(b, key);
+    const av = a[key];
+    const bv = b[key];
     if (av === null || av === undefined) return bv === null || bv === undefined ? collator.compare(a.id, b.id) : 1;
     if (bv === null || bv === undefined) return -1;
     const order = typeof av === "string" && typeof bv === "string"

@@ -116,13 +116,13 @@ export async function getListingsOverview(): Promise<ListingsOverview> {
 }
 
 export async function getSellerReport(days: number, requestedAccount: number | null): Promise<SellerReport> {
-  const [user, accounts, allProducts, listings, orders, cancellations, ads] = await Promise.all([
+  // O resumo utiliza agregados de pedidos, não a página de pedidos nem
+  // a consulta separada de cancelamentos. Evita duas viagens e dados duplicados.
+  const [user, accounts, allProducts, listings, ads] = await Promise.all([
     sellerIdentity(),
     optional<Account[]>("/api/v1/connectors/mercado-livre"),
     optional<SellerProduct[]>("/api/v1/products/", undefined, 30000),
     optional<SellerReport["listing"]>("/api/v1/analytics/ads-performance"),
-    optional<SellerOrder[]>("/api/v1/orders/", new URLSearchParams({limit:"100",offset:"0"})),
-    optional<SellerReport["cancellations"]>("/api/v1/analytics/cancellations",new URLSearchParams({days:String(days)})),
     optional<SellerReport["ads"]>("/api/v1/analytics/ads-profitability",new URLSearchParams({days:String(days)})),
   ]);
   const authorizedIds = new Set((accounts || []).map(a=>a.account_id));
@@ -142,13 +142,12 @@ export async function getSellerReport(days: number, requestedAccount: number | n
   ]);
   const liveListingsTotal = (scopedListings ?? listings)?.total_listings ?? null;
   const products = Array.isArray(allProducts) ? allProducts.filter(p=>accountId === null || p.source_key === `ml:${accountId}`) : [];
-  const records = Array.isArray(orders) ? orders.filter(o=>accountId === null || o.seller_id === accountId) : [];
-  // Consulte apenas os oito anúncios de destaque e as cinco categorias mais frequentes.
+  // Consulte apenas os três anúncios mostrados e as cinco categorias mais frequentes.
   // Fotos vêm do banco: não há chamadas ao vivo aos anúncios nesta página.
   const sold = catalogMetrics?.sales_by_item ?? {};
   const featuredIds = [...products]
     .sort((a,b)=>(sold[b.external_id]??-1)-(sold[a.external_id]??-1))
-    .slice(0,8).map(p=>p.external_id).filter(id=>/^[A-Z0-9]{3,100}$/i.test(id));
+    .slice(0,3).map(p=>p.external_id).filter(id=>/^[A-Z0-9]{3,100}$/i.test(id));
   const counts = new Map<string,number>();
   for (const p of products) {
     const category = p.category?.trim();
@@ -181,7 +180,6 @@ export async function getSellerReport(days: number, requestedAccount: number | n
   const failedSources = [
     ...(!Array.isArray(accounts) ? ["Contas Mercado Livre"] : []),
     ...(!Array.isArray(allProducts) ? ["Produtos"] : []),
-    ...(!Array.isArray(orders) ? ["Pedidos"] : []),
     ...(!timelineData ? ["Histórico"] : []),
     ...(!paidRevenue ? ["Faturamento"] : []),
     ...(!catalogMetrics ? ["Vendas por produto"] : []),
@@ -191,7 +189,7 @@ export async function getSellerReport(days: number, requestedAccount: number | n
     accounts: Array.isArray(accounts) ? accounts : [],
     profile: null,
     sources: [],
-    orders: records,
+    orders: [],
     products,
     productPhotos,
     categoryNames,
@@ -199,7 +197,7 @@ export async function getSellerReport(days: number, requestedAccount: number | n
     catalogMetrics: catalogMetrics || null,
     timeline: Array.isArray(timelineData?.data) ? timelineData.data : [],
     listing: scopedListings || null,
-    cancellations: cancellations || null,
+    cancellations: null,
     orderStatus: orderStatus || null,
     ads: ads || null,
     paidRevenue: paidRevenue || null,
