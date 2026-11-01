@@ -90,7 +90,7 @@ export default function ModernShell({
   const currentTab = activeModule.tabs.find(t => t.href === path + (path === "/" ? hash : "")) ??
     activeModule.tabs.find(t => t.href === path) ?? activeModule.tabs[0];
 
-  return <div className="fh-app fh-liquid-glass">
+  return <div className={`fh-app fh-liquid-glass${path === "/" ? " fh-expo-glass-controls" : ""}`}>
     <div className="fh-glass-atmosphere" aria-hidden="true"><i/><i/><i/></div>
     <aside className={`fh-sidebar ${mobileOpen ? "fh-open" : ""}`}>
       <div className="fh-logo">
