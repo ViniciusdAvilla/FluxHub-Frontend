@@ -35,6 +35,10 @@ export type SellerReport = {
   sources: SourceStatus[];
   orders: SellerOrder[];
   products: SellerProduct[];
+  /** Fotos persistidas no backend, indexadas pelo identificador do anúncio. */
+  productPhotos: Record<string, string>;
+  /** Nomes oficiais das categorias; vazio se a API externa não respondeu. */
+  categoryNames: Record<string, string>;
   costs: CatalogCost[];
   catalogMetrics: CatalogMetrics | null;
   timeline: TimelinePoint[];
@@ -139,6 +143,41 @@ export async function getSellerReport(days: number, requestedAccount: number | n
   const liveListingsTotal = (scopedListings ?? listings)?.total_listings ?? null;
   const products = Array.isArray(allProducts) ? allProducts.filter(p=>accountId === null || p.source_key === `ml:${accountId}`) : [];
   const records = Array.isArray(orders) ? orders.filter(o=>accountId === null || o.seller_id === accountId) : [];
+  // Consulte apenas os oito anúncios de destaque e as cinco categorias mais frequentes.
+  // Fotos vêm do banco: não há chamadas ao vivo aos anúncios nesta página.
+  const sold = catalogMetrics?.sales_by_item ?? {};
+  const featuredIds = [...products]
+    .sort((a,b)=>(sold[b.external_id]??-1)-(sold[a.external_id]??-1))
+    .slice(0,8).map(p=>p.external_id).filter(id=>/^[A-Z0-9]{3,100}$/i.test(id));
+  const counts = new Map<string,number>();
+  for (const p of products) {
+    const category = p.category?.trim();
+    if (category) counts.set(category,(counts.get(category)??0)+1);
+  }
+  const categoryIds = [...counts.entries()].sort((a,b)=>b[1]-a[1]).slice(0,5)
+    .map(([id])=>id).filter(id=>/^ML[A-Z]{1,2}\d{3,15}$/.test(id));
+  const [photoRows, officialCategories] = await Promise.all([
+    featuredIds.length ? optional<{item_id:string;thumbnail:string|null}[]>(
+      "/api/v1/products/photos",new URLSearchParams({ids:featuredIds.join(",")}),5500
+    ) : Promise.resolve(null),
+    categoryIds.length ? optional<Record<string,string>>(
+      "/api/v1/analytics/category-names",
+      new URLSearchParams({ids:categoryIds.join(",")}),12000
+    ) : Promise.resolve(null),
+  ]);
+  const productPhotos: Record<string,string> = {};
+  if (Array.isArray(photoRows)) for (const row of photoRows) {
+    if (row.item_id && row.thumbnail) {
+      try {
+        const url = new URL(row.thumbnail);
+        if (url.protocol === "https:" &&
+            (url.hostname === "mlstatic.com" || url.hostname.endsWith(".mlstatic.com")))
+          productPhotos[row.item_id] = row.thumbnail;
+      } catch { /* Foto inválida: manter marcador sem imagem. */ }
+    }
+  }
+  const categoryNames = officialCategories && typeof officialCategories === "object" &&
+    !Array.isArray(officialCategories) ? officialCategories : {};
   const failedSources = [
     ...(!Array.isArray(accounts) ? ["Contas Mercado Livre"] : []),
     ...(!Array.isArray(allProducts) ? ["Produtos"] : []),
@@ -154,6 +193,8 @@ export async function getSellerReport(days: number, requestedAccount: number | n
     sources: [],
     orders: records,
     products,
+    productPhotos,
+    categoryNames,
     costs: Array.isArray(catalogMetrics?.costs) ? catalogMetrics.costs : [],
     catalogMetrics: catalogMetrics || null,
     timeline: Array.isArray(timelineData?.data) ? timelineData.data : [],

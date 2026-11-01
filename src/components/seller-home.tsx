@@ -5,6 +5,7 @@ import {
   Tag, TrendingUp,
 } from "lucide-react";
 import { money, number, percent } from "@/lib/analytics";
+import { listingStatusLabel, orderStatusLabel } from "@/lib/order-status";
 import type { SellerReport } from "@/lib/seller-data";
 import ModernShell from "./modern-shell";
 import { DailyBars, DonutStats, PerformanceChart } from "./modern-charts";
@@ -62,7 +63,7 @@ export default function SellerHome({report}:{report:SellerReport}){
   ).slice(0,8);
   const costIndex=new Map(costs.map(c=>[c.external_id,c]));
   const statusItems=Object.entries(report.orderStatus?.by_status||{}).map(([name,value],i)=>({
-    name,value,color:["#20c58b","#488bfa","#ffbd46","#f2737a","#9878f6"][i%5]
+    name:orderStatusLabel(name),value,color:["#20c58b","#488bfa","#ffbd46","#f2737a","#9878f6"][i%5]
   }));
   const orderedTimeline=[...timeline].sort((a,b)=>a.date.localeCompare(b.date));
   const orderSeries=orderedTimeline.map(p=>p.orders);
@@ -81,7 +82,7 @@ export default function SellerHome({report}:{report:SellerReport}){
       <Box title="Evolução das vendas"><PerformanceChart points={timeline}/></Box>
       <Box title="Situação da loja">
         <DonutStats items={Object.entries(report.listing?.by_status||{}).map(([name,value],i)=>({
-          name:name==="active"?"Ativos":name==="paused"?"Pausados":name==="closed"?"Encerrados":name,
+          name:listingStatusLabel(name),
           value,color:["#347cff","#96a3c4","#ffad31","#9775f9"][i%4],
         }))} label="anúncios"/>
         <Link className="fh-status-more" href="/anuncios">Ver todos os anúncios <ArrowRight size={14}/></Link>
@@ -90,10 +91,23 @@ export default function SellerHome({report}:{report:SellerReport}){
     <div className="fh-overview-bottom" id="alertas">
       <Box title="Produtos em destaque" href="/produtos">
         {topProducts.length ? <div className="fh-spotlight-list">
-          {topProducts.slice(0,3).map(p=><Link className="fh-spotlight-row" key={p.external_id} href={/^ML[A-Z]{1,2}\\d{5,20}$/.test(p.external_id)?`/produtos/${encodeURIComponent(p.external_id)}`:"/produtos"}>
-            <span className="fh-spotlight-icon"><Package size={20}/></span>
-            <span className="fh-spotlight-copy"><strong>{p.title}</strong><small>{p.category || p.brand || "Produto cadastrado"}</small></span>
-            <span className="fh-spotlight-sales"><strong>{number(p.sales_30d)}</strong><small>vendas</small></span>
+          {topProducts.slice(0,3).map(p=><Link className="fh-spotlight-row" key={p.external_id} href={/^ML[A-Z]{1,2}\d{5,20}$/.test(p.external_id)?`/produtos/${encodeURIComponent(p.external_id)}`:"/produtos"}>
+            <span className="fh-spotlight-icon">
+              {report.productPhotos[p.external_id]
+                ? <img src={report.productPhotos[p.external_id]} width={46} height={46}
+                    alt={`Foto de ${p.title}`} loading="lazy" decoding="async"/>
+                : <Package size={20} aria-label="Foto não disponível"/>}
+            </span>
+            <span className="fh-spotlight-copy"><strong>{p.title}</strong>
+              <small>{report.categoryNames[p.category] ||
+                (/^ML[A-Z]{1,2}\d{3,15}$/.test(p.category) ? "Categoria não identificada" :
+                  p.category || p.brand || "Produto cadastrado")}</small>
+            </span>
+            <span className="fh-spotlight-sales">
+              <strong>{salesByItem[p.external_id]!==undefined ? number(salesByItem[p.external_id]) :
+                ordersComplete ? "0" : "—"}</strong>
+              <small>{salesByItem[p.external_id]===undefined && !ordersComplete ? "Em apuração" : "unid. vendidas"}</small>
+            </span>
             <ArrowRight size={15}/>
           </Link>)}
         </div> : <div className="fh-empty">Nenhum produto sincronizado nesta conta.</div>}
@@ -103,6 +117,25 @@ export default function SellerHome({report}:{report:SellerReport}){
           <Link href="/estoque" className="fh-overview-alert"><span className="fh-overview-alert-icon"><Boxes size={22}/></span><span><strong>{number(products.filter(p=>p.stock_qty===0).length)} produtos sem estoque</strong><small>Revise o estoque para evitar interrupções nos anúncios.</small></span><ArrowRight size={16}/></Link>
           <Link href="/pedidos" className="fh-overview-alert"><span className="fh-overview-alert-icon"><CircleAlert size={22}/></span><span><strong>{number(canceled)} cancelamentos registrados</strong><small>Acompanhe os pedidos do período selecionado.</small></span><ArrowRight size={16}/></Link>
         </div>
+      </Box>
+    </div>
+    <div className="fh-overview-detail-grid">
+      <Box title="Situação dos pedidos" href="/pedidos">
+        <DonutStats items={statusItems} label="pedidos"/>
+      </Box>
+      <Box title="Top categorias" href="/produtos">
+        <div className="fh-mini-list">
+          {sortedCategories.length ? sortedCategories.map(([category,value])=><div key={category} className="fh-mini-row fh-category-row">
+            <span title={report.categoryNames[category] || "Categoria do catálogo"}>
+              {report.categoryNames[category] ||
+                (/^ML[A-Z]{1,2}\d{3,15}$/.test(category) ? "Nome indisponível" : category)}
+            </span>
+            <div className="fh-progress"><i style={{width:`${value/Math.max(...sortedCategories.map(c=>c[1]))*100}%`}}/></div>
+            <strong>{number(value)}</strong>
+          </div>) : <div className="fh-empty">Sem produtos classificados.</div>}
+        </div>
+        {sortedCategories.some(([id])=>/^ML[A-Z]{1,2}\d{3,15}$/.test(id) && !report.categoryNames[id]) &&
+          <p className="fh-category-hint">Alguns nomes ainda não foram retornados pelo Mercado Livre.</p>}
       </Box>
     </div>
     <div className="fh-overview-secondary">
@@ -117,9 +150,7 @@ export default function SellerHome({report}:{report:SellerReport}){
     </div>
     <div className="fh-split-grid">
       <Box title="Vendas por dia" href="/vendas"><DailyBars points={timeline}/></Box>
-      <Box title="Pedidos por status" href="/pedidos"><DonutStats items={statusItems} label="pedidos"/></Box>
-      <Box title="Saúde dos anúncios" href="/anuncios"><DonutStats items={Object.entries(report.listing?.by_status||{}).map(([name,value],i)=>({name,value,color:["#1ac68e","#4c8dff","#ffc75c","#f67c8c"][i%4]}))} label="anúncios"/></Box>
-      <Box title="Top categorias" href="/produtos"><div className="fh-mini-list">{sortedCategories.length?sortedCategories.map(([category,value])=><div key={category} className="fh-mini-row"><span style={{minWidth:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",width:110}}>{category}</span><div className="fh-progress"><i style={{width:`${value/Math.max(...sortedCategories.map(c=>c[1]))*100}%`}}/></div><strong>{number(value)}</strong></div>):<div className="fh-empty">Sem produtos classificados.</div>}</div></Box>
+      <Box title="Saúde dos anúncios" href="/anuncios"><DonutStats items={Object.entries(report.listing?.by_status||{}).map(([name,value],i)=>({name:listingStatusLabel(name),value,color:["#1ac68e","#4c8dff","#ffc75c","#f67c8c"][i%4]}))} label="anúncios"/></Box>
     </div>
     <div className="fh-alert-row">
       <div className="fh-alert rose"><span>Cancelamentos registrados</span><strong>{number(canceled)}</strong></div>

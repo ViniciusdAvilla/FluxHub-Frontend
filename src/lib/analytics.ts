@@ -1,4 +1,5 @@
 import type { AbcRow, Finance, Product, ProductRow, Tone } from "./types";
+import { orderStatusLabels, listingStatusLabels } from "./order-status";
 
 const brl = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -489,7 +490,7 @@ export function displayValue(value: unknown): string {
     return Number.isFinite(value)
       ? value.toLocaleString("pt-BR", { maximumFractionDigits: 2 })
       : "—";
-  if (typeof value === "string") return value || "—";
+  if (typeof value === "string") return orderStatusLabels[value] || listingStatusLabels[value] || value || "—";
   try {
     const json = JSON.stringify(value);
     return json.length > 120 ? `${json.slice(0, 117)}…` : json;

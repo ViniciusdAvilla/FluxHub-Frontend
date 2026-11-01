@@ -2161,3 +2161,185 @@ html, body { background: #f6f8fe; color: #1d3058; }
     backdrop-filter:blur(10px) saturate(135%);
   }
 }
+
+/* FluxHub 2026: visual aprovado — branco suave, vidro sutil e seleção azul-pastel.
+   Superfícies grandes são opacas para preservar contraste e reduzir custo de GPU. */
+.fh-liquid-glass.fh-theme-light { background:#f6f8fc; color:#17284d; color-scheme:light; }
+.fh-liquid-glass.fh-theme-light .fh-glass-atmosphere {
+  background:linear-gradient(135deg,#fcfdff 0%,#f7f9fd 58%,#f1f5fc 100%);
+}
+.fh-liquid-glass.fh-theme-light .fh-glass-atmosphere::before,
+.fh-liquid-glass.fh-theme-light .fh-glass-atmosphere::after,
+.fh-liquid-glass.fh-theme-light .fh-glass-atmosphere i { display:none; }
+.fh-liquid-glass.fh-theme-light .fh-sidebar,
+.fh-liquid-glass.fh-theme-light .fh-topbar,
+.fh-liquid-glass.fh-theme-light .fh-subnav,
+.fh-liquid-glass.fh-theme-light.fh-expo-glass-controls .fh-sidebar,
+.fh-liquid-glass.fh-theme-light.fh-expo-glass-controls .fh-topbar,
+.fh-liquid-glass.fh-theme-light.fh-expo-glass-controls .fh-subnav {
+  background:rgba(255,255,255,.90);
+  border:1px solid rgba(225,234,247,.92);
+  box-shadow:0 8px 28px rgba(39,67,111,.055),inset 0 1px 0 #fff;
+  -webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+}
+.fh-liquid-glass.fh-theme-light .fh-card,
+.fh-liquid-glass.fh-theme-light .fh-kpi,
+.fh-liquid-glass.fh-theme-light .fh-alert,
+.fh-liquid-glass.fh-theme-light .fh-legacy-module .panel {
+  background:rgba(255,255,255,.94);
+  border:1px solid #e8eef8;
+  box-shadow:0 5px 18px rgba(38,70,120,.035),inset 0 1px 0 #fff;
+  -webkit-backdrop-filter:none;backdrop-filter:none;
+}
+.fh-liquid-glass.fh-theme-light .fh-card::before,
+.fh-liquid-glass.fh-theme-light .fh-kpi::before { opacity:.18; }
+.fh-liquid-glass.fh-theme-light .fh-sidebar .fh-nav a.fh-nav-active,
+.fh-liquid-glass.fh-theme-light.fh-expo-glass-controls .fh-sidebar .fh-nav a.fh-nav-active {
+  color:#185ab4;text-shadow:none;
+  background:linear-gradient(120deg,#dfedff,#c9ddff);
+  border:1px solid rgba(175,204,249,.9);
+  box-shadow:0 4px 12px rgba(63,114,206,.10),inset 0 1px 0 rgba(255,255,255,.85);
+  -webkit-backdrop-filter:none;backdrop-filter:none;
+}
+.fh-liquid-glass.fh-theme-light .fh-subnav a.fh-tab-active,
+.fh-liquid-glass.fh-theme-light.fh-expo-glass-controls .fh-subnav a.fh-tab-active {
+  background:#eef5ff;color:#1b5dbb;border-bottom-color:#7aacf7;
+  box-shadow:inset 0 1px 0 #fff;text-shadow:none;
+}
+.fh-liquid-glass.fh-theme-light .fh-subnav a:not(.fh-tab-active):hover,
+.fh-liquid-glass.fh-theme-light .fh-sidebar .fh-nav a:not(.fh-nav-active):hover {
+  background:#f0f6ff;color:#245aa1;
+}
+.fh-liquid-glass.fh-theme-light .fh-subnav a {border-radius:10px 10px 0 0;min-width:123px;text-align:center;}
+.fh-liquid-glass.fh-theme-light.fh-expo-glass-controls .fh-top-icon,
+.fh-liquid-glass.fh-theme-light.fh-expo-glass-controls .fh-account-control,
+.fh-liquid-glass.fh-theme-light.fh-expo-glass-controls .fh-glass-period,
+.fh-liquid-glass.fh-theme-light.fh-expo-glass-controls .fh-signout {
+  background:rgba(249,252,255,.92);border-color:#e0eafb;
+  box-shadow:inset 0 1px 0 #fff,0 3px 12px rgba(40,69,105,.045);
+}
+.fh-liquid-glass .fh-overview-detail-grid {
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  gap:14px;margin:0 0 18px;
+}
+.fh-liquid-glass .fh-overview-detail-grid>.fh-card {min-width:0;min-height:246px;}
+.fh-liquid-glass .fh-overview-detail-grid .fh-mini-list {margin-top:7px;display:grid;gap:12px;}
+.fh-liquid-glass .fh-category-row {gap:16px;min-height:26px;}
+.fh-liquid-glass .fh-category-row>span {min-width:0;flex:0 1 230px;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fh-liquid-glass .fh-category-row .fh-progress {flex:1;min-width:20px;}
+.fh-liquid-glass .fh-category-row strong {font-size:12px;min-width:25px;text-align:right;}
+.fh-liquid-glass .fh-category-hint {font-size:11px;margin:12px 0 0;color:#687d9a;}
+.fh-liquid-glass .fh-spotlight-icon {overflow:hidden;}
+.fh-liquid-glass .fh-spotlight-icon img {width:100%;height:100%;object-fit:cover;border-radius:10px;display:block;}
+.fh-liquid-glass .fh-spotlight-sales {min-width:67px;max-width:100px;}
+.fh-liquid-glass .fh-spotlight-sales small {white-space:normal;}
+.fh-theme-toggle {
+  display:flex;align-items:center;gap:11px;min-height:43px;
+  width:100%;padding:9px 12px;margin:0 0 10px;border-radius:12px;
+  border:1px solid #e1e9f6;background:rgba(255,255,255,.62);
+  color:#3b5783;font:inherit;font-size:12px;font-weight:650;
+  text-align:left;cursor:pointer;
+}
+.fh-theme-toggle:hover {background:#eaf2ff;}
+.fh-theme-toggle:focus-visible {outline:3px solid #7cafff;outline-offset:2px;}
+.fh-theme-toggle-state {margin-left:auto;color:#5e83b5;font-size:17px;}
+
+/* Tema grafite: opção de leitura, sempre com contraste em textos e controles. */
+.fh-liquid-glass.fh-theme-dark {color-scheme:dark;color:#eaf1ff;background:#141820;--fh-ink:#eaf1ff;--fh-muted:#aab8ce;--fh-line:#364259;}
+.fh-liquid-glass.fh-theme-dark .fh-glass-atmosphere {background:linear-gradient(150deg,#151a22,#1c2431 70%,#141923);}
+.fh-liquid-glass.fh-theme-dark .fh-glass-atmosphere::before,
+.fh-liquid-glass.fh-theme-dark .fh-glass-atmosphere::after,
+.fh-liquid-glass.fh-theme-dark .fh-glass-atmosphere i {display:none;}
+.fh-liquid-glass.fh-theme-dark .fh-sidebar,
+.fh-liquid-glass.fh-theme-dark .fh-topbar,
+.fh-liquid-glass.fh-theme-dark .fh-subnav {
+  background:rgba(30,36,47,.97);border:1px solid #374254;
+  box-shadow:0 8px 30px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.07);
+  -webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+}
+.fh-liquid-glass.fh-theme-dark .fh-card,
+.fh-liquid-glass.fh-theme-dark .fh-kpi,
+.fh-liquid-glass.fh-theme-dark .fh-alert,
+.fh-liquid-glass.fh-theme-dark .fh-legacy-module .panel,
+.fh-liquid-glass.fh-theme-dark .fh-legacy-module .metric-card,
+.fh-liquid-glass.fh-theme-dark .fh-legacy-module .filterbar {
+  background:#242d3a;border:1px solid #3a4659;
+  color:#eaf1ff;box-shadow:0 6px 20px rgba(0,0,0,.12);
+  -webkit-backdrop-filter:none;backdrop-filter:none;
+}
+.fh-liquid-glass.fh-theme-dark .fh-heading h1,
+.fh-liquid-glass.fh-theme-dark .fh-kpi-value,
+.fh-liquid-glass.fh-theme-dark .fh-card-head h2,
+.fh-liquid-glass.fh-theme-dark .fh-overview-charts .fh-card-head h2,
+.fh-liquid-glass.fh-theme-dark .fh-overview-bottom .fh-card-head h2,
+.fh-liquid-glass.fh-theme-dark .fh-overview-secondary>h2,
+.fh-liquid-glass.fh-theme-dark .fh-overview-alert strong,
+.fh-liquid-glass.fh-theme-dark .fh-spotlight-copy strong,
+.fh-liquid-glass.fh-theme-dark .fh-info-row strong {color:#eef4ff;}
+.fh-liquid-glass.fh-theme-dark .fh-heading p,
+.fh-liquid-glass.fh-theme-dark .fh-card-head p,
+.fh-liquid-glass.fh-theme-dark .fh-kpi-label,
+.fh-liquid-glass.fh-theme-dark .fh-overview-kpis .fh-kpi-label,
+.fh-liquid-glass.fh-theme-dark .fh-kpi-note,
+.fh-liquid-glass.fh-theme-dark .fh-spotlight-copy small,
+.fh-liquid-glass.fh-theme-dark .fh-overview-alert small,
+.fh-liquid-glass.fh-theme-dark .fh-overview-secondary>p {color:#afbed7;}
+.fh-liquid-glass.fh-theme-dark .fh-sidebar .fh-nav a {color:#c1d0e7;background:transparent;border:1px solid transparent;}
+.fh-liquid-glass.fh-theme-dark .fh-sidebar .fh-nav a.fh-nav-active {
+  color:#c9e2ff;background:linear-gradient(120deg,#33527b,#3a6191);
+  border:1px solid #5b82b0;text-shadow:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.14);
+}
+.fh-liquid-glass.fh-theme-dark .fh-sidebar .fh-nav a:not(.fh-nav-active):hover,
+.fh-liquid-glass.fh-theme-dark .fh-subnav a:hover {background:#354154;color:#fff;}
+.fh-liquid-glass.fh-theme-dark .fh-subnav a {color:#c1cde1;}
+.fh-liquid-glass.fh-theme-dark .fh-subnav a.fh-tab-active {background:#314861;color:#badbff;border-bottom-color:#81b7ff;text-shadow:none;}
+.fh-liquid-glass.fh-theme-dark .fh-spotlight-row,
+.fh-liquid-glass.fh-theme-dark .fh-overview-alert,
+.fh-liquid-glass.fh-theme-dark .fh-control,
+.fh-liquid-glass.fh-theme-dark .fh-filter,
+.fh-liquid-glass.fh-theme-dark .fh-top-icon,
+.fh-liquid-glass.fh-theme-dark .fh-account-control,
+.fh-liquid-glass.fh-theme-dark .fh-glass-period,
+.fh-liquid-glass.fh-theme-dark .fh-signout,
+.fh-liquid-glass.fh-theme-dark .fh-theme-toggle {
+  background:#2d3747;border:1px solid #465468;color:#e5efff;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+}
+.fh-liquid-glass.fh-theme-dark .fh-spotlight-row:hover,
+.fh-liquid-glass.fh-theme-dark .fh-overview-alert:hover,
+.fh-liquid-glass.fh-theme-dark .fh-theme-toggle:hover {background:#39485e;}
+.fh-liquid-glass.fh-theme-dark .fh-spotlight-sales strong,
+.fh-liquid-glass.fh-theme-dark .fh-mini-row,
+.fh-liquid-glass.fh-theme-dark .fh-mini-row strong,
+.fh-liquid-glass.fh-theme-dark .fh-theme-toggle-state {color:#ebf3ff;}
+.fh-liquid-glass.fh-theme-dark .fh-category-hint {color:#b5c3dc;}
+.fh-liquid-glass.fh-theme-dark .fh-sidebar .fh-logo strong,
+.fh-liquid-glass.fh-theme-dark .fh-sidebar .fh-help,
+.fh-liquid-glass.fh-theme-dark .fh-logo::after {color:#c6d5ef;}
+.fh-liquid-glass.fh-theme-dark input,
+.fh-liquid-glass.fh-theme-dark select,
+.fh-liquid-glass.fh-theme-dark textarea {background:#273245;color:#eaf1ff;border-color:#46546b;}
+.fh-liquid-glass.fh-theme-dark .fh-chart-label {fill:#aabbd3;color:#aabbd3;}
+.fh-liquid-glass.fh-theme-dark .fh-table th,
+.fh-liquid-glass.fh-theme-dark .fh-table td {color:#e6edff;border-color:#3a4659;}
+.fh-liquid-glass.fh-theme-dark .fh-table thead {background:#2d394c;}
+@media(max-width:1050px) {
+  .fh-liquid-glass .fh-overview-detail-grid {grid-template-columns:1fr;}
+}
+@media(max-width:530px) {
+  .fh-liquid-glass .fh-overview-detail-grid>.fh-card {min-height:auto;}
+  .fh-liquid-glass .fh-category-row {gap:9px;}
+  .fh-liquid-glass .fh-category-row>span {flex-basis:145px;}
+  .fh-liquid-glass.fh-theme-light .fh-subnav a {min-width:auto;}
+}
+@media(prefers-reduced-motion:reduce) {
+  .fh-theme-toggle {transition:none;}
+}
+@media(prefers-contrast:more), (prefers-reduced-transparency:reduce) {
+  .fh-liquid-glass.fh-theme-light .fh-sidebar,
+  .fh-liquid-glass.fh-theme-light .fh-topbar,
+  .fh-liquid-glass.fh-theme-light .fh-subnav {background:#fff;-webkit-backdrop-filter:none;backdrop-filter:none;}
+  .fh-liquid-glass.fh-theme-dark .fh-sidebar,
+  .fh-liquid-glass.fh-theme-dark .fh-topbar,
+  .fh-liquid-glass.fh-theme-dark .fh-subnav {background:#242d3a;-webkit-backdrop-filter:none;backdrop-filter:none;}
+}

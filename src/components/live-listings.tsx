@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { money, number } from "@/lib/analytics";
+import { listingStatusLabel } from "@/lib/order-status";
 import PricingCalculator, { type PricingSeed } from "./pricing-calculator";
 
 type LiveItem = {
@@ -128,7 +129,7 @@ export default function LiveListings({ accounts }: { accounts: AccountOption[] }
               <small>Ver ficha · {item.id}</small>
             </Link>
           </td>
-          <td>{item.status}</td><td>{money(item.price)}</td><td>{number(item.stock)}</td>
+          <td>{listingStatusLabel(item.status)}</td><td>{money(item.price)}</td><td>{number(item.stock)}</td>
         </tr>)}
         {!loading && current?.items.length === 0 &&
           <tr><td colSpan={4}>Nenhum anúncio nesta página.</td></tr>}

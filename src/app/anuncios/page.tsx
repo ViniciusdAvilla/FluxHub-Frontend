@@ -8,6 +8,7 @@ import { DonutStats } from "@/components/modern-charts";
 import RankedBarChart from "@/components/ranked-bar-chart";
 import { getListingsOverview } from "@/lib/seller-data";
 import { money,number } from "@/lib/analytics";
+import { listingStatusLabel } from "@/lib/order-status";
 export const dynamic="force-dynamic";export const runtime="nodejs";
 export default async function ListingsPage(){
  const r=await getListingsOverview();
@@ -34,7 +35,7 @@ export default async function ListingsPage(){
    <article className="fh-kpi purple"><div className="fh-kpi-top">Marcas cadastradas</div><strong className="fh-kpi-value">{number(new Set(r.products.map(p=>p.brand).filter(Boolean)).size)}</strong></article>
   </div>
   <div className="fh-hero-grid">
-   <section className="fh-card"><div className="fh-card-head"><h2>Anúncios por status</h2></div><DonutStats label="anúncios" items={Object.entries(r.listing?.by_status||{}).map(([name,value],i)=>({name,value,color:["#22c58b","#4288fa","#ffc55b","#f67c87"][i%4]}))}/></section>
+   <section className="fh-card"><div className="fh-card-head"><h2>Anúncios por status</h2></div><DonutStats label="anúncios" items={Object.entries(r.listing?.by_status||{}).map(([name,value],i)=>({name:listingStatusLabel(name),value,color:["#22c58b","#4288fa","#ffc55b","#f67c87"][i%4]}))}/></section>
    <section className="fh-card"><div className="fh-card-head"><h2>Dados sincronizados</h2></div>
     <div className="fh-info-row"><span>Registros mantidos no banco</span><strong>{number(r.products.filter(p=>p.source_key?.startsWith("ml:")).length)}</strong></div>
     <div className="fh-info-row"><span>Anúncios sem estoque</span><strong>{number(r.products.filter(p=>p.stock_qty===0).length)}</strong></div>
