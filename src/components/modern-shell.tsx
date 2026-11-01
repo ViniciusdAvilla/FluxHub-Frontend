@@ -80,13 +80,18 @@ export default function ModernShell({
   const [hash, setHash] = useState("");
   const [theme, setTheme] = useState<"light" | "dark">("light");
   useEffect(() => {
+    let stored: "light" | "dark" = "light";
     try {
-      if (window.localStorage.getItem("fluxhub-theme") === "dark") setTheme("dark");
+      if (window.localStorage.getItem("fluxhub-theme") === "dark") stored = "dark";
     } catch { /* Preferências locais desabilitadas: usar tema claro. */ }
+    document.documentElement.dataset.fluxhubTheme = stored;
+    setTheme(stored);
   }, []);
   function toggleTheme() {
     const next = theme === "light" ? "dark" : "light";
     setTheme(next);
+    // O tema da página raiz também cobre o drawer de filtros portaled e o skeleton entre rotas.
+    document.documentElement.dataset.fluxhubTheme = next;
     try { window.localStorage.setItem("fluxhub-theme", next); } catch { /* Não impedir a troca. */ }
   }
   useEffect(() => {

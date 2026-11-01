@@ -43,7 +43,7 @@ export function PerformanceChart({points}:{points:TimelinePoint[]}) {
           {data.filter((_,i)=>i%Math.max(1,Math.ceil(data.length/7))===0).map(p=><text key={p.date} className="fh-chart-label" textAnchor="middle" x={data.indexOf(p)/Math.max(1,data.length-1)*width} y={height+23}>{p.date.slice(5).split("-").reverse().join("/")}</text>)}
         </g>
       </svg>
-      {hover!==null&&<div style={{position:"absolute",right:13,top:12,background:"#fff",border:"1px solid #e4eafa",borderRadius:10,padding:"10px 12px",boxShadow:"0 8px 25px #142a4d1e",fontSize:11,zIndex:2}}>
+      {hover!==null&&<div className="fh-chart-tooltip" style={{position:"absolute",right:13,top:12,borderRadius:10,padding:"10px 12px",fontSize:11,zIndex:2}}>
         <strong>{date.date.split("-").reverse().join("/")}</strong>
         <div>Faturamento: {compactMoney(date.gross_non_cancelled)}</div>
         <div>Pedidos: {date.orders.toLocaleString("pt-BR")}</div>
@@ -67,7 +67,7 @@ export function DonutStats({items,label}:{items:{name:string;value:number;color:
   const gradients=items.filter(i=>i.value>0).map(item=>{const start=current;current+=(item.value/total)*100;return `${item.color} ${start}% ${current}%`;});
   return <div style={{display:"flex",alignItems:"center",gap:15,minHeight:151}}>
     <div style={{position:"relative",width:125,height:125,flexShrink:0,borderRadius:"50%",background:`conic-gradient(${gradients.join(",")})`}}>
-      <div style={{position:"absolute",inset:23,borderRadius:"50%",background:"#fff",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+      <div className="fh-donut-center" style={{position:"absolute",inset:23,borderRadius:"50%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
         <strong style={{fontSize:18}}>{total.toLocaleString("pt-BR")}</strong><span style={{fontSize:10,color:"#98a4bc"}}>{label}</span>
       </div>
     </div>

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import "./modern.css";
+import "./dark-theme.css";
+import "./route-loading.css";
 
 export const metadata: Metadata = {
   title: "FluxHub | Gestão Mercado Livre",
