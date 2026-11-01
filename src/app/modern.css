@@ -1971,3 +1971,43 @@ html, body { background: #f6f8fe; color: #1d3058; }
   border:1px solid #e5eaf5; background:white; border-radius:10px; }
 .fh-claude-mcp button:focus-visible { outline:2px solid #347dff; outline-offset:2px; }
 .fh-claude-mcp .fh-claude-secondary { display:flex; align-items:center; gap:8px; justify-content:center; }
+
+
+/* Cost CSV import – scoped to the pricing dashboard. */
+.fh-cost-import{margin:0 0 24px;padding:24px;border-radius:22px;border:1px solid #e5eaf3;background:rgba(255,255,255,.95);box-shadow:0 12px 36px rgba(22,44,84,.05)}
+.fh-cost-import-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.fh-cost-import-heading h3{font-size:21px;line-height:1.3;margin:6px 0 8px;color:#17234b}
+.fh-cost-import-heading p{margin:0;color:#6d7992;font-size:14px}
+.fh-cost-import-secure{display:flex;gap:7px;align-items:center;color:#0f8669;font-size:12px;font-weight:650;background:#e6f8f1;padding:8px 11px;border-radius:100px}
+.fh-cost-import-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:20px}
+.fh-cost-import-file{display:flex;align-items:center;gap:12px;cursor:pointer;border:1px dashed #adc3e6;border-radius:13px;background:#f7faff;padding:12px 17px;max-width:100%;font-size:14px;color:#24436f;font-weight:600}
+.fh-cost-import-file span{max-width:290px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fh-cost-import-file input{max-width:215px;font-size:12px}
+.fh-cost-import-button{border:0;border-radius:12px;padding:12px 16px;display:inline-flex;align-items:center;justify-content:center;gap:9px;background:#347dff;color:#fff;font-size:13px;font-weight:750;cursor:pointer;min-height:44px}
+.fh-cost-import-button:disabled{opacity:.45;cursor:not-allowed}
+.fh-cost-import-button:not(:disabled):hover{background:#235dd4}
+.fh-cost-import-help{font-size:12px;color:#69788f;margin:13px 0 0;line-height:1.55}
+.fh-cost-import-error,.fh-cost-import-success{margin:18px 0 0;padding:14px 16px;display:flex;align-items:flex-start;gap:10px;border-radius:12px;font-size:13px}
+.fh-cost-import-error{background:#fff0f0;color:#a42630}
+.fh-cost-import-success{background:#e8f8f0;color:#0d6951}
+.fh-cost-import-success p{margin:3px 0 0}
+.fh-cost-import-preview{margin-top:22px;border-top:1px solid #e7ecf5;padding-top:20px}
+.fh-cost-import-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:18px}
+.fh-cost-import-summary>div{background:#f7f9fd;border:1px solid #e8edf5;border-radius:12px;padding:12px 15px;min-width:0}
+.fh-cost-import-summary>div.ready{background:#e9f8f1;border-color:#cdebdc}
+.fh-cost-import-summary>div.warn{background:#fffaf0;border-color:#f5ebcc}
+.fh-cost-import-summary small{display:block;font-size:12px;color:#687a96}
+.fh-cost-import-summary strong{display:block;margin-top:5px;font-size:21px;color:#182d53;font-variant-numeric:tabular-nums}
+.fh-cost-import-filters{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:13px;font-size:13px;color:#576983}
+.fh-cost-import-filters select{max-width:100%;border:1px solid #d6deed;border-radius:10px;padding:9px;background:white;color:#233456}
+.fh-cost-import-table{font-size:12px;width:100%}
+.fh-cost-import-table td,.fh-cost-import-table th{padding:12px 10px;vertical-align:top;text-align:left}
+.fh-cost-import-table td small{display:block;color:#7987a0;margin-top:4px;max-width:230px;overflow-wrap:anywhere}
+.fh-cost-import-badge{display:inline-block;border-radius:999px;padding:4px 8px;background:#f2f4f8;color:#54617c;font-size:11px;white-space:nowrap}
+.fh-cost-import-badge.atualizar{background:#e6f7ef;color:#0e7656}
+.fh-cost-import-badge.ambiguo,.fh-cost-import-badge.duplicado,.fh-cost-import-badge.revisar_valor,.fh-cost-import-badge.preco_invalido{background:#fff2db;color:#a66d15}
+.fh-cost-import-confirm{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:18px}
+.fh-cost-import-confirm>div{max-width:710px}
+.fh-cost-import-confirm p{margin:6px 0 0;font-size:12px;color:#64748b;line-height:1.5}
+@media(max-width:900px){.fh-cost-import-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.fh-cost-import{padding:15px}.fh-cost-import-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.fh-cost-import-actions>*{width:100%}.fh-cost-import-file{flex-wrap:wrap}.fh-cost-import-confirm .fh-cost-import-button{width:100%}}

@@ -68,6 +68,7 @@ const RaioXPanel = dynamic(() => import("./raio-x-panel"));
 
 const FinanceDialog = dynamic(() => import("./finance-dialog"), { ssr: false });
 const PricingCalculator = dynamic(() => import("./pricing-calculator"), { ssr: false });
+const CostImportPanel = dynamic(() => import("./cost-import-panel"));
 
 export type View =
   | "overview"
@@ -892,6 +893,7 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
 
           {view === "pricing" && (
             <>
+              <CostImportPanel />
               <div className="tool-control"><div><span className="eyebrow">META DE MARGEM</span><strong>{desiredMargin}%</strong><p>Preço mínimo estimado para alcançar a margem desejada.</p></div><input aria-label="Margem desejada" type="range" min="1" max="50" value={desiredMargin} onChange={(event) => setDesiredMargin(Number(event.target.value))} /></div>
               <div className="fh-insight-grid">
                 <Section title="Maiores ajustes de preço" subtitle="Diferença positiva até a margem desejada. Somente produtos com custos cadastrados.">
