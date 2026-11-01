@@ -48,7 +48,10 @@ export default function LoginPage() {
       } catch {
         // Nunca armazenamos a senha.
       }
-      window.location.assign("/");
+      const next = new URLSearchParams(window.location.search).get("next");
+      const safeNext = next && /^\/mcp\/autorizar\?request_id=[A-Za-z0-9_-]{30,100}$/.test(next)
+        ? next : "/";
+      window.location.assign(safeNext);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Não foi possível entrar.");
     } finally {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import McpConnectionCard from "@/components/mcp-connection-card";
 import {
   BadgePercent, Boxes, ChartNoAxesCombined, CheckCircle2, CircleAlert,
   Eye, EyeOff, LockKeyhole, Send, ShieldCheck, Sparkles, Target,
@@ -100,7 +101,7 @@ export default function ClaudeAgentsPanel() {
         setApiKey("");
         setShowKey(false);
         await refreshStatus();
-        setConfigNotice("Claude conectado! Configuração salva com segurança.");
+        setConfigNotice("Chave Anthropic validada por uma conversa real e salva com segurança.");
       } else {
         setConfigNotice("Conexão com a Anthropic validada.");
       }
@@ -148,7 +149,7 @@ export default function ClaudeAgentsPanel() {
             <div className="fh-claude-title-line">
               <h2>Conectar Claude</h2>
               <span className={"fh-claude-status " + (status?.configured ? "connected" : "")}>
-                {status?.configured ? "Conectado" : "Não conectado"}
+                {status?.configured ? "Chave salva" : "Sem chave"}
               </span>
             </div>
             <p>Configure sua chave de API Anthropic com segurança.</p>
@@ -196,6 +197,8 @@ export default function ClaudeAgentsPanel() {
         {configNotice && <p role="status" className="fh-claude-success"><CheckCircle2 size={16}/>{configNotice}</p>}
         <p className="fh-claude-footer-note"><ShieldCheck size={18}/> A chave nunca aparece no navegador após salvar.</p>
       </section>
+
+      <McpConnectionCard/>
 
       <section className="fh-claude-available" aria-labelledby="claude-agents-heading">
         <h2 id="claude-agents-heading">Agentes disponíveis</h2>
