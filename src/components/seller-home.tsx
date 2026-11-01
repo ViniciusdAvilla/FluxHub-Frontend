@@ -8,6 +8,7 @@ import { money, number, percent } from "@/lib/analytics";
 import { listingStatusLabel, orderStatusLabel } from "@/lib/order-status";
 import type { SellerReport } from "@/lib/seller-data";
 import ModernShell from "./modern-shell";
+import ConversionFunnel from "./conversion-funnel";
 import { DailyBars, DonutStats, PerformanceChart } from "./modern-charts";
 import OverviewPeriodFilter from "./overview-period-filter";
 
@@ -138,6 +139,8 @@ export default function SellerHome({report}:{report:SellerReport}){
           <p className="fh-category-hint">Alguns nomes ainda não foram retornados pelo Mercado Livre.</p>}
       </Box>
     </div>
+    <div className="fh-secondary-with-funnel">
+      <div className="fh-secondary-left">
     <div className="fh-overview-secondary">
       <h2>Mais indicadores da loja</h2>
       <p>Detalhes adicionais disponíveis nos dados sincronizados com o Mercado Livre.</p>
@@ -151,6 +154,9 @@ export default function SellerHome({report}:{report:SellerReport}){
     <div className="fh-split-grid">
       <Box title="Vendas por dia" href="/vendas"><DailyBars points={timeline}/></Box>
       <Box title="Saúde dos anúncios" href="/anuncios"><DonutStats items={Object.entries(report.listing?.by_status||{}).map(([name,value],i)=>({name:listingStatusLabel(name),value,color:["#1ac68e","#4c8dff","#ffc75c","#f67c8c"][i%4]}))} label="anúncios"/></Box>
+    </div>
+      </div>
+      <ConversionFunnel visits={visits} orders={totalOrders} paidOrders={paidOrders}/>
     </div>
     <div className="fh-alert-row">
       <div className="fh-alert rose"><span>Cancelamentos registrados</span><strong>{number(canceled)}</strong></div>
