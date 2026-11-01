@@ -1,5 +1,6 @@
-/* Skeleton de navegação. Exibido somente após 240ms pela rota loading.tsx. */
-.fh-route-loading {min-height:100dvh;}
+/* Skeleton exclusivo do conteúdo. O menu e as abas pertencem ao layout persistente. */
+.fh-route-loading {min-height:54vh;padding:9px 0 24px;}
+.fh-route-pending {min-height:12px;}
 .fh-route-loading .fh-sidebar {display:flex;}
 .fh-route-loading .fh-sidebar-bottom {margin-top:auto;}
 .fh-skeleton-block {
@@ -32,7 +33,7 @@
 .fh-skeleton-bottom {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;}
 .fh-skeleton-bottom>.fh-card {display:flex;flex-direction:column;gap:13px;}
 .fh-skeleton-list-row {height:49px;width:100%;}
-.fh-route-loading.fh-theme-dark .fh-skeleton-block {
+.fh-theme-dark .fh-route-loading .fh-skeleton-block {
   background:linear-gradient(105deg,#2b394c 12%,#354459 39%,#2b394c 65%);
   background-size:210% 100%;
 }
@@ -61,5 +62,5 @@
 }
 @media(prefers-reduced-motion:reduce) {
   .fh-skeleton-block {animation:none;background:#e9eef7;}
-  .fh-route-loading.fh-theme-dark .fh-skeleton-block {background:#304055;}
+  .fh-theme-dark .fh-route-loading .fh-skeleton-block {background:#304055;}
 }

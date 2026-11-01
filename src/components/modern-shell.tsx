@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import MercadoLivreIdentity from "./mercado-livre-identity";
 import {
   Activity, BadgeDollarSign, Bell, Boxes, ChartNoAxesCombined,
@@ -65,16 +65,60 @@ const descriptions: Record<string,string> = {
   "/agentes-claude": "Análises inteligentes sob demanda, baseadas nos seus indicadores.",
 };
 
-export default function ModernShell({
-  title, eyebrow, isAdmin = false, adminMode = false, children, action,
-}: {
+type ShellProps = {
   title: string;
   eyebrow?: string;
   isAdmin?: boolean;
   adminMode?: boolean;
   children: React.ReactNode;
   action?: React.ReactNode;
-}) {
+};
+type RegisteredPage = Omit<ShellProps, "children"> & { pathname: string };
+const PageChromeContext = createContext<((page: RegisteredPage) => void) | null>(null);
+
+/** Montado pelo layout raiz: barra lateral e abas permanecem entre navegações. */
+export function PersistentDashboardFrame({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const [registered, setRegistered] = useState<RegisteredPage | null>(null);
+  const register = useCallback((next: RegisteredPage) => {
+    setRegistered(previous =>
+      previous?.pathname === next.pathname &&
+      previous.title === next.title &&
+      previous.eyebrow === next.eyebrow &&
+      previous.isAdmin === next.isAdmin &&
+      previous.adminMode === next.adminMode &&
+      previous.action === next.action ? previous : next
+    );
+  }, []);
+
+  // Telas públicas têm sua própria estrutura visual e não exibem navegação da loja.
+  if (pathname === "/login" || pathname.startsWith("/mcp/autorizar")) {
+    return <>{children}</>;
+  }
+  const page = registered?.pathname === pathname ? registered : null;
+  return <PageChromeContext.Provider value={register}>
+    <ShellView title={page?.title ?? ""} eyebrow={page?.eyebrow}
+      isAdmin={page?.isAdmin} adminMode={pathname.startsWith("/admin")} action={page?.action}>
+      {children}
+    </ShellView>
+  </PageChromeContext.Provider>;
+}
+
+/** Páginas antigas registram seus controles no frame persistente sem duplicar a sidebar. */
+export default function ModernShell({ children, ...config }: ShellProps) {
+  const register = useContext(PageChromeContext);
+  const pathname = usePathname();
+  useEffect(() => {
+    if (register) register({ pathname, ...config });
+  }, [register, pathname, config.title, config.eyebrow, config.isAdmin, config.adminMode, config.action]);
+
+  if (register) return <>{children}</>;
+  return <ShellView {...config}>{children}</ShellView>;
+}
+
+function ShellView({
+  title, eyebrow, isAdmin = false, adminMode = false, children, action,
+}: ShellProps) {
   const path = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [hash, setHash] = useState("");
