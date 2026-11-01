@@ -54,12 +54,12 @@ export default function ConversionFunnel({ visits, orders, paidOrders }: FunnelP
     <div className="fh-funnel-rates">
       <div className="fh-funnel-rate">
         <span className="fh-funnel-rate-value">{visitRate}</span>
-        <span>visitas em relação aos pedidos</span>
+        <span>pedidos ÷ visitas no período</span>
         <ArrowDown size={13} aria-hidden="true"/>
       </div>
       <div className="fh-funnel-rate">
         <span className="fh-funnel-rate-value">{paymentRate}</span>
-        <span>pedidos registrados que foram pagos</span>
+        <span>pagos ÷ pedidos no período</span>
         <ArrowDown size={13} aria-hidden="true"/>
       </div>
     </div>
