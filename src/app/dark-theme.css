@@ -1,0 +1,303 @@
+/* Cores padrão dos gráficos no tema claro preservadas. */
+ .fh-chart-tooltip {background:#fff;border:1px solid #e4eafa;box-shadow:0 8px 25px #142a4d1e;}
+.fh-donut-center {background:#fff;}
+
+/* FluxHub: tokens do tema grafite. Importado depois de modern.css.
+   Todas as regras permanecem dentro do tema escuro para preservar o tema claro. */
+html[data-fluxhub-theme="dark"],
+html[data-fluxhub-theme="dark"] body { background:#141a23; }
+
+.fh-liquid-glass.fh-theme-dark {
+  --fh-dark-bg:#141a23;
+  --fh-dark-panel:#222c3a;
+  --fh-dark-raised:#293548;
+  --fh-dark-input:#1c2635;
+  --fh-dark-border:#3a4960;
+  --fh-dark-text:#edf3ff;
+  --fh-dark-muted:#b4c3da;
+  --fh-dark-accent:#8cbaff;
+  --fh-ink:var(--fh-dark-text);
+  --fh-muted:var(--fh-dark-muted);
+  --fh-line:var(--fh-dark-border);
+  color-scheme:dark;
+  color:var(--fh-dark-text);
+  background:var(--fh-dark-bg);
+}
+.fh-liquid-glass.fh-theme-dark .fh-glass-atmosphere {
+  background:linear-gradient(145deg,#17202c 0%,#141b26 52%,#121923 100%);
+}
+.fh-liquid-glass.fh-theme-dark .fh-glass-atmosphere::before,
+.fh-liquid-glass.fh-theme-dark .fh-glass-atmosphere::after,
+.fh-liquid-glass.fh-theme-dark .fh-glass-atmosphere i { display:none; }
+
+/* Navegação: glass apenas nas barras, sem reflexos prateados. */
+.fh-liquid-glass.fh-theme-dark .fh-sidebar,
+.fh-liquid-glass.fh-theme-dark .fh-topbar,
+.fh-liquid-glass.fh-theme-dark .fh-subnav {
+  background:rgba(29,38,52,.96);
+  border:1px solid var(--fh-dark-border);
+  box-shadow:0 8px 26px rgba(3,9,19,.17),inset 0 1px 0 rgba(255,255,255,.045);
+  -webkit-backdrop-filter:blur(10px);
+  backdrop-filter:blur(10px);
+}
+.fh-liquid-glass.fh-theme-dark .fh-sidebar .fh-nav a {
+  color:#c7d5eb;
+  background:transparent;
+  border:1px solid transparent;
+  box-shadow:none;
+  text-shadow:none;
+}
+.fh-liquid-glass.fh-theme-dark .fh-sidebar .fh-nav a.fh-nav-active {
+  color:#eaf2ff;
+  background:linear-gradient(125deg,#335781,#385f91);
+  border-color:#567ba7;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.1);
+  text-shadow:none;
+  -webkit-backdrop-filter:none;
+  backdrop-filter:none;
+}
+.fh-liquid-glass.fh-theme-dark .fh-sidebar .fh-nav a:not(.fh-nav-active):hover {
+  color:#fff;
+  background:#29374b;
+  border-color:#43526a;
+  box-shadow:none;
+  transform:none;
+}
+.fh-liquid-glass.fh-theme-dark .fh-subnav a {
+  color:#c2d0e5;
+  background:transparent;
+  border-bottom-color:transparent;
+  box-shadow:none;
+  text-shadow:none;
+}
+.fh-liquid-glass.fh-theme-dark .fh-subnav a.fh-tab-active {
+  background:#293b55;
+  border-bottom-color:#7bacf2;
+  color:#d9eaff;
+  box-shadow:none;
+  text-shadow:none;
+}
+.fh-liquid-glass.fh-theme-dark .fh-subnav a:hover {
+  background:#2d3c51;
+  color:#f1f6ff;
+}
+.fh-liquid-glass.fh-theme-dark .fh-top-icon,
+.fh-liquid-glass.fh-theme-dark .fh-account-control,
+.fh-liquid-glass.fh-theme-dark .fh-glass-period,
+.fh-liquid-glass.fh-theme-dark .fh-signout,
+.fh-liquid-glass.fh-theme-dark .fh-theme-toggle,
+.fh-liquid-glass.fh-theme-dark .fh-mobile-toggle,
+.fh-liquid-glass.fh-theme-dark .fh-mobile-close {
+  background:#263448;
+  border:1px solid #43546e;
+  color:#e5eeff;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.045);
+  -webkit-backdrop-filter:none;
+  backdrop-filter:none;
+}
+.fh-liquid-glass.fh-theme-dark .fh-ml-identity-text strong,
+.fh-liquid-glass.fh-theme-dark .fh-admin-account,
+.fh-liquid-glass.fh-theme-dark .fh-heading h1 { color:#f0f5ff; }
+.fh-liquid-glass.fh-theme-dark .fh-ml-identity-text small,
+.fh-liquid-glass.fh-theme-dark .fh-heading p,
+.fh-liquid-glass.fh-theme-dark .fh-help { color:#b5c5dd; }
+.fh-liquid-glass.fh-theme-dark .fh-account-control:hover .fh-ml-identity-text strong {
+  color:#bcd9ff;
+}
+
+/* Superfícies grandes são opacas: menos GPU, gradiente leve, contraste estável. */
+.fh-liquid-glass.fh-theme-dark .fh-card,
+.fh-liquid-glass.fh-theme-dark .fh-kpi,
+.fh-liquid-glass.fh-theme-dark .fh-alert,
+.fh-liquid-glass.fh-theme-dark .fh-overview-account,
+.fh-liquid-glass.fh-theme-dark .fh-legacy-module .panel,
+.fh-liquid-glass.fh-theme-dark .fh-legacy-module .metric-card,
+.fh-liquid-glass.fh-theme-dark .fh-legacy-module .tool-control,
+.fh-liquid-glass.fh-theme-dark .fh-legacy-module .filterbar,
+.fh-liquid-glass.fh-theme-dark .fh-integration-account,
+.fh-liquid-glass.fh-theme-dark .fh-marketplace-provider,
+.fh-liquid-glass.fh-theme-dark .fh-support-summary,
+.fh-liquid-glass.fh-theme-dark .fh-support-conversation,
+.fh-liquid-glass.fh-theme-dark .fh-support-threads,
+.fh-liquid-glass.fh-theme-dark .fh-cost-import,
+.fh-liquid-glass.fh-theme-dark .fh-claude-connection,
+.fh-liquid-glass.fh-theme-dark .fh-claude-chat,
+.fh-liquid-glass.fh-theme-dark .fh-smart-filter-module {
+  background:linear-gradient(145deg,#242f3f 0%,#222c3a 100%);
+  border:1px solid var(--fh-dark-border);
+  color:var(--fh-dark-text);
+  box-shadow:0 7px 24px rgba(4,10,20,.13),inset 0 1px 0 rgba(255,255,255,.035);
+  -webkit-backdrop-filter:none;
+  backdrop-filter:none;
+}
+.fh-liquid-glass.fh-theme-dark .fh-card::before,
+.fh-liquid-glass.fh-theme-dark .fh-kpi::before { display:none; }
+.fh-liquid-glass.fh-theme-dark :is(.fh-card-head h2,.fh-kpi-value,.fh-overview-alert strong,.fh-spotlight-copy strong,.fh-overview-secondary>h2,.fh-info-row strong,.fh-legacy-module h2,.fh-legacy-module h3,.fh-module-intro strong) {color:var(--fh-dark-text);}
+.fh-liquid-glass.fh-theme-dark :is(.fh-card-head p,.fh-kpi-label,.fh-kpi-note,.fh-spotlight-copy small,.fh-overview-alert small,.fh-overview-secondary>p,.fh-mini-row,.fh-module-intro,.fh-category-hint,.fh-chart-key) {color:var(--fh-dark-muted);}
+.fh-liquid-glass.fh-theme-dark .fh-spotlight-row,
+.fh-liquid-glass.fh-theme-dark .fh-overview-alert,
+.fh-liquid-glass.fh-theme-dark .fh-orders-card,
+.fh-liquid-glass.fh-theme-dark .fh-buyer-card {
+  color:#e5eeff;
+  background:#2a3648;
+  border-color:#42536d;
+  box-shadow:none;
+}
+.fh-liquid-glass.fh-theme-dark .fh-spotlight-row:hover,
+.fh-liquid-glass.fh-theme-dark .fh-overview-alert:hover,
+.fh-liquid-glass.fh-theme-dark .fh-buyer-card:hover {background:#33445b;}
+.fh-liquid-glass.fh-theme-dark .fh-chart-label {fill:#aabbd4;color:#aabbd4;}
+.fh-liquid-glass.fh-theme-dark .fh-chart-wrap line[stroke="#edf1f9"] {stroke:#3e4d62;}
+.fh-liquid-glass.fh-theme-dark .fh-donut-center,
+.fh-liquid-glass.fh-theme-dark .fh-overview-charts .fh-card:nth-child(2) > div:nth-child(2) > div:first-child > div {
+  color:#eff5ff;
+  background:#242e3e !important;
+}
+.fh-liquid-glass.fh-theme-dark .fh-chart-tooltip {
+  background:#273448;
+  border-color:#4a5c75;
+  color:#eff5ff;
+  box-shadow:0 9px 24px rgba(0,0,0,.24);
+}
+
+/* Campos, botões, tabelas e componentes legados usados em várias rotas. */
+.fh-liquid-glass.fh-theme-dark :is(.fh-filter,.fh-control,.fh-orders-search,.fh-orders-period,.fh-orders-advanced,.fh-smart-search,.fh-smart-sort-inline,.fh-smart-order-toolbar,.fh-smart-chip,.fh-smart-order-dir,.fh-smart-dir,.fh-orders-status-tabs button,.fh-orders-pill,.fh-orders-empty,.fh-orders-loading,.fh-notice,.fh-legacy-module .input,.fh-legacy-module .button:not(.primary),.fh-legacy-module .toolbar,.fh-legacy-module .filters) {
+  background:var(--fh-dark-raised);
+  border-color:#465773;
+  color:#e2edff;
+}
+.fh-liquid-glass.fh-theme-dark :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),select,textarea) {
+  background:var(--fh-dark-input);
+  border-color:#465773;
+  color:#ecf3ff;
+}
+.fh-liquid-glass.fh-theme-dark :is(input,textarea)::placeholder {color:#9eafc7;opacity:1;}
+.fh-liquid-glass.fh-theme-dark :is(.fh-orders-search input,.fh-orders-period select,.fh-smart-search input,.fh-smart-sort-inline select,.fh-profit-input-wrap input,.fh-claude-secret-wrap input,.fh-claude-chat-compose textarea) {
+  background:transparent;
+  border:0;
+  color:#f0f5ff;
+}
+.fh-liquid-glass.fh-theme-dark :is(.fh-smart-order-toolbar select,.fh-smart-fieldset select,.fh-smart-fieldset input,.fh-orders-advanced input,.fh-legacy-module input,.fh-legacy-module select,.fh-legacy-module textarea,.fh-profit-field select,.fh-profit-input-wrap,.fh-form input,.fh-form select) {
+  background:#1b2635;
+  border-color:#475a74;
+  color:#eaf2ff;
+}
+.fh-liquid-glass.fh-theme-dark :is(.fh-smart-chip.is-selected,.fh-orders-status-tabs button.is-active,.fh-smart-dir,.fh-smart-order-dir,.fh-smart-order-toolbar .is-active) {
+  background:#355477;
+  border-color:#638fcb;
+  color:#e2f0ff;
+}
+.fh-liquid-glass.fh-theme-dark :is(.fh-smart-order-hint,.fh-smart-filter-footer,.fh-smart-order-toolbar,.fh-orders-title small,.fh-orders-card-top,.fh-orders-bottom,.fh-orders-period,.fh-smart-search,.fh-smart-sort-inline) {color:#b7c7dc;}
+.fh-liquid-glass.fh-theme-dark :is(.fh-orders-title strong,.fh-orders-price,.fh-orders-product-button,.fh-smart-order-toolbar label,.fh-smart-filter-footer strong,.fh-smart-chip,.fh-orders-status-tabs button span) {color:#e5eeff;}
+.fh-liquid-glass.fh-theme-dark .fh-smart-column:not(.is-active) {color:#d3e3f8;}
+.fh-liquid-glass.fh-theme-dark .fh-smart-column.is-active {color:#9dc6ff;}
+.fh-liquid-glass.fh-theme-dark .fh-orders-card-top,
+.fh-liquid-glass.fh-theme-dark .fh-orders-bottom,
+.fh-liquid-glass.fh-theme-dark .fh-orders-product+.fh-orders-product {border-color:#42516a;}
+.fh-liquid-glass.fh-theme-dark :is(.fh-table th,.fh-legacy-module th,.fh-smart-sales-table th,.fh-legacy-module table thead,.fh-table thead) {
+  color:#bbcce4;
+  background:#2b394c;
+  border-color:#43526a;
+}
+.fh-liquid-glass.fh-theme-dark :is(.fh-table td,.fh-legacy-module td,.fh-smart-sales-table td,.fh-legacy-module table tbody tr) {
+  color:#dbe6f6;
+  border-color:#43526a;
+  background:transparent;
+}
+.fh-liquid-glass.fh-theme-dark :is(.fh-table td strong,.fh-legacy-module td strong,.fh-legacy-module table strong) {color:#f1f5ff;}
+.fh-liquid-glass.fh-theme-dark :is(.fh-legacy-module .cell-sub,.fh-legacy-module .eyebrow,.fh-orders-title small,.fh-cost-import-table td small) {color:#aebfd7;}
+.fh-liquid-glass.fh-theme-dark :is(.fh-legacy-module .panel-head,.fh-legacy-module .status-strip>div,.fh-legacy-module .metric-grid>div,.fh-legacy-module .abc-summary>div) {
+  background:transparent;
+  border-color:#40516a;
+}
+.fh-liquid-glass.fh-theme-dark :is(.fh-legacy-module .button:not(.primary),.fh-info-action,.fh-legacy-module .tab:not(.active),.fh-legacy-module .pagination button) {
+  background:#2b3c53;
+  border-color:#465a76;
+  color:#d9e9ff;
+}
+.fh-liquid-glass.fh-theme-dark :is(.fh-legacy-module .button.primary,.fh-primary-btn) {background:#315fa0;color:#fff;}
+
+/* Visões de pedidos, precificação e calculadora de lucro. */
+.fh-liquid-glass.fh-theme-dark :is(.fh-orders-advanced summary,.fh-orders-advanced label,.fh-profit-field>span:first-child,.fh-profit-totals dt,.fh-buyer-fields dt) {color:#c5d5e9;}
+.fh-liquid-glass.fh-theme-dark :is(.fh-orders-title strong,.fh-profit-product strong,.fh-buyer-card strong) {color:#ecf2ff;}
+.fh-liquid-glass.fh-theme-dark :is(.fh-profit-panel,.fh-buyer-panel) {
+  background:#1e2836;border-color:#45566e;color:#e9f0ff;
+}
+.fh-liquid-glass.fh-theme-dark :is(.fh-profit-head,.fh-profit-card,.fh-profit-results,.fh-buyer-card,.fh-profit-input-wrap,.fh-profit-paste textarea) {
+  background:#273448;border-color:#455870;color:#e9f1ff;
+}
+.fh-liquid-glass.fh-theme-dark :is(.fh-profit-head h2,.fh-profit-card h3,.fh-profit-totals dd,.fh-buyer-fields dd,.fh-profit-results strong) {color:#f1f5ff;}
+.fh-liquid-glass.fh-theme-dark :is(.fh-profit-head p,.fh-profit-hint,.fh-profit-product small,.fh-profit-product span,.fh-profit-results p,.fh-buyer-card small) {color:#b2c5df;}
+.fh-liquid-glass.fh-theme-dark :is(.fh-profit-totals div,.fh-buyer-fields div,.fh-profit-results>div,.fh-profit-head) {border-color:#43546d;}
+.fh-liquid-glass.fh-theme-dark .fh-profit-results strong.positive {color:#63e1b2;}
+.fh-liquid-glass.fh-theme-dark .fh-profit-results strong.negative {color:#ff9aa8;}
+
+/* Agentes Claude, dados, integrações e importação de custos. */
+.fh-liquid-glass.fh-theme-dark :is(.fh-claude-card-copy h2,.fh-claude-chat h2,.fh-claude-available h2,.fh-cost-import-heading h3,.fh-cost-import-summary strong,.fh-listing-health-summary strong,.fh-claude-empty strong) {color:#f1f5ff;}
+.fh-liquid-glass.fh-theme-dark :is(.fh-claude-card-copy p,.fh-claude-microcopy,.fh-claude-chat-meta,.fh-claude-chat-safety,.fh-claude-agent small,.fh-cost-import-heading p,.fh-cost-import-help,.fh-cost-import-summary small,.fh-claude-footer-note) {color:#b5c6df;}
+.fh-liquid-glass.fh-theme-dark :is(.fh-claude-agent,.fh-claude-secret-wrap,.fh-claude-model,.fh-claude-secondary,.fh-claude-chat-compose,.fh-claude-bubble.assistant,.fh-claude-bubble.user,.fh-cost-import-file,.fh-cost-import-summary>div,.fh-cost-import-filters select,.fh-cost-import-badge,.fh-claude-managed,.fh-claude-mcp-url input,.fh-claude-mcp-url button,.fh-listing-health-summary>div,.fh-shopee-steps li) {
+  background:#29374a;border-color:#475c78;color:#eaf2ff;box-shadow:none;
+}
+.fh-liquid-glass.fh-theme-dark :is(.fh-claude-agent.is-active,.fh-claude-agent:hover,.fh-cost-import-summary>div.ready) {background:#334d70;border-color:#688ec3;}
+.fh-liquid-glass.fh-theme-dark :is(.fh-claude-bubble.assistant,.fh-claude-bubble.user,.fh-claude-output) {color:#ecf3ff;}
+.fh-liquid-glass.fh-theme-dark :is(.fh-claude-chat-header,.fh-cost-import-preview,.fh-claude-chat-safety) {border-color:#42536b;}
+.fh-liquid-glass.fh-theme-dark :is(.fh-claude-label,.fh-claude-agent strong,.fh-financial-lines dd,.fh-financial-lines dt,.fh-cost-import-confirm p,.fh-shopee-steps p) {color:#d4e2f7;}
+
+
+/* Componentes que explicitamente forçavam color-scheme:light no CSS legado. */
+.fh-liquid-glass.fh-theme-dark :is(.fh-legacy-module,.fh-admin-grid,.fh-card,.finance-dialog,.detail-drawer) {color-scheme:dark;}
+.fh-liquid-glass.fh-theme-dark :is(input,select,textarea) {color-scheme:dark;}
+.fh-liquid-glass.fh-theme-dark .fh-sidebar .fh-sidebar-bottom {background:transparent;border-top-color:#40516a;}
+.fh-liquid-glass.fh-theme-dark .fh-legacy-module {color:#e6f0ff;}
+.fh-liquid-glass.fh-theme-dark :is(.fh-ranked-label,.fh-ranked-label strong,.fh-legacy-module .panel-head h2,.fh-legacy-module .metric-card,.fh-legacy-module .metric-value) {color:#e8f1ff;}
+.fh-liquid-glass.fh-theme-dark .fh-ranked-track,
+.fh-liquid-glass.fh-theme-dark .fh-progress {background:#384962;}
+.fh-liquid-glass.fh-theme-dark :is(.fh-legacy-module .filterbar .search-field,.fh-legacy-module .search-field.compact,.fh-legacy-module .field input,.fh-legacy-module .field select,.fh-legacy-module .filterbar select,.fh-legacy-module .panel-head select,.fh-legacy-module .endpoint-list,.fh-legacy-module .endpoint-workspace,.fh-legacy-module .raiox-selector,.fh-legacy-module .raiox-product-price,.fh-legacy-module .query-box,.fh-legacy-module .result-toolbar,.fh-legacy-module .raw-json summary,.fh-legacy-module .json-view,.fh-legacy-module .endpoint-title code,.fh-legacy-module .detail-grid>div,.fh-legacy-module .market-price-grid>div,.fh-legacy-module .price-note,.fh-legacy-module .market-thumb,.fh-legacy-module .subtabs) {
+  color:#e5f0ff;background:#263449;border-color:#465a75;
+}
+.fh-liquid-glass.fh-theme-dark :is(.fh-legacy-module .filterbar input,.fh-legacy-module .search-field input,.fh-legacy-module .field input,.fh-legacy-module .field select,.fh-legacy-module .filterbar select,.fh-legacy-module .panel-head select) {
+  color:#eef5ff;background:#1b2635;background-color:#1b2635;color-scheme:dark;
+}
+.fh-liquid-glass.fh-theme-dark .fh-legacy-module .search-field input {background:transparent;background-color:transparent;}
+.fh-liquid-glass.fh-theme-dark .fh-legacy-module select option {background:#1b2635;color:#eef5ff;}
+.fh-liquid-glass.fh-theme-dark .fh-legacy-module .endpoint-list {background:#202c3e;border-color:#465b76;}
+.fh-liquid-glass.fh-theme-dark .fh-legacy-module .endpoint-item {color:#c8d8ed;}
+.fh-liquid-glass.fh-theme-dark .fh-legacy-module .endpoint-item strong {color:#a9d0ff;}
+.fh-liquid-glass.fh-theme-dark .fh-legacy-module .endpoint-item small {color:#b5c4d8;}
+.fh-liquid-glass.fh-theme-dark .fh-legacy-module .endpoint-item:hover {background:#304562;}
+.fh-liquid-glass.fh-theme-dark .fh-legacy-module .endpoint-item.active {background:#315076;border-color:#638dbd;}
+.fh-liquid-glass.fh-theme-dark .fh-legacy-module .endpoint-title h3 {color:#f1f5ff;}
+.fh-liquid-glass.fh-theme-dark :is(.fh-legacy-module .catalog-row,.fh-legacy-module .check-row,.fh-legacy-module .raw-fields>div) {border-color:#465a75;}
+.fh-liquid-glass.fh-theme-dark :is(.finance-dialog,.detail-drawer) {
+  background:#202c3b;border-color:#495c77;color:#eaf2ff;
+}
+.fh-liquid-glass.fh-theme-dark :is(.finance-dialog .field input,.finance-dialog .field select,.detail-drawer input,.detail-drawer select,.detail-drawer textarea) {
+  background:#1a2534;color:#eef5ff;border-color:#4b5d74;
+}
+.fh-liquid-glass.fh-theme-dark .finance-dialog select option {background:#1a2534;color:#eef5ff;}
+
+/* Portal de filtros avançados: fica fora de .fh-app no DOM. */
+html[data-fluxhub-theme="dark"] .fh-smart-overlay {color-scheme:dark;}
+html[data-fluxhub-theme="dark"] .fh-smart-drawer {
+  background:#1e2836;box-shadow:-20px 0 50px rgba(0,0,0,.35);color:#e9f1ff;
+}
+html[data-fluxhub-theme="dark"] .fh-smart-drawer-header,
+html[data-fluxhub-theme="dark"] .fh-smart-drawer-footer {
+  background:#273448;border-color:#455870;
+}
+html[data-fluxhub-theme="dark"] :is(.fh-smart-drawer h2,.fh-smart-fieldset legend,.fh-smart-multi>strong) {color:#f0f5ff;}
+html[data-fluxhub-theme="dark"] :is(.fh-smart-drawer-header p,.fh-smart-fieldset>label,.fh-smart-form-row label,.fh-smart-fieldset small) {color:#bbcbdf;}
+html[data-fluxhub-theme="dark"] :is(.fh-smart-close,.fh-smart-fieldset select,.fh-smart-fieldset input[type="number"],.fh-smart-multi-scroll,.fh-smart-urgency button,.fh-smart-reset) {
+  background:#1b2635;border-color:#485b76;color:#e9f1ff;
+}
+html[data-fluxhub-theme="dark"] .fh-smart-fieldset {border-color:#43536d;}
+html[data-fluxhub-theme="dark"] .fh-smart-check {color:#d8e5f5 !important;}
+html[data-fluxhub-theme="dark"] .fh-smart-urgency button.is-selected {background:#36577c;border-color:#77a4db;color:#e7f3ff;}
+html[data-fluxhub-theme="dark"] .fh-smart-drawer :is(input,select)::placeholder {color:#a1b2cb;}
+
+/* Segurança visual para contraste elevado, sem GPU blur e sem animação forçada. */
+@media (prefers-reduced-transparency:reduce), (prefers-contrast:more) {
+  .fh-liquid-glass.fh-theme-dark :is(.fh-sidebar,.fh-topbar,.fh-subnav) {
+    background:#202a39;-webkit-backdrop-filter:none;backdrop-filter:none;
+  }
+}

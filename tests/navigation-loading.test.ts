@@ -2,9 +2,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 
-test("navegação interna nunca mostra a antiga tela de loading com ícones e sidebar duplicada", () => {
-  assert.equal(existsSync("src/app/loading.tsx"), false,
-    "O loading global antigo recria AppSidebar durante as transições e causa o flash de ícones.");
+test("navegação interna usa skeleton atrasado sem duplicar a sidebar real", () => {
+  assert.equal(existsSync("src/app/loading.tsx"), true);
+  const loading = readFileSync("src/app/loading.tsx", "utf8");
+  assert.match(loading, /setTimeout\(\(\) => setVisible\(true\), 240\)/);
+  assert.match(loading, /if \(!visible\) return null/);
+  assert.match(loading, /clearTimeout\(timer\)/);
+  assert.doesNotMatch(loading, /AppSidebar|modules\.map\(/);
   const shell = readFileSync("src/components/modern-shell.tsx", "utf8");
   assert.match(shell, /<aside className=\{`fh-sidebar/);
   assert.match(shell, /modules\.map\(/);
