@@ -26,12 +26,22 @@ function fromBackend(row: BackendCost): Finance {
 }
 
 export async function readFinance(): Promise<Finance[]> {
-  const rows = await backendRequest(
-    "/api/v1/analytics/product-costs",
-    new URLSearchParams({ limit: "1000", offset: "0" }),
-  ) as BackendCost[];
-  if (!Array.isArray(rows)) throw new Error("O backend não retornou custos válidos.");
-  return rows.map(fromBackend);
+  // The catalog may contain 11,000+ products. Paginate all tenant costs
+  // so the financial dashboard never silently drops costs past row 1,000.
+  const pageSize = 10000;
+  const costs: Finance[] = [];
+  for (let page = 0; page < 100; page++) {
+    const rows = await backendRequest(
+      "/api/v1/analytics/product-costs",
+      new URLSearchParams({ limit: String(pageSize), offset: String(page * pageSize) }),
+      30000,
+    ) as BackendCost[];
+    if (!Array.isArray(rows) || rows.length > pageSize)
+      throw new Error("O backend não retornou custos válidos.");
+    costs.push(...rows.map(fromBackend));
+    if (rows.length < pageSize) return costs;
+  }
+  throw new Error("O catálogo de custos excedeu o limite de paginação.");
 }
 
 export async function saveFinance(finance: Finance): Promise<Finance> {

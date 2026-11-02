@@ -63,6 +63,10 @@ export default function SellerHome({report}:{report:SellerReport}){
     (salesByItem[b.external_id]??-1)-(salesByItem[a.external_id]??-1)
   ).slice(0,8);
   const costIndex=new Map(costs.map(c=>[c.external_id,c]));
+  const costsCovered=products.filter(p=>{
+    const amount=costIndex.get(p.external_id)?.unit_cost;
+    return typeof amount==="number" && Number.isFinite(amount) && amount>0;
+  }).length;
   const statusItems=Object.entries(report.orderStatus?.by_status||{}).map(([name,value],i)=>({
     name:orderStatusLabel(name),value,color:["#20c58b","#488bfa","#ffbd46","#f2737a","#9878f6"][i%5]
   }));
@@ -162,7 +166,7 @@ export default function SellerHome({report}:{report:SellerReport}){
       <div className="fh-alert rose"><span>Cancelamentos registrados</span><strong>{number(canceled)}</strong></div>
       <div className="fh-alert orange"><span>Estoque zerado</span><strong>{number(products.filter(p=>p.stock_qty===0).length)}</strong></div>
       <div className="fh-alert green"><span>Gasto em publicidade</span><strong>{accountId===null?money(ads?.ad_spend??null):"—"}</strong></div>
-      <div className="fh-alert"><span>Produtos cadastrados</span><strong>{number(products.length)}</strong></div>
+      <div className="fh-alert"><span>Custos de compra cadastrados</span><strong>{number(costsCovered)} de {number(products.length)}</strong></div>
     </div>
     <Box title={Object.keys(salesByItem).length?"Produtos mais vendidos":"Produtos do catálogo"} subtitle="Vendas de pedidos pagos, custos cadastrados e Ads reportados" href="/produtos">
       <div className="fh-table-wrap"><table className="fh-table"><thead><tr><th>Produto</th><th>Preço</th><th>Custo de compra</th><th>Unid. vendidas (30 dias)</th><th>Ads (30 dias)</th><th>Estoque</th><th>Fabricante</th></tr></thead><tbody>
@@ -173,7 +177,8 @@ export default function SellerHome({report}:{report:SellerReport}){
           return <tr key={p.external_id}>
             <td className="fh-table-name"><strong>{p.title}</strong><small>{p.external_id} · {p.category}</small></td>
             <td>{money(p.promotional_price)}</td>
-            <td>{c?.unit_cost===undefined?<Link href="/produtos" style={{color:"#2563eb",fontWeight:600}}>Cadastrar custo</Link>:money(c.unit_cost)}</td>
+            <td>{c && Number.isFinite(c.unit_cost) && c.unit_cost>0 ? money(c.unit_cost) :
+              <Link href="/precificacao" style={{color:"#2563eb",fontWeight:600}}>Importar custo</Link>}</td>
             <td title={!ordersComplete?"Dados parciais: a importação de pedidos ou de seus itens ainda está em andamento.":undefined}>{units!==undefined?`${number(units)}${ordersComplete?"":" *"}`:ordersComplete?"0":"Em apuração"}</td>
             <td title={ad?"Gasto publicitário presente em relatório importado.":"Sem relatório Product Ads importado para este anúncio."}>{ad?money(ad.ad_spend):"Sem relatório"}</td>
             <td>{number(p.stock_qty)}</td>
@@ -187,7 +192,7 @@ export default function SellerHome({report}:{report:SellerReport}){
           "Vendas calculadas pelos itens dos pedidos pagos sincronizados.":
           `* Dados parciais: ${number(catalogMetrics.enriched_paid_orders)} de ${number(catalogMetrics.paid_orders)} pedidos pagos têm itens detalhados; a sincronização precisa concluir.`
         ):"Não foi possível consultar o detalhamento de vendas; tente novamente após atualizar o backend."}
-        {" "}O custo de compra precisa ser cadastrado; o gasto Ads só aparece quando há relatórios reais importados.{" "}
+        {" "}A tabela usa custos de compra cadastrados, sem modificar os preços anunciados. O gasto Ads só aparece quando há relatórios reais importados.{" "}
         <Link href="/integracoes" style={{color:"#2563eb",fontWeight:600}}>Consultar integrações</Link>.
       </p>
     </Box>

@@ -15,8 +15,18 @@ test("tabela distingue vendas parciais, custos pendentes e Ads sem relatório", 
   assert.ok(home.includes("salesByItem[p.external_id]"));
   assert.ok(home.includes("adsByItem[p.external_id]"));
   assert.ok(home.includes("ordersComplete"));
-  assert.ok(home.includes("Cadastrar custo"));
+  assert.ok(home.includes('href="/precificacao"'));
+  assert.ok(home.includes("Importar custo"));
+  assert.ok(home.includes("Custos de compra cadastrados"));
   assert.ok(home.includes("Sem relatório"));
   const table = home.split("Unid. vendidas (30 dias)")[1] ?? "";
   assert.ok(!table.includes("p.sales_30d"));
+});
+
+test("precificação pagina custos completos em vez de cortar após mil registros", () => {
+  const database = readFileSync("src/lib/database.ts", "utf8");
+  assert.ok(database.includes("pageSize = 10000"));
+  assert.ok(database.includes("page * pageSize"));
+  assert.ok(database.includes("rows.length < pageSize"));
+  assert.ok(!database.includes('limit: "1000"'));
 });
