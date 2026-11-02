@@ -1,10 +1,10 @@
 import "server-only";
-import { applyProductBrands, normalizeProducts } from "./analytics";
+import { applyCatalogPaidSales, applyProductBrands, normalizeProducts } from "./analytics";
 import { readFinance } from "./database";
 import { parseOpenApi } from "./openapi";
 import { backendRequest } from "./backend-transport";
 export { backendRequest, backendMutation, serviceLogin, serviceIdentity } from "./backend-transport";
-import type { BackendSchema, Snapshot } from "./types";
+import type { BackendSchema, CatalogPaidSales, Snapshot } from "./types";
 
 export async function getBackendSchema(): Promise<BackendSchema> {
   try {
@@ -139,6 +139,27 @@ async function ordersRevenueSnapshot(): Promise<Snapshot["sales"]> {
   }
 }
 
+async function catalogPaidSalesSnapshot(): Promise<CatalogPaidSales | null> {
+  try {
+    const query = new URLSearchParams({ days: "30" });
+    const payload = await backendRequest("/api/v1/analytics/catalog-metrics", query, 20000);
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) return null;
+    const row = payload as Record<string, unknown>;
+    if (row.days !== 30 || typeof row.orders_complete !== "boolean" ||
+        !row.sales_by_item || typeof row.sales_by_item !== "object" ||
+        Array.isArray(row.sales_by_item) ||
+        typeof row.paid_orders !== "number" ||
+        typeof row.enriched_paid_orders !== "number") {
+      return null;
+    }
+    return row as CatalogPaidSales;
+  } catch (error) {
+    // Sem os dados reais de vendas, a listagem permanece consultável.
+    console.warn("[catalog-paid-sales]", error instanceof Error ? error.message : "Indisponível");
+    return null;
+  }
+}
+
 /**
  * O formato enviado às páginas deve refletir o que elas realmente usam:
  * - catalog: catálogo/custos, sem relatório de pedidos ou OpenAPI serializado;
@@ -156,6 +177,7 @@ export async function getSnapshot(scope: SnapshotScope = "catalog"): Promise<Sna
     return {
       products: [],
       finance: [],
+      catalogSales: null,
       sales: null,
       schema,
       updatedAt: schema.error ? null : new Date().toISOString(),
@@ -163,10 +185,11 @@ export async function getSnapshot(scope: SnapshotScope = "catalog"): Promise<Sna
     };
   }
 
-  const [schema, finance, sales] = await Promise.all([
+  const [schema, finance, sales, paidSales] = await Promise.all([
     getBackendSchema(),
     financeSnapshot(),
     scope === "full" ? ordersRevenueSnapshot() : Promise.resolve(null),
+    catalogPaidSalesSnapshot(),
   ]);
   // Somente a Central de Dados precisa da lista de endpoints no navegador.
   const clientSchema = scope === "full" ? schema : { ...schema, endpoints: [] };
@@ -175,10 +198,15 @@ export async function getSnapshot(scope: SnapshotScope = "catalog"): Promise<Sna
     const baseProducts = normalizeProducts(
       await backendRequest(chooseProductsPath(schema), undefined, 30000),
     );
-    const products = await enrichBrandsFromBackend(baseProducts, schema);
+    const products = await enrichBrandsFromBackend(applyCatalogPaidSales(baseProducts, paidSales), schema);
     return {
       products,
       finance,
+      catalogSales: paidSales ? {
+        paid_orders: paidSales.paid_orders,
+        enriched_paid_orders: paidSales.enriched_paid_orders,
+        orders_complete: paidSales.orders_complete,
+      } : null,
       sales,
       schema: clientSchema,
       updatedAt: new Date().toISOString(),
@@ -192,6 +220,7 @@ export async function getSnapshot(scope: SnapshotScope = "catalog"): Promise<Sna
     return {
       products: [],
       finance,
+      catalogSales: null,
       sales,
       schema: clientSchema,
       updatedAt: null,
