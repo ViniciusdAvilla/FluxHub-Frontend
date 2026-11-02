@@ -1,5 +1,5 @@
 import "server-only";
-import { applyCatalogPaidSales, applyProductBrands, normalizeProducts } from "./analytics";
+import { applyCatalogPaidSales, applyCategoryDisplayNames, applyProductBrands, normalizeProducts } from "./analytics";
 import { readFinance } from "./database";
 import { parseOpenApi } from "./openapi";
 import { backendRequest } from "./backend-transport";
@@ -139,6 +139,65 @@ async function ordersRevenueSnapshot(): Promise<Snapshot["sales"]> {
   }
 }
 
+const officialCategoryCache = new Map<string, { name: string; expiresAt: number }>();
+
+/** Nomes oficiais no gráfico sem consultar individualmente milhares de anúncios. */
+async function categoryLabelsForCharts(products: ReturnType<typeof normalizeProducts>) {
+  const stats = new Map<string, { count: number; revenue: number }>();
+  for (const product of products) {
+    const categoryId = product.category;
+    if (!/^ML[A-Z]{1,2}\d{3,15}$/.test(categoryId)) continue;
+    const current = stats.get(categoryId) ?? { count: 0, revenue: 0 };
+    current.count++;
+    current.revenue += (product.price ?? 0) * (product.sales ?? 0);
+    stats.set(categoryId, current);
+  }
+  const entries = [...stats.entries()];
+  const byCount = [...entries].sort((a, b) => b[1].count - a[1].count).slice(0, 20);
+  const byRevenue = [...entries].sort((a, b) => b[1].revenue - a[1].revenue).slice(0, 12);
+  const categoryIds = [...new Set([...byCount, ...byRevenue].map(([id]) => id))];
+  const names: Record<string, string> = {};
+  const missing: string[] = [];
+  const stamp = Date.now();
+  for (const id of categoryIds) {
+    const cached = officialCategoryCache.get(id);
+    if (cached && cached.expiresAt > stamp) names[id] = cached.name;
+    else missing.push(id);
+  }
+
+  const groups: string[][] = [];
+  for (let i = 0; i < missing.length; i += 5) {
+    groups.push(missing.slice(i, i + 5));
+  }
+  // Máximo de três chamadas simultâneas à API de categorias.
+  for (let index = 0; index < groups.length; index += 3) {
+    const response = await Promise.all(groups.slice(index, index + 3).map(async (ids) => {
+      try {
+        const payload = await backendRequest(
+          "/api/v1/analytics/category-names",
+          new URLSearchParams({ ids: ids.join(",") }), 10000
+        );
+        return payload && typeof payload === "object" && !Array.isArray(payload)
+          ? payload as Record<string, unknown> : {};
+      } catch (error) {
+        console.warn("[category-names]", error instanceof Error ? error.message : "Indisponível");
+        return {};
+      }
+    }));
+    for (const result of response) {
+      for (const [id, label] of Object.entries(result)) {
+        if (categoryIds.includes(id) && typeof label === "string" &&
+            label.trim().length >= 1 && label.trim().length <= 100) {
+          names[id] = label.trim();
+          officialCategoryCache.set(id, { name: label.trim(), expiresAt: Date.now() + 7 * 86400000 });
+        }
+      }
+    }
+  }
+  if (officialCategoryCache.size > 3000) officialCategoryCache.clear();
+  return names;
+}
+
 async function catalogPaidSalesSnapshot(): Promise<CatalogPaidSales | null> {
   try {
     const query = new URLSearchParams({ days: "30" });
@@ -198,7 +257,12 @@ export async function getSnapshot(scope: SnapshotScope = "catalog"): Promise<Sna
     const baseProducts = normalizeProducts(
       await backendRequest(chooseProductsPath(schema), undefined, 30000),
     );
-    const products = await enrichBrandsFromBackend(applyCatalogPaidSales(baseProducts, paidSales), schema);
+    const withSales = applyCatalogPaidSales(baseProducts, paidSales);
+    const [withBrands, categoryNames] = await Promise.all([
+      enrichBrandsFromBackend(withSales, schema),
+      categoryLabelsForCharts(withSales),
+    ]);
+    const products = applyCategoryDisplayNames(withBrands, categoryNames);
     return {
       products,
       finance,
