@@ -15,7 +15,9 @@ test("tabela distingue vendas parciais, custos pendentes e Ads sem relatório", 
   assert.ok(home.includes("salesByItem[p.external_id]"));
   assert.ok(home.includes("adsByItem[p.external_id]"));
   assert.ok(home.includes("ordersComplete"));
-  assert.ok(home.includes("Cadastrar custo"));
+  assert.ok(home.includes('href="/precificacao"'));
+  assert.ok(home.includes("Importar custo"));
+  assert.ok(home.includes("Custos de compra cadastrados"));
   assert.ok(home.includes("Sem relatório"));
   const table = home.split("Unid. vendidas (30 dias)")[1] ?? "";
   assert.ok(!table.includes("p.sales_30d"));
