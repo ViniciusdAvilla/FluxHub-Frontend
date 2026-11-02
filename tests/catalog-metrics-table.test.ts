@@ -55,3 +55,18 @@ test("listagem de produtos usa contagem dos pedidos pagos e mostra cobertura", (
   assert.ok(analytics.includes("metrics.orders_complete ? 0 : null"));
   assert.ok(platform.includes("Vendas dos últimos 30 dias em sincronização"));
 });
+
+test("categorias dos gráficos vêm dos nomes oficiais; vendidos mostra período e total", () => {
+  const backend = readFileSync("src/lib/backend.ts", "utf8");
+  const page = readFileSync("src/components/platform-page.tsx", "utf8");
+  const salesProxy = readFileSync("src/app/api/platform/product-sales/route.ts", "utf8");
+  const syncProxy = readFileSync("src/app/api/platform/sync-sales/route.ts", "utf8");
+  assert.ok(backend.includes('"/api/v1/analytics/category-names"'));
+  assert.ok(backend.includes("applyCategoryDisplayNames(withBrands, categoryNames)"));
+  assert.ok(page.includes("Vendidos (30 dias)"));
+  assert.ok(page.includes("Total no anúncio"));
+  assert.ok(page.includes("/api/platform/product-sales?"));
+  assert.ok(page.includes("Sincronizar vendas"));
+  assert.ok(salesProxy.includes('"/api/v1/analytics/items/sold-totals"'));
+  assert.ok(syncProxy.includes('"/api/v1/analytics/sync-jobs/"'));
+});
