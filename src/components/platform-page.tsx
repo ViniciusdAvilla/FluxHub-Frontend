@@ -238,6 +238,39 @@ function ProductTable({
   const visiblePage = Math.min(page, totalPages - 1);
   const visibleRows = sortedRows.slice(visiblePage * pageSize, (visiblePage + 1) * pageSize);
   const [photos, setPhotos] = useState<Record<string, string>>({});
+  const [soldTotals, setSoldTotals] = useState<Record<string, number>>({});
+  const listingTotal = (row: ProductRow) => {
+    const source = typeof row.raw?.source_key === "string" ? row.raw.source_key : "";
+    if (!/^ml:\d+$/.test(source)) return null;
+    const value = soldTotals[source.slice(3) + ":" + row.id];
+    return Number.isSafeInteger(value) && value >= 0 ? value : null;
+  };
+  useEffect(() => {
+    const ids = [...new Set(visibleRows.filter(row =>
+      typeof row.raw?.source_key === "string" &&
+      /^ml:\d+$/.test(row.raw.source_key) &&
+      /^ML[A-Z]{1,2}\d{5,20}$/.test(row.id)
+    ).map(row => row.id))];
+    if (!ids.length) return;
+    const controller = new AbortController();
+    fetch("/api/platform/product-sales?" + new URLSearchParams({ ids: ids.join(",") }),
+      { cache: "no-store", signal: controller.signal })
+      .then(async response => response.ok ? await response.json() : [])
+      .then((payload: unknown) => {
+        if (controller.signal.aborted || !Array.isArray(payload)) return;
+        const next: Record<string, number> = {};
+        for (const entry of payload as { account_id: number; item_id: string; sold_lifetime: number }[]) {
+          if (Number.isSafeInteger(entry.account_id) &&
+              /^ML[A-Z]{1,2}\d{5,20}$/.test(entry.item_id) &&
+              Number.isSafeInteger(entry.sold_lifetime) && entry.sold_lifetime >= 0) {
+            next[entry.account_id + ":" + entry.item_id] = entry.sold_lifetime;
+          }
+        }
+        setSoldTotals(previous => ({ ...previous, ...next }));
+      }).catch(() => {});
+    return () => controller.abort();
+  }, [visiblePage, sortedRows]);
+
   useEffect(() => {
     const mlRows = visibleRows.filter(row =>
       typeof row.raw?.source_key === "string" &&
@@ -267,7 +300,7 @@ function ProductTable({
           <tr>
             <SortableColumn label="Produto" field="title" selected={sortKey} direction={sortDirection} onSelect={onSort ?? (() => {})}/>
             <SortableColumn label="Preço" field="price" selected={sortKey} direction={sortDirection} onSelect={onSort ?? (() => {})}/>
-            <SortableColumn label="Vendidos" field="sales" selected={sortKey} direction={sortDirection} onSelect={onSort ?? (() => {})}/>
+            <SortableColumn label="Vendidos (30 dias)" field="sales" selected={sortKey} direction={sortDirection} onSelect={onSort ?? (() => {})}/>
             <SortableColumn label="Estoque" field="stock" selected={sortKey} direction={sortDirection} onSelect={onSort ?? (() => {})}/>
             <SortableColumn label="Receita estimada" field="revenue" selected={sortKey} direction={sortDirection} onSelect={onSort ?? (() => {})}/>
             <SortableColumn label="Lucro" field="profit" selected={sortKey} direction={sortDirection} onSelect={onSort ?? (() => {})}/>
@@ -301,7 +334,14 @@ function ProductTable({
                     </button>}
               </td>
               <td>{money(row.price)}</td>
-              <td>{number(row.sales)}</td>
+              <td>
+                <div className="status-stack">
+                  <b>{number(row.sales)}</b>
+                  {listingTotal(row) !== null && (
+                    <small>Total no anúncio: {number(listingTotal(row))}</small>
+                  )}
+                </div>
+              </td>
               <td>
                 <div className="status-stack">
                   <b>{number(row.stock)}</b>
@@ -330,7 +370,9 @@ function ProductTable({
             </button>
             <div className="fh-smart-mobile-stats">
               <div><small>Preço</small><strong>{money(row.price)}</strong></div>
-              <div><small>Vendidos</small><strong>{number(row.sales)}</strong></div>
+              <div><small>Vendidos (30 dias)</small><strong>{number(row.sales)}</strong>
+                {listingTotal(row) !== null && <small>Total: {number(listingTotal(row))}</small>}
+              </div>
               <div><small>Estoque</small><strong>{number(row.stock)}</strong></div>
               <div><small>Receita</small><strong>{money(row.revenue)}</strong></div>
             </div>
@@ -709,6 +751,33 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
     }
   }
 
+  async function synchronizeSales() {
+    const accountIds = [...new Set(snapshot.products
+      .map(product => typeof product.raw?.source_key === "string"
+        ? product.raw.source_key : "")
+      .filter(key => /^ml:\d+$/.test(key))
+      .map(key => Number(key.slice(3))))].filter(id => Number.isSafeInteger(id) && id > 0);
+    if (!accountIds.length) {
+      setNotice("Nenhuma conta do Mercado Livre está vinculada a este catálogo.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const response = await fetch("/api/platform/sync-sales", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ account_ids: accountIds.slice(0, 5) }),
+      });
+      const data = await response.json() as { message?: string; errors?: string[] };
+      setNotice((data.message || "Sincronização solicitada.") +
+        (data.errors?.length ? " " + data.errors.join(" ") : ""));
+    } catch {
+      setNotice("Não foi possível agendar a sincronização de pedidos.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const current = titles[view];
   const orderEndpoints = snapshot.schema.endpoints.filter((endpoint) => /order|pedido|sale|venda/i.test(`${endpoint.path} ${endpoint.tag} ${endpoint.summary}`));
 
@@ -792,7 +861,12 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
                   <DonutStats items={stockDistribution(filtered)} label="produtos"/>
                 </Section>
               </div>
-              <Section title={`${filtered.length} produtos`} subtitle="Clique no nome para abrir a ficha completa." action={<Link className="button primary" href="/precificacao"><UploadCloud size={15} /> Importar custos em massa</Link>}>
+              <Section title={`${filtered.length} produtos`} subtitle="Clique no nome para abrir a ficha completa." action={<div className="fh-inline-actions">
+                <button className="button" type="button" disabled={busy} onClick={synchronizeSales}>
+                  <RefreshCw size={15} /> {busy ? "Aguarde..." : "Sincronizar vendas"}
+                </button>
+                <Link className="button primary" href="/precificacao"><UploadCloud size={15} /> Importar custos em massa</Link>
+              </div>}>
               {filtered.length ? <ProductTable rows={filtered} onInspect={setInspected} onPrice={setPricingItem} sortKey={advanced.sortKey} sortDirection={advanced.sortDirection} onSort={setSort} /> : <Empty title="Nenhum produto encontrado" text="Ajuste os filtros para visualizar o catálogo." />}
               </Section>
             </>
