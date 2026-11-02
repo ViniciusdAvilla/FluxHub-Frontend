@@ -1,4 +1,4 @@
-import type { AbcRow, Finance, Product, ProductRow, Tone } from "./types";
+import type { AbcRow, CatalogPaidSales, Finance, Product, ProductRow, Tone } from "./types";
 import { orderStatusLabels, listingStatusLabels } from "./order-status";
 
 const brl = new Intl.NumberFormat("pt-BR", {
@@ -182,6 +182,43 @@ export function normalizeProducts(payload: unknown): Product[] {
   });
 }
 
+/**
+ * Os anúncios sincronizados não trazem vendas dos últimos 30 dias. Esse
+ * indicador deve vir das quantidades dos itens de pedidos pagos, nunca do
+ * acumulado histórico sold_quantity do anúncio.
+ *
+ * Enquanto o enriquecimento dos pedidos estiver incompleto, ausência de um
+ * item no mapa não significa zero vendas: permanece sem informação.
+ */
+export function applyCatalogPaidSales(
+  products: Product[],
+  metrics: CatalogPaidSales | null,
+): Product[] {
+  return products.map((product) => {
+    if (typeof product.raw?.source_key !== "string" ||
+        !product.raw.source_key.startsWith("ml:")) {
+      return product;
+    }
+
+    const id = product.id.toUpperCase();
+    if (!metrics || metrics.days !== 30 ||
+        !metrics.sales_by_item ||
+        typeof metrics.sales_by_item !== "object" ||
+        Array.isArray(metrics.sales_by_item)) {
+      return { ...product, sales: null };
+    }
+
+    if (Object.prototype.hasOwnProperty.call(metrics.sales_by_item, id)) {
+      const count = metrics.sales_by_item[id];
+      return {
+        ...product,
+        sales: Number.isSafeInteger(count) && count >= 0 ? count : null,
+      };
+    }
+    return { ...product, sales: metrics.orders_complete ? 0 : null };
+  });
+}
+
 export function enrichProducts(
   products: Product[],
   finance: Finance[],
@@ -193,7 +230,7 @@ export function enrichProducts(
     const revenue =
       price !== null && sales !== null ? round(price * sales) : null;
     const profit =
-      financial && price !== null && sales !== null
+      financial && financial.unitCost > 0 && price !== null && sales !== null
         ? round(
             sales *
               (price *
@@ -231,7 +268,7 @@ export function enrichProducts(
           : sales === 0
             ? "Sem giro"
             : stockDays === null
-              ? "Sem histórico"
+              ? "Sem dados de vendas"
               : stockDays < 7
                 ? "Repor em breve"
                 : "Estoque saudável";

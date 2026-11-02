@@ -50,8 +50,17 @@ export type BackendSchema = {
   error: string | null;
 };
 
+export type CatalogPaidSales = {
+  days: number;
+  sales_by_item: Record<string, number>;
+  paid_orders: number;
+  enriched_paid_orders: number;
+  orders_complete: boolean;
+};
+
 export type Snapshot = {
   products: Product[];
+  catalogSales?: Pick<CatalogPaidSales, "paid_orders" | "enriched_paid_orders" | "orders_complete"> | null;
   sales?: {
     days: number;
     total_orders: number;

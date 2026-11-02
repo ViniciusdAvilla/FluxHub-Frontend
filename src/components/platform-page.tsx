@@ -734,6 +734,17 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
 
           {(snapshot.error || notice) && <div className={`notice ${snapshot.error ? "warning" : "good"}`} role="status">{snapshot.error || notice}</div>}
 
+          {view === "products" && snapshot.catalogSales && !snapshot.catalogSales.orders_complete && (
+            <div className="notice warning" role="status">
+              Vendas dos últimos 30 dias em sincronização: {snapshot.catalogSales.enriched_paid_orders.toLocaleString("pt-BR")} de {snapshot.catalogSales.paid_orders.toLocaleString("pt-BR")} pedidos pagos com itens detalhados. Produtos sem vendas confirmadas continuam com “—” até a sincronização terminar.
+            </div>
+          )}
+          {view === "products" && !snapshot.catalogSales && !snapshot.error && (
+            <div className="notice warning" role="status">
+              Não foi possível consultar as vendas por produto. Estoque e preços permanecem disponíveis; receita, lucro e margem dependem dos pedidos sincronizados e dos custos de compra.
+            </div>
+          )}
+
           {!(["orders", "data"] as View[]).includes(view) && (
             <SmartProductFilters
               query={query} onQueryChange={setQuery}

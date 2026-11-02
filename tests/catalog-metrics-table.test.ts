@@ -45,3 +45,13 @@ test("cadastro de custos fica centralizado na precificação, sem edição por l
   }
   assert.ok(panel.includes('form.set("preview_token", preview.preview_token)'));
 });
+
+test("listagem de produtos usa contagem dos pedidos pagos e mostra cobertura", () => {
+  const backend = readFileSync("src/lib/backend.ts", "utf8");
+  const analytics = readFileSync("src/lib/analytics.ts", "utf8");
+  const platform = readFileSync("src/components/platform-page.tsx", "utf8");
+  assert.ok(backend.includes('"/api/v1/analytics/catalog-metrics"'));
+  assert.ok(backend.includes("applyCatalogPaidSales(baseProducts, paidSales)"));
+  assert.ok(analytics.includes("metrics.orders_complete ? 0 : null"));
+  assert.ok(platform.includes("Vendas dos últimos 30 dias em sincronização"));
+});
