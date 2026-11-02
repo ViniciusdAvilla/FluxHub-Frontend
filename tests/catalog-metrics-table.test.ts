@@ -15,8 +15,8 @@ test("tabela distingue vendas parciais, custos pendentes e Ads sem relatório", 
   assert.ok(home.includes("salesByItem[p.external_id]"));
   assert.ok(home.includes("adsByItem[p.external_id]"));
   assert.ok(home.includes("ordersComplete"));
-  assert.ok(home.includes('href="/precificacao"'));
-  assert.ok(home.includes("Importar custo"));
+  assert.ok(home.includes("importação em massa na Precificação"));
+  assert.ok(!home.includes(">Importar custo</Link>"));
   assert.ok(home.includes("Custos de compra cadastrados"));
   assert.ok(home.includes("Sem relatório"));
   const table = home.split("Unid. vendidas (30 dias)")[1] ?? "";
@@ -29,4 +29,19 @@ test("precificação pagina custos completos em vez de cortar após mil registro
   assert.ok(database.includes("page * pageSize"));
   assert.ok(database.includes("rows.length < pageSize"));
   assert.ok(!database.includes('limit: "1000"'));
+});
+
+
+test("cadastro de custos fica centralizado na precificação, sem edição por linha", () => {
+  const products = readFileSync("src/components/platform-page.tsx", "utf8");
+  const panel = readFileSync("src/components/cost-import-panel.tsx", "utf8");
+  assert.ok(!products.includes("Editar custos de"));
+  assert.ok(!products.includes("Cadastrar custos</button>"));
+  assert.ok(!products.includes("fh-smart-edit"));
+  assert.ok(products.includes('href="/precificacao"'));
+  assert.ok(panel.includes("Importação de custos em massa"));
+  for (const extension of [".csv", ".xlsx", ".xls", ".docx", ".pdf", ".txt"]) {
+    assert.ok(panel.includes(extension), extension);
+  }
+  assert.ok(panel.includes('form.set("preview_token", preview.preview_token)'));
 });
