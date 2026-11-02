@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { readCostImportResponse } from "@/lib/cost-import-response";
 import { CheckCircle2, ShieldCheck, UploadCloud, AlertTriangle, FileText, X } from "lucide-react";
 
 type StatusKey = "atualizar" | "sem_alteracao" | "nao_encontrado" |
@@ -89,9 +90,7 @@ export default function CostImportPanel() {
       const response = await fetch("/api/platform/cost-import?mode=" + mode, {
         method: "POST", body: form, cache: "no-store",
       });
-      const data = await response.json() as Record<string, unknown>;
-      if (!response.ok) throw new Error(
-        typeof data.error === "string" ? data.error : "Não foi possível importar os custos do arquivo.");
+      const data = await readCostImportResponse(response);
       if (mode === "preview") {
         setPreview(data as unknown as Preview);
         setApplied(null);
