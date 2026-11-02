@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
+  applyCatalogPaidSales,
   applyProductBrands,
   classifyAbc,
   displayValue,
@@ -304,4 +305,75 @@ test("normaliza exatamente os campos do backend FastAPI atual", () => {
   assert.equal(product.sales, 109);
   assert.equal(product.freeShipping, true);
   assert.equal(product.condition, "Novo");
+});
+
+test("vendas pagas preenchem métricas do produto do Mercado Livre", () => {
+  const [product] = normalizeProducts([{
+    ...raw,
+    external_id: "MLB111222333",
+    source_key: "ml:436667093",
+    sales_30d: null,
+    stock_qty: 62,
+  }]);
+  const [withPaidSales] = applyCatalogPaidSales([product], {
+    days: 30,
+    sales_by_item: { MLB111222333: 5 },
+    paid_orders: 4,
+    enriched_paid_orders: 4,
+    orders_complete: true,
+  });
+  const [row] = enrichProducts([withPaidSales], [{
+    ...finance,
+    productId: "MLB111222333",
+  }]);
+  assert.equal(withPaidSales.sales, 5);
+  assert.equal(row.revenue, 500);
+  assert.equal(row.profit, 175);
+  assert.equal(row.margin, 35);
+  assert.equal(row.stockDays, 372);
+});
+
+test("não transforma ausência de vendas em zero com pedidos incompletos", () => {
+  const [product] = normalizeProducts([{
+    ...raw,
+    external_id: "MLB888",
+    source_key: "ml:436667093",
+    sales_30d: null,
+    sold_quantity: 800,
+  }]);
+  const incomplete = applyCatalogPaidSales([product], {
+    days: 30,
+    sales_by_item: {},
+    paid_orders: 50,
+    enriched_paid_orders: 30,
+    orders_complete: false,
+  })[0];
+  assert.equal(incomplete.sales, null);
+  assert.equal(enrichProducts([incomplete], [finance])[0].stockLabel, "Sem dados de vendas");
+  const noMetrics = applyCatalogPaidSales([product], null)[0];
+  assert.equal(noMetrics.sales, null);
+});
+
+test("somente pedidos completos permitem vendas zero; produtos não-ML não mudam", () => {
+  const products = normalizeProducts([
+    { ...raw, external_id: "MLB987", source_key: "ml:436667093", sales_30d: null },
+    { ...raw, external_id: "SKU-LOCAL", source_key: "excel", sales_30d: 10 },
+  ]);
+  const result = applyCatalogPaidSales(products, {
+    days: 30,
+    sales_by_item: {},
+    paid_orders: 10,
+    enriched_paid_orders: 10,
+    orders_complete: true,
+  });
+  assert.equal(result[0].sales, 0);
+  assert.equal(result[1].sales, 10);
+});
+
+test("não calcula lucro ou margem sem custo de compra válido", () => {
+  const [product] = normalizeProducts([raw]);
+  const [row] = enrichProducts([product], [{ ...finance, unitCost: 0 }]);
+  assert.equal(row.revenue, 1000);
+  assert.equal(row.profit, null);
+  assert.equal(row.margin, null);
 });
