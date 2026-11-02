@@ -219,6 +219,21 @@ export function applyCatalogPaidSales(
   });
 }
 
+/** Traduz IDs de categorias com nomes oficiais sem alterar o ID original do anúncio. */
+export function applyCategoryDisplayNames(
+  products: Product[],
+  names: Record<string, string>,
+): Product[] {
+  return products.map((product) => {
+    const label = names[product.category];
+    if (typeof label !== "string" || !label.trim() ||
+        label.trim().length > 100 || label === product.category) {
+      return product;
+    }
+    return { ...product, category: label.trim() };
+  });
+}
+
 export function enrichProducts(
   products: Product[],
   finance: Finance[],
