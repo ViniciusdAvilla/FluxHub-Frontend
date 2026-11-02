@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   applyCatalogPaidSales,
+  applyCategoryDisplayNames,
   applyProductBrands,
   classifyAbc,
   displayValue,
@@ -376,4 +377,20 @@ test("não calcula lucro ou margem sem custo de compra válido", () => {
   assert.equal(row.revenue, 1000);
   assert.equal(row.profit, null);
   assert.equal(row.margin, null);
+});
+
+test("categorias dos gráficos recebem nome oficial sem perder código original", () => {
+  const products = normalizeProducts([
+    { ...raw, external_id: "MLB55555", category: "MLB63517" },
+    { ...raw, external_id: "MLB66666", category: "MLB193476" },
+  ]);
+  const named = applyCategoryDisplayNames(products, {
+    MLB63517: "Peças para Automóveis",
+    MLB193476: "Componentes do Motor",
+  });
+  assert.deepEqual(named.map(product => product.category), [
+    "Peças para Automóveis", "Componentes do Motor",
+  ]);
+  assert.equal(named[0].raw?.category, "MLB63517");
+  assert.equal(applyCategoryDisplayNames(products, {})[0].category, "MLB63517");
 });
