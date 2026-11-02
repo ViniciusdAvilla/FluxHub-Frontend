@@ -22,3 +22,11 @@ test("tabela distingue vendas parciais, custos pendentes e Ads sem relatório", 
   const table = home.split("Unid. vendidas (30 dias)")[1] ?? "";
   assert.ok(!table.includes("p.sales_30d"));
 });
+
+test("precificação pagina custos completos em vez de cortar após mil registros", () => {
+  const database = readFileSync("src/lib/database.ts", "utf8");
+  assert.ok(database.includes("pageSize = 10000"));
+  assert.ok(database.includes("page * pageSize"));
+  assert.ok(database.includes("rows.length < pageSize"));
+  assert.ok(!database.includes('limit: "1000"'));
+});
