@@ -35,8 +35,8 @@ type Applied = {
 };
 
 const labels: Record<StatusKey, string> = {
-  atualizar: "Pronto para atualizar",
-  sem_alteracao: "Custo já atualizado",
+  atualizar: "Preencher custo ausente",
+  sem_alteracao: "Custo existente — preservado",
   nao_encontrado: "SKU não localizado",
   ambiguo: "SKU ambíguo",
   duplicado: "Duplicado na planilha",
@@ -104,7 +104,7 @@ export default function CostImportPanel() {
       <div>
         <span className="eyebrow">CUSTOS DE COMPRA</span>
         <h3 id="cost-import-title">Importar custos médios por CSV</h3>
-        <p>Atualize apenas os custos dos anúncios existentes pela referência/SKU exato ou pelo ID MLB.</p>
+        <p>Preencha somente custos de compra ainda não cadastrados, por referência/SKU exato ou pelo ID MLB.</p>
       </div>
       <div className="fh-cost-import-secure"><ShieldCheck size={16}/> Preços de venda preservados</div>
     </div>
@@ -123,21 +123,22 @@ export default function CostImportPanel() {
     </div>
     <p className="fh-cost-import-help">
       Colunas aceitas: <strong>Cód.Item</strong>, <strong>Referência</strong> e <strong>Preço Médio</strong>.
-      Para associação direta, inclua uma coluna <strong>MLB</strong>. Os códigos repetidos,
-      preços inválidos e custos de R$ 0,01 ou menos não são aplicados automaticamente.
+      Para associação direta, inclua uma coluna <strong>MLB</strong>. Saldo, preço de venda,
+      marca e todas as outras colunas são ignorados. Custos já preenchidos, códigos duplicados,
+      valores inválidos e custos de R$ 0,01 ou menos não são modificados.
     </p>
     {error && <p className="fh-cost-import-error" role="alert"><AlertTriangle size={17}/>{error}</p>}
     {applied && <div className="fh-cost-import-success" role="status">
       <CheckCircle2 size={20}/>
-      <div><strong>{applied.updated.toLocaleString("pt-BR")} custo(s) atualizado(s) com sucesso.</strong>
-        <p>{applied.message} {applied.skipped} registros ficaram fora da atualização.</p></div>
+      <div><strong>{applied.updated.toLocaleString("pt-BR")} custo(s) ausente(s) preenchido(s) com sucesso.</strong>
+        <p>{applied.message} {applied.unchanged.toLocaleString("pt-BR")} custos existentes foram mantidos; {applied.skipped.toLocaleString("pt-BR")} linhas ignoradas.</p></div>
     </div>}
 
     {preview && <div className="fh-cost-import-preview">
       <div className="fh-cost-import-summary">
         <div><small>Linhas no arquivo</small><strong>{preview.total.toLocaleString("pt-BR")}</strong></div>
-        <div className="ready"><small>Atualizações seguras</small><strong>{preview.ready.toLocaleString("pt-BR")}</strong></div>
-        <div><small>Sem alteração</small><strong>{preview.summary.sem_alteracao.toLocaleString("pt-BR")}</strong></div>
+        <div className="ready"><small>Custos a preencher</small><strong>{preview.ready.toLocaleString("pt-BR")}</strong></div>
+        <div><small>Já cadastrados</small><strong>{preview.summary.sem_alteracao.toLocaleString("pt-BR")}</strong></div>
         <div><small>Não encontrados</small><strong>{preview.summary.nao_encontrado.toLocaleString("pt-BR")}</strong></div>
         <div className="warn"><small>Duplicados / ambíguos</small><strong>{(preview.summary.duplicado + preview.summary.ambiguo).toLocaleString("pt-BR")}</strong></div>
         <div className="warn"><small>Valores para revisar</small><strong>{(preview.summary.revisar_valor + preview.summary.preco_invalido + preview.summary.sem_identificador).toLocaleString("pt-BR")}</strong></div>
@@ -178,13 +179,13 @@ export default function CostImportPanel() {
       <div className="fh-cost-import-confirm">
         <div>
           <strong>Confira antes de aplicar</strong>
-          <p>Somente os {preview.ready.toLocaleString("pt-BR")} registros com correspondência exata e custo válido serão atualizados.
-          Comissões, impostos, estoque e preço de venda continuam como estão.</p>
+          <p>Somente os {preview.ready.toLocaleString("pt-BR")} anúncios com correspondência exata, custo válido e custo ainda ausente serão preenchidos.
+          Custos já cadastrados, comissões, impostos, estoque e preços anunciados continuarão como estão.</p>
         </div>
         <button type="button" className="fh-cost-import-button" disabled={Boolean(busy) || preview.ready === 0}
           onClick={() => void send("apply")}>
           <CheckCircle2 size={18}/>
-          {busy === "apply" ? "Atualizando..." : "Confirmar " + preview.ready.toLocaleString("pt-BR") + " custos"}
+          {busy === "apply" ? "Preenchendo..." : "Preencher " + preview.ready.toLocaleString("pt-BR") + " custos ausentes"}
         </button>
       </div>
     </div>}
