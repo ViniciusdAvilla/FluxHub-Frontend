@@ -49,9 +49,18 @@ export async function POST(request: Request) {
       redirect: "error", cache: "no-store",
       signal: AbortSignal.timeout(120000),
     });
+    const contentType = response.headers.get("content-type")?.toLowerCase() || "";
+    if (!contentType.includes("application/json") && !contentType.includes("+json")) {
+      return response.status === 413
+        ? reply("O servidor rejeitou o tamanho do arquivo. Verifique o limite de upload no proxy Nginx.", 413)
+        : reply("O servidor de importação retornou uma página em vez de dados. Verifique a conexão com o backend.", 502);
+    }
     const data = await response.json().catch(() => null) as Record<string, unknown> | null;
+    if (!data || typeof data !== "object" || Array.isArray(data))
+      return reply("O servidor de importação retornou dados inválidos.", 502);
     if (!response.ok) {
-      const message = typeof data?.detail === "string" ? data.detail : "Falha ao importar custos.";
+      const message = typeof data.detail === "string" ? data.detail :
+        typeof data.error === "string" ? data.error : "Falha ao importar custos.";
       return reply(message, [400, 401, 403, 409, 413, 415, 422, 429].includes(response.status)
         ? response.status : 502);
     }
