@@ -178,7 +178,7 @@ export default function SellerHome({report}:{report:SellerReport}){
             <td className="fh-table-name"><strong>{p.title}</strong><small>{p.external_id} · {p.category}</small></td>
             <td>{money(p.promotional_price)}</td>
             <td>{c && Number.isFinite(c.unit_cost) && c.unit_cost>0 ? money(c.unit_cost) :
-              <Link href="/precificacao" style={{color:"#2563eb",fontWeight:600}}>Importar custo</Link>}</td>
+              <span title="Cadastre os custos pela importação em massa na Precificação">—</span>}</td>
             <td title={!ordersComplete?"Dados parciais: a importação de pedidos ou de seus itens ainda está em andamento.":undefined}>{units!==undefined?`${number(units)}${ordersComplete?"":" *"}`:ordersComplete?"0":"Em apuração"}</td>
             <td title={ad?"Gasto publicitário presente em relatório importado.":"Sem relatório Product Ads importado para este anúncio."}>{ad?money(ad.ad_spend):"Sem relatório"}</td>
             <td>{number(p.stock_qty)}</td>

@@ -21,7 +21,7 @@ import {
   Layers3,
   Menu,
   Package,
-  Pencil,
+  UploadCloud,
   RefreshCw,
   ScanSearch,
   Search,
@@ -46,7 +46,6 @@ import {
 } from "@/lib/analytics";
 import type {
   EndpointDefinition,
-  Finance,
   ProductRow,
   Snapshot,
   Tone,
@@ -66,7 +65,6 @@ import { defaultAdvancedProductFilters, filterCatalogProducts, sortCatalogProduc
 import type { ProductSortKey, ProductSortDirection } from "@/lib/product-filters";
 const RaioXPanel = dynamic(() => import("./raio-x-panel"));
 
-const FinanceDialog = dynamic(() => import("./finance-dialog"), { ssr: false });
 const PricingCalculator = dynamic(() => import("./pricing-calculator"), { ssr: false });
 const CostImportPanel = dynamic(() => import("./cost-import-panel"));
 
@@ -219,7 +217,6 @@ function SortableColumn({
 
 function ProductTable({
   rows,
-  onEdit,
   onInspect,
   onPrice,
   sortKey = "title",
@@ -227,7 +224,6 @@ function ProductTable({
   onSort,
 }: {
   rows: ProductRow[];
-  onEdit: (id: string) => void;
   onInspect?: (row: ProductRow) => void;
   onPrice?: (row: ProductRow) => void;
   sortKey?: ProductSortKey;
@@ -276,7 +272,6 @@ function ProductTable({
             <SortableColumn label="Receita estimada" field="revenue" selected={sortKey} direction={sortDirection} onSelect={onSort ?? (() => {})}/>
             <SortableColumn label="Lucro" field="profit" selected={sortKey} direction={sortDirection} onSelect={onSort ?? (() => {})}/>
             <SortableColumn label="Margem" field="margin" selected={sortKey} direction={sortDirection} onSelect={onSort ?? (() => {})}/>
-            <th aria-label="Ações" />
           </tr>
         </thead>
         <tbody>
@@ -316,11 +311,6 @@ function ProductTable({
               <td>{money(row.revenue)}</td>
               <td className={`text-${marginTone(row.margin)}`}>{money(row.profit)}</td>
               <td className={`text-${marginTone(row.margin)}`}>{percent(row.margin)}</td>
-              <td>
-                <button className="icon-button" onClick={() => onEdit(row.id)} aria-label={`Editar custos de ${row.title}`}>
-                  <Pencil size={16} />
-                </button>
-              </td>
             </tr>
           ))}
         </tbody>
@@ -347,9 +337,6 @@ function ProductTable({
             <footer>
               <Status tone={row.stockTone}>{row.stockLabel}</Status>
               <span className={"text-" + marginTone(row.margin)}>Margem: {percent(row.margin)}</span>
-              <button type="button" className="fh-smart-edit" onClick={() => onEdit(row.id)}>
-                <Pencil size={14}/> Custos
-              </button>
             </footer>
           </article>;
         })}
@@ -668,7 +655,6 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
   const [manufacturer, setManufacturer] = useState("");
   const [stockTone, setStockTone] = useState("");
   const [advanced, setAdvanced] = useState(defaultAdvancedProductFilters);
-  const [editProduct, setEditProduct] = useState<string | null | undefined>(undefined);
   const [inspected, setInspected] = useState<ProductRow | null>(null);
   const [pricingItem, setPricingItem] = useState<ProductRow | null>(null);
   const [desiredMargin, setDesiredMargin] = useState(20);
@@ -721,14 +707,6 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
     } finally {
       setBusy(false);
     }
-  }
-
-  function saved(finance: Finance) {
-    setSnapshot((current) => ({
-      ...current,
-      finance: [...current.finance.filter((item) => item.productId !== finance.productId), finance],
-    }));
-    setNotice("Custos salvos e indicadores recalculados.");
   }
 
   const current = titles[view];
@@ -787,8 +765,8 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
                 <div><Status tone="warning">Atenção</Status><strong>{summary.warning}</strong><span>baixo giro/cobertura</span></div>
                 <div><Status tone="good">Bom</Status><strong>{summary.healthy}</strong><span>estoque saudável</span></div>
               </div>
-              <Section title="Produtos em destaque" subtitle="Ordenados pela maior receita estimada." action={<button className="button primary" onClick={() => setEditProduct(null)}><Pencil size={15} /> Cadastrar custos</button>}>
-                {filtered.length ? <ProductTable rows={[...filtered].sort((a, b) => (b.revenue ?? -1) - (a.revenue ?? -1)).slice(0, 8)} onEdit={setEditProduct} onInspect={setInspected} onPrice={setPricingItem} sortKey={advanced.sortKey} sortDirection={advanced.sortDirection} onSort={setSort} /> : <Empty title="Nenhum produto encontrado" text="Ajuste os filtros para visualizar o catálogo." />}
+              <Section title="Produtos em destaque" subtitle="Ordenados pela maior receita estimada." action={<Link className="button primary" href="/precificacao"><UploadCloud size={15} /> Importar custos em massa</Link>}>
+                {filtered.length ? <ProductTable rows={[...filtered].sort((a, b) => (b.revenue ?? -1) - (a.revenue ?? -1)).slice(0, 8)} onInspect={setInspected} onPrice={setPricingItem} sortKey={advanced.sortKey} sortDirection={advanced.sortDirection} onSort={setSort} /> : <Empty title="Nenhum produto encontrado" text="Ajuste os filtros para visualizar o catálogo." />}
               </Section>
             </>
           )}
@@ -803,8 +781,8 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
                   <DonutStats items={stockDistribution(filtered)} label="produtos"/>
                 </Section>
               </div>
-              <Section title={`${filtered.length} produtos`} subtitle="Clique no nome para abrir a ficha completa." action={<button className="button primary" onClick={() => setEditProduct(null)}><Pencil size={15} /> Cadastrar custos</button>}>
-              {filtered.length ? <ProductTable rows={filtered} onEdit={setEditProduct} onInspect={setInspected} onPrice={setPricingItem} sortKey={advanced.sortKey} sortDirection={advanced.sortDirection} onSort={setSort} /> : <Empty title="Nenhum produto encontrado" text="Ajuste os filtros para visualizar o catálogo." />}
+              <Section title={`${filtered.length} produtos`} subtitle="Clique no nome para abrir a ficha completa." action={<Link className="button primary" href="/precificacao"><UploadCloud size={15} /> Importar custos em massa</Link>}>
+              {filtered.length ? <ProductTable rows={filtered} onInspect={setInspected} onPrice={setPricingItem} sortKey={advanced.sortKey} sortDirection={advanced.sortDirection} onSort={setSort} /> : <Empty title="Nenhum produto encontrado" text="Ajuste os filtros para visualizar o catálogo." />}
               </Section>
             </>
           )}
@@ -864,8 +842,8 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
               <Section title="Receita e lucro por categoria" subtitle="Comparativo dos resultados disponíveis no catálogo filtrado.">
                 <FinanceCategoryChart rows={filtered} />
               </Section>
-              <Section title="Resultado por produto" subtitle="Vermelho = prejuízo, amarelo = margem abaixo de 15%, verde = margem a partir de 15%." action={<button className="button primary" onClick={() => setEditProduct(null)}><Pencil size={15} /> Cadastrar custos</button>}>
-                <ProductTable rows={filtered} onEdit={setEditProduct} onInspect={setInspected} onPrice={setPricingItem} sortKey={advanced.sortKey} sortDirection={advanced.sortDirection} onSort={setSort} />
+              <Section title="Resultado por produto" subtitle="Vermelho = prejuízo, amarelo = margem abaixo de 15%, verde = margem a partir de 15%." action={<Link className="button primary" href="/precificacao"><UploadCloud size={15} /> Importar custos em massa</Link>}>
+                <ProductTable rows={filtered} onInspect={setInspected} onPrice={setPricingItem} sortKey={advanced.sortKey} sortDirection={advanced.sortDirection} onSort={setSort} />
               </Section>
             </>
           )}
@@ -994,14 +972,13 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
             other_cost: pricingItem.finance?.otherCost ?? null,
           }}
           onClose={() => setPricingItem(null)}/>}
-      {editProduct !== undefined && <FinanceDialog products={rows} selected={editProduct} onClose={() => setEditProduct(undefined)} onSaved={saved} />}
-      {inspected && (
+            {inspected && (
         <div className="drawer-backdrop" onClick={() => setInspected(null)}>
           <aside className="detail-drawer" onClick={(event) => event.stopPropagation()}>
             <div className="drawer-head"><div><span className="eyebrow">FICHA DO PRODUTO</span><h2>{inspected.title}</h2><p>{inspected.id}</p></div><button className="icon-button" onClick={() => setInspected(null)} aria-label="Fechar ficha"><X size={19} /></button></div>
             <div className="detail-grid"><div><span>Fabricante</span><strong>{inspected.brand}</strong></div><div><span>Categoria</span><strong>{inspected.category}</strong></div><div><span>Preço</span><strong>{money(inspected.price)}</strong></div><div><span>Desconto</span><strong>{percent(inspected.discount)}</strong></div><div><span>Avaliação</span><strong>{inspected.rating?.toLocaleString("pt-BR", { maximumFractionDigits: 2 }) ?? "—"}</strong></div><div><span>Condição</span><strong>{inspected.condition ?? "—"}</strong></div><div><span>Frete grátis</span><strong>{inspected.freeShipping === null ? "—" : inspected.freeShipping ? "Sim" : "Não"}</strong></div><div><span>Custos cadastrados</span><strong>{inspected.finance ? "Sim" : "Não"}</strong></div></div>
             {rawEntries(inspected).length > 0 && <><h3 className="drawer-section-title">Outros campos recebidos</h3><dl className="raw-fields">{rawEntries(inspected).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{displayValue(value)}</dd></div>)}</dl></>}
-            <button className="button primary full" onClick={() => { setEditProduct(inspected.id); setInspected(null); }}><Pencil size={16} /> Editar custos</button>
+            <Link className="button primary full" href="/precificacao" onClick={() => setInspected(null)}><UploadCloud size={16} /> Importar custos em massa</Link>
           </aside>
         </div>
       )}
