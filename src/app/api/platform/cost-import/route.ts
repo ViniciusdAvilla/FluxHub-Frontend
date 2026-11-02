@@ -7,7 +7,8 @@ import { isTrustedRequestOrigin } from "@/lib/request-security";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const MAX_BYTES = 8 * 1024 * 1024;
+const MAX_BYTES = 16 * 1024 * 1024;
+const ACCEPTED_EXTENSIONS = /\.(csv|tsv|txt|xlsx|xls|docx|pdf)$/i;
 
 function reply(error: string, status: number) {
   return Response.json({ error }, { status, headers: { "Cache-Control": "private, no-store" } });
@@ -22,14 +23,14 @@ export async function POST(request: Request) {
   const session = readSession((await cookies()).get(SESSION_COOKIE)?.value);
   if (!session) return reply("Entre no FluxHub para importar custos.", 401);
   const length = Number(request.headers.get("content-length") || 0);
-  if (length > MAX_BYTES + 10000) return reply("Arquivo maior que 8 MB.", 413);
+  if (length > MAX_BYTES + 10000) return reply("Arquivo maior que 16 MB.", 413);
   try {
     const form = await request.formData();
     const file = form.get("file");
-    if (!(file instanceof File) || !file.name.toLowerCase().endsWith(".csv"))
-      return reply("Selecione um arquivo CSV.", 415);
+    if (!(file instanceof File) || !ACCEPTED_EXTENSIONS.test(file.name))
+      return reply("Selecione CSV, Excel, Word (.docx), PDF, TXT ou TSV.", 415);
     if (file.size === 0 || file.size > MAX_BYTES)
-      return reply("Arquivo vazio ou maior que 8 MB.", 413);
+      return reply("Arquivo vazio ou maior que 16 MB.", 413);
     const token = form.get("preview_token");
     if (mode === "apply" && (typeof token !== "string" || token.length > 2000 || !token))
       return reply("Faça a prévia antes de confirmar.", 422);
