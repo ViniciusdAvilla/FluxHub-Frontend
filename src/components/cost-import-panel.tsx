@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, FileSpreadsheet, ShieldCheck, UploadCloud, AlertTriangle } from "lucide-react";
+import { CheckCircle2, ShieldCheck, UploadCloud, AlertTriangle, FileText, X } from "lucide-react";
 
 type StatusKey = "atualizar" | "sem_alteracao" | "nao_encontrado" |
   "ambiguo" | "duplicado" | "revisar_valor" | "preco_invalido" | "sem_identificador";
@@ -48,6 +48,8 @@ const statuses: StatusKey[] = [
   "atualizar", "sem_alteracao", "nao_encontrado", "ambiguo",
   "duplicado", "revisar_valor", "preco_invalido", "sem_identificador",
 ];
+const ACCEPTED_TYPES = /\.(csv|tsv|txt|xlsx|xls|docx|pdf)$/i;
+const MAX_UPLOAD_BYTES = 16 * 1024 * 1024;
 const currency = (value: number | null) =>
   value === null ? "—" : value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -59,15 +61,21 @@ export default function CostImportPanel() {
   const [filter, setFilter] = useState<StatusKey | "todos">("todos");
   const [busy, setBusy] = useState<"preview" | "apply" | null>(null);
   const [error, setError] = useState("");
+  const [dragging, setDragging] = useState(false);
   const rows = useMemo(() => preview?.rows.filter(row =>
     filter === "todos" || row.status === filter) ?? [], [preview, filter]);
 
   function choose(next: File | null) {
-    setFile(next);
     setPreview(null);
     setApplied(null);
     setError("");
     setFilter("todos");
+    if (next && (!ACCEPTED_TYPES.test(next.name) || next.size === 0 || next.size > MAX_UPLOAD_BYTES)) {
+      setFile(null);
+      setError("Arquivo inválido. Use CSV, Excel, Word (.docx), PDF ou TXT de até 16 MB.");
+      return;
+    }
+    setFile(next);
   }
 
   async function send(mode: "preview" | "apply") {
@@ -83,7 +91,7 @@ export default function CostImportPanel() {
       });
       const data = await response.json() as Record<string, unknown>;
       if (!response.ok) throw new Error(
-        typeof data.error === "string" ? data.error : "Não foi possível importar a planilha.");
+        typeof data.error === "string" ? data.error : "Não foi possível importar os custos do arquivo.");
       if (mode === "preview") {
         setPreview(data as unknown as Preview);
         setApplied(null);
@@ -99,34 +107,62 @@ export default function CostImportPanel() {
     }
   }
 
+  const phase = applied ? 3 : preview ? 2 : 1;
+
   return <section className="fh-cost-import" aria-labelledby="cost-import-title">
     <div className="fh-cost-import-heading">
       <div>
-        <span className="eyebrow">CUSTOS DE COMPRA</span>
-        <h3 id="cost-import-title">Importar custos médios por CSV</h3>
-        <p>Preencha somente custos de compra ainda não cadastrados, por referência/SKU exato ou pelo ID MLB.</p>
+        <span className="eyebrow">PRECIFICAÇÃO / IMPORTAÇÃO DE CUSTOS</span>
+        <h3 id="cost-import-title">Importação de custos em massa</h3>
+        <p>Preencha custos de compra ausentes de vários produtos de uma só vez.</p>
       </div>
-      <div className="fh-cost-import-secure"><ShieldCheck size={16}/> Preços de venda preservados</div>
+      <div className="fh-cost-import-secure"><ShieldCheck size={16}/> Custos existentes e preços de venda preservados</div>
     </div>
 
-    <div className="fh-cost-import-actions">
-      <label className="fh-cost-import-file">
-        <FileSpreadsheet size={20}/>
-        <span>{file ? file.name : "Escolher arquivo CSV (.csv)"}</span>
-        <input type="file" accept=".csv,text/csv" disabled={Boolean(busy)}
-          onChange={event => choose(event.target.files?.[0] ?? null)} />
-      </label>
-      <button className="fh-cost-import-button" type="button" disabled={!file || Boolean(busy)}
-        onClick={() => void send("preview")}>
-        <UploadCloud size={17}/> {busy === "preview" ? "Analisando..." : "Conferir correspondências"}
-      </button>
+    <label className={"fh-cost-dropzone " + (dragging ? "is-dragging" : "") + (busy ? " is-busy" : "")}
+      htmlFor="bulk-cost-file" onDragOver={event => {event.preventDefault(); if (!busy) setDragging(true);}}
+      onDragLeave={event => {event.preventDefault(); setDragging(false);}}
+      onDrop={event => {
+        event.preventDefault();
+        setDragging(false);
+        if (!busy) choose(event.dataTransfer.files?.[0] ?? null);
+      }}>
+      <input id="bulk-cost-file" type="file"
+        accept=".csv,.tsv,.txt,.xlsx,.xls,.docx,.pdf"
+        disabled={Boolean(busy)} onChange={event => {
+          choose(event.target.files?.[0] ?? null);
+          event.target.value = "";
+        }}/>
+      <span className="fh-cost-dropzone-icon"><UploadCloud size={28}/></span>
+      <strong>{file ? file.name : "Arraste seu arquivo ou clique para selecionar"}</strong>
+      <span>{file ? "Clique para trocar de arquivo" : "Arquivo com SKU, referência ou MLB e uma coluna de custo de compra"}</span>
+      <span className="fh-cost-file-types" aria-label="Formatos aceitos">
+        {["CSV", "Excel", "Word (.docx)", "PDF", "TXT"].map(kind =>
+          <span key={kind}>{kind}</span>)}
+      </span>
+    </label>
+
+    <div className="fh-cost-steps" aria-label="Etapas da importação">
+      <span className={phase >= 1 ? "is-active" : ""}><b>1</b> Enviar arquivo</span>
+      <span className={phase >= 2 ? "is-active" : ""}><b>2</b> Conferir prévia</span>
+      <span className={phase >= 3 ? "is-active" : ""}><b>3</b> Importar custos</span>
     </div>
-    <p className="fh-cost-import-help">
-      Colunas aceitas: <strong>Cód.Item</strong>, <strong>Referência</strong> e <strong>Preço Médio</strong>.
-      Para associação direta, inclua uma coluna <strong>MLB</strong>. Saldo, preço de venda,
-      marca e todas as outras colunas são ignorados. Custos já preenchidos, códigos duplicados,
-      valores inválidos e custos de R$ 0,01 ou menos não são modificados.
-    </p>
+    <div className="fh-cost-upload-actions">
+      <p className="fh-cost-import-help">
+        O FluxHub lê <strong>Preço Médio</strong> ou uma coluna identificada como
+        <strong> custo de compra</strong>. Outros campos são ignorados.
+        Só serão preenchidos custos ausentes com correspondência exata.
+        PDF digitalizado pode exigir OCR.
+      </p>
+      <div className="fh-cost-upload-buttons">
+        {file && <button type="button" className="fh-cost-clear" onClick={() => choose(null)}
+          disabled={Boolean(busy)} aria-label="Remover arquivo"><X size={16}/> Remover</button>}
+        <button className="fh-cost-import-button" type="button" disabled={!file || Boolean(busy)}
+          onClick={() => void send("preview")}>
+          <FileText size={17}/> {busy === "preview" ? "Lendo documento..." : "Conferir prévia"}
+        </button>
+      </div>
+    </div>
     {error && <p className="fh-cost-import-error" role="alert"><AlertTriangle size={17}/>{error}</p>}
     {applied && <div className="fh-cost-import-success" role="status">
       <CheckCircle2 size={20}/>
@@ -136,7 +172,7 @@ export default function CostImportPanel() {
 
     {preview && <div className="fh-cost-import-preview">
       <div className="fh-cost-import-summary">
-        <div><small>Linhas no arquivo</small><strong>{preview.total.toLocaleString("pt-BR")}</strong></div>
+        <div><small>Registros analisados</small><strong>{preview.total.toLocaleString("pt-BR")}</strong></div>
         <div className="ready"><small>Custos a preencher</small><strong>{preview.ready.toLocaleString("pt-BR")}</strong></div>
         <div><small>Já cadastrados</small><strong>{preview.summary.sem_alteracao.toLocaleString("pt-BR")}</strong></div>
         <div><small>Não encontrados</small><strong>{preview.summary.nao_encontrado.toLocaleString("pt-BR")}</strong></div>
@@ -160,7 +196,7 @@ export default function CostImportPanel() {
         <table className="fh-cost-import-table">
           <thead><tr>
             <th>Linha</th><th>Referência / Código</th><th>Produto associado</th>
-            <th>Custo atual</th><th>Novo custo</th><th>Situação</th>
+            <th>Custo atual</th><th>Custo no arquivo</th><th>Situação</th>
           </tr></thead>
           <tbody>
             {rows.map(row => <tr key={row.line}>
@@ -178,14 +214,14 @@ export default function CostImportPanel() {
       </div>
       <div className="fh-cost-import-confirm">
         <div>
-          <strong>Confira antes de aplicar</strong>
+          <strong>Prévia da importação</strong>
           <p>Somente os {preview.ready.toLocaleString("pt-BR")} anúncios com correspondência exata, custo válido e custo ainda ausente serão preenchidos.
           Custos já cadastrados, comissões, impostos, estoque e preços anunciados continuarão como estão.</p>
         </div>
         <button type="button" className="fh-cost-import-button" disabled={Boolean(busy) || preview.ready === 0}
           onClick={() => void send("apply")}>
           <CheckCircle2 size={18}/>
-          {busy === "apply" ? "Preenchendo..." : "Preencher " + preview.ready.toLocaleString("pt-BR") + " custos ausentes"}
+          {busy === "apply" ? "Importando..." : "Confirmar importação em massa (" + preview.ready.toLocaleString("pt-BR") + ")"}
         </button>
       </div>
     </div>}
