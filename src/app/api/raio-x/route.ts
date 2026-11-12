@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function GET() {
-  return Response.json(marketProviderStatus(), { headers: { "Cache-Control": "no-store" } });
+  return Response.json(await marketProviderStatus(), { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function POST(request: Request) {

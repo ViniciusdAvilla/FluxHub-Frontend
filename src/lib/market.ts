@@ -1,6 +1,7 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import type { MarketListing, MarketplaceName, Product, RaioXResult } from "./types";
+import { backendMutation, backendRequest } from "./backend-transport";
 import { adQualityChecks, listingSimilarity, marketStats, overallScore } from "./market-analysis";
 
 const configuredCacheMinutes = Number(process.env.MARKET_CACHE_MINUTES || "360");
@@ -63,22 +64,12 @@ function dedupe(listings: MarketListing[]) {
 }
 
 async function serpApi(product: Product, query: string): Promise<MarketListing[]> {
-  const key = process.env.SERPAPI_KEY?.trim();
-  if (!key) return [];
-  const url = new URL("https://serpapi.com/search.json");
-  url.searchParams.set("engine", "google_shopping");
-  url.searchParams.set("q", query);
-  url.searchParams.set("gl", "br");
-  url.searchParams.set("hl", "pt-br");
-  url.searchParams.set("api_key", key);
-  const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(15000) });
-  if (!response.ok) throw new Error(`Google Shopping indisponível (${response.status}).`);
-  const data = await response.json() as Record<string, unknown>;
-  const direct = Array.isArray(data.shopping_results) ? data.shopping_results : [];
-  const categorized = Array.isArray(data.categorized_shopping_results)
-    ? data.categorized_shopping_results.flatMap((category) => category && typeof category === "object" && Array.isArray((category as Record<string, unknown>).shopping_results) ? (category as Record<string, unknown>).shopping_results as unknown[] : [])
-    : [];
-  return [...direct, ...categorized]
+  // Google Shopping credentials are stored exclusively in FastAPI.
+  const data = await backendMutation(
+    "/api/v1/market/google-shopping", "POST", { query }, 25000,
+  ) as Record<string, unknown>;
+  const direct = Array.isArray(data?.shopping_results) ? data.shopping_results : [];
+  return direct
     .filter((value): value is Record<string, unknown> => Boolean(value && typeof value === "object"))
     .map((item, index): MarketListing | null => {
       const title = safeText(item.title);
@@ -156,9 +147,16 @@ async function mercadoLivre(product: Product, query: string): Promise<MarketList
     .sort((a, b) => b.similarity - a.similarity);
 }
 
-export function marketProviderStatus() {
+export async function marketProviderStatus() {
+  let googleShopping = false;
+  try {
+    const status = await backendRequest("/api/v1/market/providers", undefined, 10000) as Record<string, unknown>;
+    googleShopping = status?.googleShopping === true;
+  } catch {
+    // Keep the Raio-X available for the other configured providers.
+  }
   return {
-    googleShopping: Boolean(process.env.SERPAPI_KEY?.trim()),
+    googleShopping,
     mercadoLivre: Boolean(process.env.MELI_ACCESS_TOKEN?.trim()),
     cacheMinutes: CACHE_MINUTES,
   };
@@ -174,7 +172,8 @@ export async function analyzeMarket(product: Product, force = false): Promise<Ra
   const providers: string[] = [];
   const batches: MarketListing[][] = [];
   const tasks: Array<{ name: string; fallback: string; run: () => Promise<MarketListing[]> }> = [];
-  if (process.env.SERPAPI_KEY?.trim()) tasks.push({ name: "Google Shopping", fallback: "Falha no Google Shopping.", run: () => serpApi(product, query) });
+  const providerStatus = await marketProviderStatus();
+  if (providerStatus.googleShopping) tasks.push({ name: "Google Shopping", fallback: "Falha no Google Shopping.", run: () => serpApi(product, query) });
   if (process.env.MELI_ACCESS_TOKEN?.trim()) tasks.push({ name: "Mercado Livre", fallback: "Falha no Mercado Livre.", run: () => mercadoLivre(product, query) });
   const settled = await Promise.allSettled(tasks.map((task) => task.run()));
   settled.forEach((item, index) => {
@@ -182,7 +181,7 @@ export async function analyzeMarket(product: Product, force = false): Promise<Ra
     if (item.status === "fulfilled") { providers.push(task.name); batches.push(item.value); }
     else warnings.push(item.reason instanceof Error ? item.reason.message : task.fallback);
   });
-  if (!tasks.length) warnings.push("Configure SERPAPI_KEY para Shopee e outros e/ou MELI_ACCESS_TOKEN para concorrentes do Mercado Livre.");
+  if (!tasks.length) warnings.push("Configure SERPAPI_KEY no backend FastAPI e/ou MELI_ACCESS_TOKEN para concorrentes do Mercado Livre.");
 
   const listings = dedupe(batches.flat())
     .sort((a, b) => b.similarity - a.similarity || (a.price ?? Infinity) - (b.price ?? Infinity))

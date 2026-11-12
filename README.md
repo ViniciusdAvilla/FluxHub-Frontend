@@ -159,7 +159,6 @@ PRODUCTS_PATH=
 PRODUCTS_BY_BRANDS_PATH=
 BACKEND_TOKEN=
 FINANCE_DB_PATH=./data/finance.sqlite
-SERPAPI_KEY=
 MELI_ACCESS_TOKEN=
 MARKET_CACHE_MINUTES=360
 ```
@@ -200,7 +199,7 @@ Configure o mesmo valor nos dois ambientes, ambos com o nome `BACKEND_TOKEN`. N�
 
 O Swagger público deixa de funcionar diretamente no navegador porque não recebe o token Bearer; isso é **intencional**. Para consultar o contrato com autorização, use um cliente API (curl/Postman) com o token, sem expô-lo no navegador ou no frontend público.
 - `FINANCE_DB_PATH`: arquivo SQLite usado para custos.
-- `SERPAPI_KEY`: habilita pesquisa no Google Shopping para Shopee e outros e-commerces.
+- `SERPAPI_KEY` deve existir **apenas no ambiente privado do backend FastAPI**. O frontend consulta `/api/v1/market/providers` e `/api/v1/market/google-shopping` por meio da conexão autenticada com o backend.
 - `MELI_ACCESS_TOKEN`: habilita comparação direta com anúncios do Mercado Livre.
 - `MARKET_CACHE_MINUTES`: controla por quanto tempo uma análise externa pode ser reutilizada.
 
@@ -320,3 +319,7 @@ Se `check-auth.mjs` disser que as variáveis estão ausentes, configure-as no me
 A antiga tela central de loading foi substituída por um **esqueleto da interface** com a navegação lateral e a barra superior presentes. O conteúdo é substituído por métricas e tabelas reais quando o servidor conclui a leitura. Não há valores fictícios no esqueleto.
 
 Em `/financeiro`, um gráfico de barras compara **receita e lucro estimados por categoria** com base no filtro aplicado. Exibe receita apenas quando existem preços e vendas, e lucro somente para itens com custos cadastrados. Esse gráfico não representa evolução diária ou mensal, porque a API atual não fornece uma série histórica para isso.
+
+## SerpAPI no Raio-X
+
+A análise de anúncios continua na tela `/raio-x`, mas as buscas Google Shopping são executadas pelo FastAPI usando a variável secreta `SERPAPI_KEY`. **Não coloque essa chave no `.env.local` do Next.js** e não use variáveis `NEXT_PUBLIC_*` para tokens de provedores. Após atualizar os dois serviços e configurar a chave no ambiente do backend, reinicie o FastAPI e o Next.js. A chave nunca é enviada ao navegador.
