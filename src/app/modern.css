@@ -1720,7 +1720,12 @@ html, body { background: #f6f8fe; color: #1d3058; }
 .fh-smart-order-toolbar select{border:1px solid #d4e3f4;background:#fff;color:#315676;border-radius:9px;padding:8px 11px;font-size:12px}
 .fh-smart-order-dir{border:1px solid #b9d4f4;border-radius:9px;background:white;color:#266cbd;font-size:12px;font-weight:700;cursor:pointer;padding:8px 12px}
 .fh-smart-order-hint{margin-left:auto;color:#718aa5;font-size:11px}
-.fh-smart-sales-table th{white-space:nowrap}
+.fh-smart-sales-table.table-wrap thead th {
+  white-space: nowrap;
+  font-size: 14px;
+  line-height: 1.4;
+  padding-block: 13px;
+}
 .fh-smart-sales-table .fh-orders-product-button{max-width:440px;text-align:left}
 .fh-smart-sales-table .fh-orders-pill{border:0;cursor:pointer}
 .fh-smart-sales-table .fh-orders-image-fallback{width:54px;height:54px;min-width:54px}

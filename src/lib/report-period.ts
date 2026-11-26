@@ -63,6 +63,20 @@ export function backendPeriod(period: ReportPeriod) {
 }
 
 export function previousPeriod(period: ReportPeriod) {
-  const length = (dateAtUtc(period.end).getTime() - dateAtUtc(period.start).getTime()) / dayMs + 1;
+  const length = periodLength(period);
   return { ...period, start: shiftDate(period.start, -length), end: shiftDate(period.start, -1) };
+}
+
+export function periodLength(period: ReportPeriod) {
+  return (dateAtUtc(period.end).getTime() - dateAtUtc(period.start).getTime()) / dayMs + 1;
+}
+
+export function periodSearchParams(period: ReportPeriod) {
+  const params = new URLSearchParams({ period: period.preset });
+  if (period.preset === "custom") {
+    params.set("start_date", period.start);
+    params.set("end_date", period.end);
+  }
+  if (period.compare) params.set("compare", "1");
+  return params;
 }

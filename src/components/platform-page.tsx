@@ -2,7 +2,8 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useDeferredValue, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useDeferredValue, useEffect, useMemo, useState, useTransition } from "react";
 import type { ReactNode } from "react";
 import {
   Activity,
@@ -52,6 +53,9 @@ import type {
 } from "@/lib/types";
 import { CategoryChart, ManufacturerChart, RevenueChart } from "./charts";
 import ModernShell from "./modern-shell";
+import OverviewPeriodFilter from "./overview-period-filter";
+import PeriodComparison from "./period-comparison";
+import { periodLength, previousPeriod, type ReportPeriod } from "@/lib/report-period";
 import RankedBarChart from "./ranked-bar-chart";
 import { DonutStats } from "./modern-charts";
 import {
@@ -394,7 +398,7 @@ function ProductTable({
   );
 }
 
-function PurchasePlanTable({ rows, coverageDays }: { rows: ProductRow[]; coverageDays: number }) {
+function PurchasePlanTable({ rows, coverageDays, salesDays }: { rows: ProductRow[]; coverageDays: number; salesDays: number }) {
   const [page, setPage] = useState(0);
   const [sortKey, setSortKey] = useState<ProductSortKey>("stockDays");
   const [sortDirection, setSortDirection] = useState<ProductSortDirection>("asc");
@@ -415,12 +419,12 @@ function PurchasePlanTable({ rows, coverageDays }: { rows: ProductRow[]; coverag
           <SortableColumn label="Produto" field="title" selected={sortKey} direction={sortDirection} onSelect={sort}/>
           <SortableColumn label="Fabricante" field="brand" selected={sortKey} direction={sortDirection} onSelect={sort}/>
           <SortableColumn label="Saldo" field="stock" selected={sortKey} direction={sortDirection} onSelect={sort}/>
-          <SortableColumn label="Vendas 30d" field="sales" selected={sortKey} direction={sortDirection} onSelect={sort}/>
+          <SortableColumn label="Vendas no período" field="sales" selected={sortKey} direction={sortDirection} onSelect={sort}/>
           <SortableColumn label="Cobertura" field="stockDays" selected={sortKey} direction={sortDirection} onSelect={sort}/>
           <th>Comprar</th><th>Investimento</th><th>Prioridade</th>
         </tr></thead>
         <tbody>{show.map(row => {
-          const plan = replenishment(row, coverageDays);
+          const plan = replenishment(row, coverageDays, salesDays);
           const investment = plan.quantity !== null && row.finance ? plan.quantity * row.finance.unitCost : null;
           const urgency = purchaseUrgency(row);
           return <tr key={row.id}>
@@ -686,7 +690,9 @@ function DataExplorer({
   );
 }
 
-export default function PlatformPage({ initial, view, isAdmin = false }: { initial: Snapshot; view: View; syncAccounts?: { accountId: number; auto: boolean }[]; isAdmin?: boolean }) {
+export default function PlatformPage({ initial, view, isAdmin = false, dateFilter }: { initial: Snapshot; dateFilter?: { period: ReportPeriod; today: string }; view: View; syncAccounts?: { accountId: number; auto: boolean }[]; isAdmin?: boolean }) {
+  const router = useRouter();
+  const [refreshing, startRefresh] = useTransition();
   const [snapshot, setSnapshot] = useState(initial);
   useEffect(() => { setSnapshot(initial); }, [initial]);
   const [busy, setBusy] = useState(false);
@@ -702,7 +708,8 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
   const [desiredMargin, setDesiredMargin] = useState(20);
   const [coverageDays, setCoverageDays] = useState(30);
 
-  const rows = useMemo(() => enrichProducts(snapshot.products, snapshot.finance), [snapshot.products, snapshot.finance]);
+  const salesDays = dateFilter ? periodLength(dateFilter.period) : 30;
+  const rows = useMemo(() => enrichProducts(snapshot.products, snapshot.finance, salesDays), [snapshot.products, snapshot.finance, salesDays]);
   const categories = useMemo(() => [...new Set(rows.map((row) => row.category))].sort((a, b) => a.localeCompare(b, "pt-BR")), [rows]);
   const manufacturers = useMemo(() => [...new Set(rows.filter((row) => row.brand !== "Sem marca").map((row) => row.brand))].sort((a, b) => a.localeCompare(b, "pt-BR")), [rows]);
   const filtered = useMemo(() => {
@@ -733,6 +740,10 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
   const abcThreshold = useMemo(() => highVolumeThreshold(abc), [abc]);
 
   async function refresh() {
+    if (dateFilter) {
+      startRefresh(() => router.refresh());
+      return;
+    }
     setBusy(true);
     setNotice("");
     try {
@@ -786,13 +797,14 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
       <ModernShell title={current.title} eyebrow={current.eyebrow}
         isAdmin={isAdmin}
         action={<div className="fh-inline-actions">
+          {dateFilter && <OverviewPeriodFilter {...dateFilter} accountId={null} accounts={[]}/>}
           <a className="fh-control" href={"/api/platform/export?report=" +
             (view === "finance" ? "costs" : view === "overview" ? "complete" : "products")}>
-            <Download size={16}/> Exportar Excel
+            <Download size={16}/> {dateFilter ? "Exportar catálogo" : "Exportar Excel"}
           </a>
-          <button className="fh-control fh-module-refresh" type="button" onClick={refresh} disabled={busy}>
-            <RefreshCw className={busy ? "spin" : ""} size={16} />
-            {busy ? "Atualizando..." : "Atualizar dados"}
+          <button className="fh-control fh-module-refresh" type="button" onClick={refresh} disabled={busy || refreshing}>
+            <RefreshCw className={busy || refreshing ? "spin" : ""} size={16} />
+            {busy || refreshing ? "Atualizando..." : "Atualizar dados"}
           </button>
         </div>}>
         <div className="fh-legacy-module">
@@ -801,6 +813,14 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
             {snapshot.updatedAt && <span><CircleCheck size={14}/> Consulta em {new Date(snapshot.updatedAt).toLocaleTimeString("pt-BR", {hour:"2-digit",minute:"2-digit"})}</span>}
           </div>
 
+          {dateFilter && !snapshot.catalogSales && !snapshot.error &&
+            <p className="notice warning" role="status">Não foi possível consultar as vendas do período.</p>}
+          {dateFilter && snapshot.catalogSales && !snapshot.catalogSales.orders_complete &&
+            <p className="notice warning" role="status">Os dados de vendas do período podem estar incompletos.</p>}
+          {dateFilter?.period.compare && <PeriodComparison period={previousPeriod(dateFilter.period)} metrics={[
+            { label: "Pedidos pagos", current: snapshot.periodSales?.current ?? null,
+              previous: snapshot.periodSales?.previous ?? null, format: "number" },
+          ]}/>}
           {(snapshot.error || notice) && <div className={`notice ${snapshot.error ? "warning" : "good"}`} role="status">{snapshot.error || notice}</div>}
 
           {view === "products" && snapshot.catalogSales && !snapshot.catalogSales.orders_complete && (
@@ -878,8 +898,8 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
                 <Section title="Produtos por categoria" subtitle="Quantidade de itens da operação para análise.">
                   <RankedBarChart values={groupedInsights(filtered, "category", "count")}/>
                 </Section>
-                <Section title="Produtos por fabricante" subtitle="Distribuição do catálogo carregado.">
-                  <RankedBarChart values={groupedInsights(filtered, "brand", "count")}/>
+                <Section title="Vendas por fabricante" subtitle="Unidades vendidas no período selecionado.">
+                  <RankedBarChart values={groupedInsights(filtered, "brand", "sales")}/>
                 </Section>
               </div>
               <RaioXPanel products={filtered}/>
@@ -977,15 +997,15 @@ export default function PlatformPage({ initial, view, isAdmin = false }: { initi
             <>
               <div className="tool-control"><div><span className="eyebrow">COBERTURA ALVO</span><strong>{coverageDays} dias</strong><p>Quantidade sugerida para recompor o estoque até a cobertura definida.</p></div><input aria-label="Cobertura alvo" type="range" min="7" max="90" step="1" value={coverageDays} onChange={(event) => setCoverageDays(Number(event.target.value))} /></div>
               <div className="fh-insight-grid">
-                <Section title="Itens prioritários para reposição" subtitle="Quantidade sugerida com base na meta de cobertura e vendas de 30 dias.">
-                  <RankedBarChart values={topReplenishment(filtered, coverageDays)} empty="Sem necessidade de reposição calculável para os dados e período selecionados."/>
+                <Section title="Itens prioritários para reposição" subtitle="Quantidade sugerida com base na meta de cobertura e vendas do período selecionado.">
+                  <RankedBarChart values={topReplenishment(filtered, coverageDays, salesDays)} empty="Sem necessidade de reposição calculável para os dados e período selecionados."/>
                 </Section>
                 <Section title="Saldo atual por fabricante" subtitle="Unidades de estoque informado por fabricante.">
                   <RankedBarChart values={groupedInsights(filtered, "brand", "stock")}/>
                 </Section>
               </div>
-              <Section title="Plano de compras" subtitle="A sugestão usa somente saldo e venda de 30 dias já disponíveis.">
-                <PurchasePlanTable rows={filtered} coverageDays={coverageDays}/>
+              <Section title="Plano de compras" subtitle="A sugestão usa o estoque atual e a média diária de vendas do período.">
+                <PurchasePlanTable rows={filtered} coverageDays={coverageDays} salesDays={salesDays}/>
               </Section>
             </>
           )}

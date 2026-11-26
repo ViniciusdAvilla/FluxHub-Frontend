@@ -239,6 +239,20 @@ test("reposição calcula venda diária estoque alvo e quantidade de compra", ()
   });
 });
 
+test("cobertura e reposição usam a quantidade de dias do período selecionado", () => {
+  const [row] = enrichProducts(
+    normalizeProducts([{ ...raw, stock_qty: 6, sales_30d: 30 }]),
+    [finance],
+    10,
+  );
+  assert.equal(row.stockDays, 2);
+  assert.deepEqual(replenishment(row, 7, 10), {
+    dailySales: 3,
+    targetStock: 21,
+    quantity: 15,
+  });
+});
+
 test("curva ABC classifica por participação acumulada de receita", () => {
   const base = {
     ...raw,

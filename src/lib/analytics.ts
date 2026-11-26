@@ -237,6 +237,7 @@ export function applyCategoryDisplayNames(
 export function enrichProducts(
   products: Product[],
   finance: Finance[],
+  salesDays = 30,
 ): ProductRow[] {
   const costs = new Map(finance.map((item) => [item.productId, item]));
   return products.map((product) => {
@@ -261,7 +262,7 @@ export function enrichProducts(
         : null;
     const stockDays =
       stock !== null && sales !== null && sales > 0
-        ? stock / (sales / 30)
+        ? stock / (sales / salesDays)
         : null;
     const stockTone: Tone =
       stock === null
@@ -472,6 +473,7 @@ export function projectedAtPrice(
 export function replenishment(
   row: ProductRow,
   targetCoverageDays = 30,
+  salesDays = 30,
 ): {
   quantity: number | null;
   dailySales: number | null;
@@ -481,10 +483,11 @@ export function replenishment(
     row.sales === null ||
     row.stock === null ||
     !Number.isFinite(targetCoverageDays) ||
-    targetCoverageDays <= 0
+    targetCoverageDays <= 0 ||
+    !Number.isFinite(salesDays) || salesDays <= 0
   )
     return { quantity: null, dailySales: null, targetStock: null };
-  const dailySales = row.sales / 30;
+  const dailySales = row.sales / salesDays;
   const targetStock = Math.ceil(dailySales * targetCoverageDays);
   return {
     dailySales,

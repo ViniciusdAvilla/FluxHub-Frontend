@@ -1,3 +1,4 @@
+import { backendPeriod, previousPeriod, type ReportPeriod } from "./report-period";
 import "server-only";
 import { applyCatalogPaidSales, applyCategoryDisplayNames, applyProductBrands, normalizeProducts } from "./analytics";
 import { readFinance } from "./database";
@@ -198,9 +199,9 @@ async function categoryLabelsForCharts(products: ReturnType<typeof normalizeProd
   return names;
 }
 
-async function catalogPaidSalesSnapshot(): Promise<CatalogPaidSales | null> {
+async function catalogPaidSalesSnapshot(period?: ReportPeriod): Promise<CatalogPaidSales | null> {
   try {
-    const query = new URLSearchParams({ days: "30" });
+    const query = period ? backendPeriod(period) : new URLSearchParams({ days: "30" });
     const payload = await backendRequest("/api/v1/analytics/catalog-metrics", query, 20000);
     if (!payload || typeof payload !== "object" || Array.isArray(payload)) return null;
     const row = payload as Record<string, unknown>;
@@ -230,7 +231,7 @@ async function catalogPaidSalesSnapshot(): Promise<CatalogPaidSales | null> {
  */
 export type SnapshotScope = "catalog" | "data" | "full";
 
-export async function getSnapshot(scope: SnapshotScope = "catalog"): Promise<Snapshot> {
+export async function getSnapshot(scope: SnapshotScope = "catalog", period?: ReportPeriod): Promise<Snapshot> {
   if (scope === "data") {
     const schema = await getBackendSchema();
     return {
@@ -244,11 +245,12 @@ export async function getSnapshot(scope: SnapshotScope = "catalog"): Promise<Sna
     };
   }
 
-  const [schema, finance, sales, paidSales] = await Promise.all([
+  const [schema, finance, sales, paidSales, previousSales] = await Promise.all([
     getBackendSchema(),
     financeSnapshot(),
     scope === "full" ? ordersRevenueSnapshot() : Promise.resolve(null),
-    catalogPaidSalesSnapshot(),
+    catalogPaidSalesSnapshot(period),
+    period?.compare ? catalogPaidSalesSnapshot(previousPeriod(period)) : null,
   ]);
   // Somente a Central de Dados precisa da lista de endpoints no navegador.
   const clientSchema = scope === "full" ? schema : { ...schema, endpoints: [] };
@@ -266,6 +268,10 @@ export async function getSnapshot(scope: SnapshotScope = "catalog"): Promise<Sna
     return {
       products,
       finance,
+      periodSales: period ? {
+        current: paidSales?.paid_orders ?? null,
+        previous: previousSales?.paid_orders ?? null,
+      } : undefined,
       catalogSales: paidSales ? {
         paid_orders: paidSales.paid_orders,
         enriched_paid_orders: paidSales.enriched_paid_orders,
