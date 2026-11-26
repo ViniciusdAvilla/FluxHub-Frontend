@@ -202,7 +202,7 @@ function ShellView({
       {adminMode ? <nav className="fh-subnav" aria-label="Área administrativa">
         {adminLinks.map(item=><Link key={item.href} href={item.href} className={path===item.href?"fh-tab-active":""} aria-current={path===item.href?"page":undefined}>{item.label}</Link>)}
       </nav> : <nav className="fh-subnav" aria-label={`Abas de ${activeModule.label}`}>
-        {activeModule.tabs.map(tab=><Link key={tab.href} href={tab.href}
+        {activeModule.tabs.map(tab=><Link key={tab.href} href={path === "/" && tab.href.startsWith("/#") ? tab.href.slice(1) : tab.href}
           aria-current={currentTab.href===tab.href?"page":undefined}
           className={currentTab.href===tab.href?"fh-tab-active":""}
           onClick={()=>{ if(tab.href.startsWith("/#")) setHash(tab.href.slice(1)); }}>

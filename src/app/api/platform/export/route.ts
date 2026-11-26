@@ -23,6 +23,10 @@ export async function GET(request: Request) {
       return Response.json({ error: "Período inválido." }, { status: 422 });
     query.set("days", days);
   }
+  for (const field of ["start_date", "end_date"]) {
+    const value = params.get(field);
+    if (value !== null) query.set(field, value);
+  }
   try {
     const backend = await backendDownload("/api/v1/exports/" + report, query);
     const name = backend.headers.get("content-disposition") ||

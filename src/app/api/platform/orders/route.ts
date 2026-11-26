@@ -38,6 +38,10 @@ export async function GET(request: Request) {
       const days = params.get("days");
       if (days && days !== "all" && /^\d{1,3}$/.test(days))
         target.set("days", days);
+      for (const field of ["start_date", "end_date"]) {
+        const value = params.get(field);
+        if (value !== null) target.set(field, value);
+      }
       if (params.get("status")) target.set("status", params.get("status")!.slice(0, 40));
       if (params.get("search")) target.set("search", params.get("search")!.slice(0, 100));
       const sortBy = params.get("sort_by");

@@ -10,6 +10,8 @@ import type { SellerReport } from "@/lib/seller-data";
 import ModernShell from "./modern-shell";
 import ConversionFunnel from "./conversion-funnel";
 import { DailyBars, DonutStats, PerformanceChart } from "./modern-charts";
+import PeriodComparison from "./period-comparison";
+import { previousPeriod, type ReportPeriod } from "@/lib/report-period";
 import OverviewPeriodFilter from "./overview-period-filter";
 
 function halfPeriodChange(values: number[]):number|null {
@@ -42,8 +44,8 @@ function Box({title,subtitle,children,href}:{title:string;subtitle?:string;child
   return <section className="fh-card"><div className="fh-card-head"><div><h2>{title}</h2>{subtitle&&<p>{subtitle}</p>}</div>{href&&<Link href={href} className="fh-card-link">Ver detalhes →</Link>}</div>{children}</section>;
 }
 function safeNum(input:unknown):number|null {return typeof input==="number"&&Number.isFinite(input)?input:null;}
-export default function SellerHome({report}:{report:SellerReport}){
-  const {accounts,accountId,days,products,timeline,costs,ads}=report;
+export default function SellerHome({ report, period, today }: { report: SellerReport; period: ReportPeriod; today: string }){
+  const {accounts,accountId,products,timeline,costs,ads}=report;
   const revenue=report.paidRevenue?.gross_paid_order_amount??null;
   const totalOrders=timeline.length?timeline.reduce((a,p)=>a+p.orders,0):null;
   const visits=timeline.some(p=>p.visits!==null)?timeline.reduce((a,p)=>a+(p.visits||0),0):null;
@@ -75,7 +77,7 @@ export default function SellerHome({report}:{report:SellerReport}){
   const visitSeries=orderedTimeline.map(p=>p.visits??0);
   const conversionSeries=orderedTimeline.map(p=>p.visits&&p.visits>0?p.orders/p.visits*100:0);
   return <ModernShell title="Visão geral" eyebrow="Resumo geral" isAdmin={Boolean(report.user?.is_admin)}
-    action={<OverviewPeriodFilter days={days} accountId={accountId} accounts={accounts}/>}>
+    action={<OverviewPeriodFilter period={period} today={today} accountId={accountId} accounts={accounts}/>}>
     {report.failedSources.length>0&&<div className="fh-notice error" role="status">Algumas consultas não responderam: {report.failedSources.join(", ")}. Verifique se o FastAPI está online e autenticado.</div>}
     <div className="fh-kpis fh-overview-kpis" id="resumo">
       <Stat color="blue" icon={BadgeDollarSign} title="Faturamento bruto" value={money(revenue)} help={report.paidRevenue?.partial_data?"Dados parciais: histórico de pedidos em sincronização":"Pedidos pagos no período selecionado"}/>
@@ -83,6 +85,10 @@ export default function SellerHome({report}:{report:SellerReport}){
       <Stat color="blue" icon={Eye} title="Visitas" value={number(visits)} help="Visitas informadas pelo Mercado Livre" spark={visitSeries} change={halfPeriodChange(visitSeries)}/>
       <Stat color="purple" icon={TrendingUp} title="Conversão" value={visits!==null&&visits>0&&totalOrders!==null?percent(totalOrders/visits*100):"—"} help="Pedidos ÷ visitas disponíveis" spark={conversionSeries} change={halfPeriodChange(conversionSeries)}/>
     </div>
+    {report.comparison && <PeriodComparison period={previousPeriod(period)} metrics={[
+      { label: "Faturamento bruto", current: revenue, previous: report.comparison.revenue, format: "money" },
+      { label: "Pedidos", current: report.orderStatus?.total_orders ?? null, previous: report.comparison.orders, format: "number" },
+    ]}/>}
     <div className="fh-hero-grid fh-overview-charts" id="desempenho">
       <Box title="Evolução das vendas"><PerformanceChart points={timeline}/></Box>
       <Box title="Situação da loja">
@@ -169,7 +175,7 @@ export default function SellerHome({report}:{report:SellerReport}){
       <div className="fh-alert"><span>Custos de compra cadastrados</span><strong>{number(costsCovered)} de {number(products.length)}</strong></div>
     </div>
     <Box title={Object.keys(salesByItem).length?"Produtos mais vendidos":"Produtos do catálogo"} subtitle="Vendas de pedidos pagos, custos cadastrados e Ads reportados" href="/produtos">
-      <div className="fh-table-wrap"><table className="fh-table"><thead><tr><th>Produto</th><th>Preço</th><th>Custo de compra</th><th>Unid. vendidas (30 dias)</th><th>Ads (30 dias)</th><th>Estoque</th><th>Fabricante</th></tr></thead><tbody>
+      <div className="fh-table-wrap"><table className="fh-table"><thead><tr><th>Produto</th><th>Preço</th><th>Custo de compra</th><th>Unid. vendidas no período</th><th>Ads no período</th><th>Estoque</th><th>Fabricante</th></tr></thead><tbody>
         {topProducts.map(p=>{
           const c=costIndex.get(p.external_id);
           const units=salesByItem[p.external_id];

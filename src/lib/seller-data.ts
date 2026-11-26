@@ -1,4 +1,5 @@
 import "server-only";
+import { backendPeriod, previousPeriod, type ReportPeriod } from "./report-period";
 import { backendRequest } from "./backend-transport";
 
 export type Account = { account_id: number; nickname: string | null; expires_at: string; connected: boolean };
@@ -49,7 +50,7 @@ export type SellerReport = {
   paidRevenue: PaidOrdersRevenue | null;
   accountId: number | null;
   liveListingsTotal: number | null;
-  days: number;
+  comparison: { orders: number | null; revenue: number | null } | null;
   failedSources: string[];
 };
 
@@ -73,20 +74,34 @@ export async function sellerIdentity(): Promise<SellerIdentity | null> {
  * Não carregamos o catálogo inteiro (11 mil+ anúncios), custos nem pedidos
  * duplicados: o OrderExplorer já consulta sua própria página de pedidos.
  */
-export type OrdersOverview = Pick<SellerReport, "user" | "accounts" | "timeline" | "orderStatus">;
+export type OrdersOverview = Pick<SellerReport, "user" | "accounts" | "timeline" | "orderStatus" | "accountId"> & {
+  previousOrderStatus: SellerReport["orderStatus"];
+  revenue: number | null;
+  previousRevenue: number | null;
+};
 
-export async function getOrdersOverview(days: 7 | 30 | 90 = 30): Promise<OrdersOverview> {
-  const period = new URLSearchParams({ days: String(days) });
-  const [user, accounts, timeline, orderStatus] = await Promise.all([
+export async function getOrdersOverview(period: ReportPeriod, requestedAccount: number | null, compareRevenue = false): Promise<OrdersOverview> {
+  const [user, accountData] = await Promise.all([
     sellerIdentity(),
     optional<Account[]>("/api/v1/connectors/mercado-livre"),
-    optional<{ data: TimelinePoint[] }>("/api/v1/analytics/timeline", period),
-    optional<SellerReport["orderStatus"]>("/api/v1/analytics/order-status", period),
+  ]);
+  const accounts = Array.isArray(accountData) ? accountData : [];
+  const accountId = accounts.some(account => account.account_id === requestedAccount) ? requestedAccount : null;
+  const query = scopedPeriod(period, accountId);
+  const previous = period.compare ? scopedPeriod(previousPeriod(period), accountId) : null;
+  const [timeline, orderStatus, previousOrderStatus, revenue, previousRevenue] = await Promise.all([
+    optional<{ data: TimelinePoint[] }>("/api/v1/analytics/timeline", query),
+    optional<SellerReport["orderStatus"]>("/api/v1/analytics/order-status", query),
+    previous ? optional<SellerReport["orderStatus"]>("/api/v1/analytics/order-status", previous) : null,
+    compareRevenue && previous ? optional<PaidOrdersRevenue>("/api/v1/sales/", query) : null,
+    compareRevenue && previous ? optional<PaidOrdersRevenue>("/api/v1/sales/", previous) : null,
   ]);
 
   return {
     user,
-    accounts: Array.isArray(accounts) ? accounts : [],
+    accounts, accountId, previousOrderStatus,
+    revenue: revenue?.gross_paid_order_amount ?? null,
+    previousRevenue: previousRevenue?.gross_paid_order_amount ?? null,
     timeline: Array.isArray(timeline?.data) ? timeline.data : [],
     orderStatus,
   };
@@ -115,7 +130,13 @@ export async function getListingsOverview(): Promise<ListingsOverview> {
   };
 }
 
-export async function getSellerReport(days: number, requestedAccount: number | null): Promise<SellerReport> {
+function scopedPeriod(period: ReportPeriod, accountId: number | null) {
+  const query = backendPeriod(period);
+  if (accountId !== null) query.set("account_id", String(accountId));
+  return query;
+}
+
+export async function getSellerReport(period: ReportPeriod, requestedAccount: number | null): Promise<SellerReport> {
   // O resumo utiliza agregados de pedidos, não a página de pedidos nem
   // a consulta separada de cancelamentos. Evita duas viagens e dados duplicados.
   const [user, accounts, allProducts, listings, ads] = await Promise.all([
@@ -123,22 +144,24 @@ export async function getSellerReport(days: number, requestedAccount: number | n
     optional<Account[]>("/api/v1/connectors/mercado-livre"),
     optional<SellerProduct[]>("/api/v1/products/", undefined, 30000),
     optional<SellerReport["listing"]>("/api/v1/analytics/ads-performance"),
-    optional<SellerReport["ads"]>("/api/v1/analytics/ads-profitability",new URLSearchParams({days:String(days)})),
+    optional<SellerReport["ads"]>("/api/v1/analytics/ads-profitability",backendPeriod(period)),
   ]);
   const authorizedIds = new Set((accounts || []).map(a=>a.account_id));
   const accountId = requestedAccount !== null && authorizedIds.has(requestedAccount) ? requestedAccount : null;
-  const timeQuery = new URLSearchParams({days:String(days)});
-  if (accountId !== null) timeQuery.set("account_id",String(accountId));
+  const timeQuery = scopedPeriod(period, accountId);
+  const previous = period.compare ? scopedPeriod(previousPeriod(period), accountId) : null;
   // The overview reads persisted snapshots only. Live marketplace requests
   // belong to Integrações and must not block the main dashboard.
-  const [timelineData, orderStatus, scopedListings, paidRevenue, catalogMetrics] = await Promise.all([
+  const [timelineData, orderStatus, scopedListings, paidRevenue, catalogMetrics, previousOrders, previousRevenue] = await Promise.all([
     optional<{data: TimelinePoint[]}>("/api/v1/analytics/timeline",timeQuery),
     optional<{total_orders:number;by_status:Record<string,number>}>("/api/v1/analytics/order-status",timeQuery),
     accountId === null ? Promise.resolve(listings) :
       optional<SellerReport["listing"]>("/api/v1/analytics/ads-performance",
         new URLSearchParams({account_id:String(accountId)})),
     optional<PaidOrdersRevenue>("/api/v1/sales/",timeQuery),
-    optional<CatalogMetrics>("/api/v1/analytics/catalog-metrics",new URLSearchParams({days:"30",...(accountId===null?{}:{account_id:String(accountId)})})),
+    optional<CatalogMetrics>("/api/v1/analytics/catalog-metrics",timeQuery),
+    previous ? optional<SellerReport["orderStatus"]>("/api/v1/analytics/order-status", previous) : null,
+    previous ? optional<PaidOrdersRevenue>("/api/v1/sales/", previous) : null,
   ]);
   const liveListingsTotal = (scopedListings ?? listings)?.total_listings ?? null;
   const products = Array.isArray(allProducts) ? allProducts.filter(p=>accountId === null || p.source_key === `ml:${accountId}`) : [];
@@ -201,6 +224,8 @@ export async function getSellerReport(days: number, requestedAccount: number | n
     orderStatus: orderStatus || null,
     ads: ads || null,
     paidRevenue: paidRevenue || null,
-    accountId, liveListingsTotal, days, failedSources,
+    accountId, liveListingsTotal, failedSources,
+    comparison: previous ? { orders: previousOrders?.total_orders ?? null,
+      revenue: previousRevenue?.gross_paid_order_amount ?? null } : null,
   };
 }
