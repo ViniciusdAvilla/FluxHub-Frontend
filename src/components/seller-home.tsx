@@ -40,8 +40,22 @@ function Stat({title,value,help,color,icon:Icon,spark,change}:{title:string;valu
     </span>
   </article>;
 }
-function Box({title,subtitle,children,href}:{title:string;subtitle?:string;children:React.ReactNode;href?:string}) {
-  return <section className="fh-card"><div className="fh-card-head"><div><h2>{title}</h2>{subtitle&&<p>{subtitle}</p>}</div>{href&&<Link href={href} className="fh-card-link">Ver detalhes →</Link>}</div>{children}</section>;
+function Box({ title, subtitle, children, href, action }: {
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+  href?: string;
+  action?: React.ReactNode;
+}) {
+  return <section className="fh-card">
+    <div className="fh-card-head">
+      <div><h2>{title}</h2>{subtitle && <p>{subtitle}</p>}</div>
+      {action ? <div className="fh-inline-actions">{action}
+        {href && <Link href={href} className="fh-card-link">Ver detalhes →</Link>}
+      </div> : href && <Link href={href} className="fh-card-link">Ver detalhes →</Link>}
+    </div>
+    {children}
+  </section>;
 }
 function safeNum(input:unknown):number|null {return typeof input==="number"&&Number.isFinite(input)?input:null;}
 export default function SellerHome({ report, period, today }: { report: SellerReport; period: ReportPeriod; today: string }){
@@ -174,7 +188,8 @@ export default function SellerHome({ report, period, today }: { report: SellerRe
       <div className="fh-alert green"><span>Gasto em publicidade</span><strong>{accountId===null?money(ads?.ad_spend??null):"—"}</strong></div>
       <div className="fh-alert"><span>Custos de compra cadastrados</span><strong>{number(costsCovered)} de {number(products.length)}</strong></div>
     </div>
-    <Box title={Object.keys(salesByItem).length?"Produtos mais vendidos":"Produtos do catálogo"} subtitle="Vendas de pedidos pagos, custos cadastrados e Ads reportados" href="/produtos">
+    <Box title={Object.keys(salesByItem).length?"Produtos mais vendidos":"Produtos do catálogo"} subtitle="Vendas de pedidos pagos, custos cadastrados e Ads reportados" href="/produtos"
+      action={<OverviewPeriodFilter period={period} today={today} accountId={accountId} accounts={[]}/>}>
       <div className="fh-table-wrap"><table className="fh-table"><thead><tr><th>Produto</th><th>Preço</th><th>Custo de compra</th><th>Unid. vendidas no período</th><th>Ads no período</th><th>Estoque</th><th>Fabricante</th></tr></thead><tbody>
         {topProducts.map(p=>{
           const c=costIndex.get(p.external_id);
