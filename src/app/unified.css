@@ -1,0 +1,267 @@
+/* Shared presentation for the existing FluxHub pages and controls. */
+.fh-app.fh-unified {
+  --ui-bg: #f2f6fc;
+  --ui-surface: #fff;
+  --ui-soft: #f7f9fd;
+  --ui-line: #d4deec;
+  --ui-ink: #142447;
+  --ui-muted: #4b5d79;
+  --ui-blue: #1653ce;
+  --ui-selected: #e7efff;
+  --ui-sidebar: 228px;
+  --ui-gutter: clamp(16px, 2.1vw, 32px);
+}
+.fh-app.fh-unified.fh-theme-dark {
+  --ui-bg: #10192a;
+  --ui-surface: #18243a;
+  --ui-soft: #1e2e48;
+  --ui-line: #3b4d6d;
+  --ui-ink: #f0f5ff;
+  --ui-muted: #b9c8df;
+  --ui-blue: #a9c3ff;
+  --ui-selected: #263e68;
+}
+.fh-app.fh-unified.fh-liquid-glass,
+.fh-app.fh-unified.fh-liquid-glass .fh-content,
+.fh-app.fh-unified.fh-liquid-glass .fh-main {
+  background: var(--ui-bg);
+  color: var(--ui-ink);
+}
+.fh-unified .fh-skip-link {
+  position: fixed;
+  z-index: 100;
+  inset: 12px auto auto 12px;
+  transform: translateY(-180%);
+  background: var(--ui-surface);
+  color: var(--ui-blue);
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+.fh-unified .fh-skip-link:focus { transform: none; }
+.fh-app.fh-unified.fh-liquid-glass .fh-sidebar {
+  inset: 0 auto 0 0;
+  width: var(--ui-sidebar);
+  height: 100dvh;
+  border: 0;
+  border-right: 1px solid var(--ui-line);
+  border-radius: 0;
+  background: var(--ui-surface);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.fh-app.fh-unified .fh-sidebar .fh-logo { padding: 21px 16px 28px; }
+.fh-app.fh-unified .fh-logo::after { top: 52px; left: 57px; color: var(--ui-muted); }
+.fh-app.fh-unified .fh-sidebar .fh-nav { gap: 4px; padding-inline: 9px; }
+.fh-app.fh-unified.fh-liquid-glass :is(.fh-theme-toggle, .fh-signout) {
+  background: var(--ui-soft);
+  border: 1px solid var(--ui-line);
+  color: var(--ui-ink);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.fh-app.fh-unified.fh-liquid-glass .fh-sidebar .fh-sidebar-bottom { background: var(--ui-surface); border-color: var(--ui-line); }
+.fh-app.fh-unified.fh-liquid-glass .fh-sidebar .fh-nav a {
+  min-height: 42px;
+  padding-inline: 9px;
+  border: 1px solid transparent;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  color: var(--ui-ink);
+  font-size: 13px;
+}
+.fh-app.fh-unified.fh-liquid-glass .fh-sidebar .fh-nav a:is(:hover, .fh-nav-active) {
+  background: var(--ui-selected);
+  color: var(--ui-blue);
+  border-color: transparent;
+}
+.fh-app.fh-unified.fh-liquid-glass .fh-sidebar .fh-nav a svg { color: currentColor; flex: none; }
+.fh-app.fh-unified.fh-liquid-glass .fh-content { margin-left: var(--ui-sidebar); padding: 0; }
+.fh-app.fh-unified.fh-liquid-glass .fh-topbar {
+  height: auto;
+  min-height: 83px;
+  top: 0;
+  border: 0;
+  border-bottom: 1px solid var(--ui-line);
+  border-radius: 0;
+  padding: 16px var(--ui-gutter);
+  background: var(--ui-surface);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.fh-app.fh-unified.fh-liquid-glass .fh-heading { min-width: 0; }
+.fh-app.fh-unified.fh-liquid-glass .fh-heading h1 {
+  margin: 0;
+  font-size: clamp(23px, 2.4vw, 34px);
+  letter-spacing: -.035em;
+  line-height: 1.15;
+  color: var(--ui-ink);
+  overflow-wrap: anywhere;
+}
+.fh-app.fh-unified.fh-liquid-glass .fh-heading p { color: var(--ui-muted); font-size: 13px; }
+.fh-app.fh-unified.fh-liquid-glass .fh-top-actions {
+  flex-wrap: wrap;
+  flex-direction: row;
+  justify-content: flex-end;
+  align-items: center;
+  min-width: 0;
+  gap: 8px;
+}
+.fh-app.fh-unified.fh-liquid-glass .fh-subnav {
+  margin: 0;
+  min-height: 45px;
+  padding: 4px var(--ui-gutter) 0;
+  gap: 8px;
+  border: 0;
+  border-bottom: 1px solid var(--ui-line);
+  border-radius: 0;
+  background: var(--ui-surface);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.fh-app.fh-unified.fh-liquid-glass .fh-subnav a {
+  padding-inline: 13px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 6px 6px 0 0;
+  background: transparent;
+  color: var(--ui-muted);
+  box-shadow: none;
+}
+.fh-app.fh-unified.fh-liquid-glass .fh-subnav a:is(:hover, .fh-tab-active) {
+  color: var(--ui-blue);
+  background: var(--ui-selected);
+  border-bottom-color: currentColor;
+}
+.fh-app.fh-unified.fh-liquid-glass .fh-main { padding: 20px var(--ui-gutter) 44px; }
+.fh-app.fh-unified.fh-liquid-glass :is(.fh-card, .fh-kpi, .fh-alert, .fh-integration-intro,
+  .fh-integration-account, .fh-marketplace-provider, .fh-spotlight-row, .fh-overview-alert),
+.fh-app.fh-unified.fh-liquid-glass .fh-legacy-module :is(.panel, .metric-card, .tool-control, .filterbar, .raiox-selector) {
+  border: 1px solid var(--ui-line);
+  border-radius: 12px;
+  background: var(--ui-surface);
+  box-shadow: 0 1px 2px #1424470c;
+  backdrop-filter: none;
+  min-width: 0;
+}
+.fh-app.fh-unified :is(.fh-card, .fh-kpi)::before { display: none; }
+.fh-app.fh-unified :is(.fh-card-head h2, .panel-head h2) { font-size: 17px; color: var(--ui-ink); }
+.fh-app.fh-unified :is(.fh-card-head p, .panel-head p, .fh-kpi-note, .metric-note) { color: var(--ui-muted); }
+.fh-app.fh-unified .fh-kpi-value { font-variant-numeric: tabular-nums; }
+.fh-app.fh-unified .fh-legacy-module .panel-head { background: var(--ui-surface); border-color: var(--ui-line); }
+.fh-app.fh-unified.fh-liquid-glass :is(.fh-control, .fh-filter, .fh-top-icon, .fh-account-control, .fh-glass-period, .fh-orders-search, .fh-smart-search) {
+  border: 1px solid var(--ui-line);
+  border-radius: 8px;
+  background: var(--ui-surface);
+  color: var(--ui-ink);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.fh-app.fh-unified :is(.fh-primary-btn, .button.primary, .fh-claude-primary, .fh-claude-send) {
+  background: #1653ce;
+  border-color: #1653ce;
+  color: #fff;
+  box-shadow: none;
+}
+.fh-app.fh-unified :is(.fh-primary-btn, .button.primary, .fh-claude-primary):not(:disabled):hover { background: #123fa2; }
+.fh-app.fh-unified :is(.table-wrap, .fh-table-wrap) { max-width: 100%; overflow-x: auto; }
+.fh-app.fh-unified :is(.table-wrap, .fh-table-wrap) table { background: var(--ui-surface); }
+.fh-app.fh-unified :is(.table-wrap, .fh-table-wrap) th {
+  background: var(--ui-soft);
+  color: var(--ui-ink);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+  border-bottom: 1px solid var(--ui-line);
+}
+.fh-app.fh-unified :is(.table-wrap, .fh-table-wrap) td {
+  color: var(--ui-ink);
+  font-size: 13px;
+  border-color: var(--ui-line);
+}
+.fh-app.fh-unified :is(.table-wrap, .fh-table-wrap) tbody tr:hover { background: var(--ui-soft); }
+.fh-app.fh-unified :is(.table-wrap, .fh-table-wrap) th[aria-sort="ascending"],
+.fh-app.fh-unified :is(.table-wrap, .fh-table-wrap) th[aria-sort="descending"] { color: var(--ui-blue); }
+.fh-app.fh-unified :is(button, a, input, select, textarea, summary):focus-visible {
+  outline: 2px solid var(--ui-blue);
+  outline-offset: 2px;
+}
+
+.fh-unified .fh-buyer-workspace {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(0, 1.8fr);
+  gap: 16px;
+  align-items: start;
+}
+.fh-unified .fh-buyers-grid { grid-template-columns: minmax(0, 1fr); }
+.fh-unified .fh-buyer-card { text-align: left; background: var(--ui-soft); border-color: var(--ui-line); }
+.fh-unified .fh-buyer-card[aria-pressed="true"] { background: var(--ui-selected); border-color: var(--ui-blue); }
+.fh-unified .fh-buyer-placeholder { display: grid; min-height: 290px; align-content: center; justify-items: center; text-align: center; color: var(--ui-muted); }
+.fh-unified .fh-buyer-placeholder h2 { font-size: 19px; color: var(--ui-ink); }
+.fh-unified .fh-buyer-order { flex-wrap: wrap; }
+.fh-unified .fh-thread-search { margin: 6px 12px; min-width: 0; }
+.fh-unified .fh-support-grid { grid-template-columns: minmax(220px, .85fr) minmax(0, 1.7fr); }
+.fh-unified .fh-support-help { grid-column: 1 / -1; min-height: 0; }
+.fh-unified .fh-support-thread.active { background: var(--ui-selected); border-color: var(--ui-blue); }
+.fh-unified .fh-purchase-summary { margin-bottom: 16px; }
+.fh-unified .fh-abc-filters { display: flex; align-items: center; gap: 8px; }
+.fh-unified .fh-abc-filters select { min-height: 38px; }
+
+.login-page.fh-login-unified {
+  display: grid;
+  grid-template-columns: minmax(0, 460px);
+  place-content: center;
+  padding: 20px;
+  background: #edf3fc;
+}
+.fh-login-unified .login-card {
+  width: 100%;
+  padding: clamp(23px, 4vw, 42px);
+  border: 1px solid #d4deec;
+  border-radius: 15px;
+  background: white;
+  box-shadow: 0 8px 28px #233d7014;
+}
+.fh-login-unified .login-copy { margin: 21px 0 24px; }
+.fh-login-unified .login-form { gap: 7px; }
+.fh-login-unified .fh-login-label { font-size: 13px; font-weight: 700; color: #142447; }
+.fh-login-unified .login-input-wrap { margin-bottom: 7px; min-height: 44px; }
+.fh-login-unified .login-submit { min-height: 44px; background: #1653ce; box-shadow: none; border-radius: 8px; }
+.fh-login-unified .login-submit:hover { background: #123fa2; transform: none; box-shadow: none; }
+.fh-login-unified .login-foot { font-size: 12px; }
+
+@media (max-width: 1050px) {
+  .fh-unified .fh-buyer-workspace { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 880px) {
+  .fh-app.fh-unified.fh-liquid-glass .fh-sidebar { transform: translateX(-105%); visibility: hidden; }
+  .fh-app.fh-unified.fh-liquid-glass .fh-sidebar.fh-open { transform: translateX(0); visibility: visible; }
+  .fh-app.fh-unified.fh-liquid-glass .fh-content { margin-left: 0; }
+  .fh-app.fh-unified.fh-liquid-glass .fh-topbar { flex-wrap: wrap; }
+  .fh-app.fh-unified.fh-liquid-glass .fh-top-actions { width: 100%; justify-content: flex-start; }
+}
+@media (max-width: 650px) {
+  .fh-unified .fh-support-grid { grid-template-columns: minmax(0, 1fr); }
+  .fh-app.fh-unified .fh-subnav { overflow-x: auto; }
+  .fh-unified .fh-glass-period-group button[aria-haspopup="dialog"] {
+    font-size: 13px;
+    gap: 7px;
+    padding-inline: 9px;
+  }
+  .fh-app.fh-unified.fh-liquid-glass .fh-main { padding-top: 14px; }
+}
+
+.fh-unified .fh-purchase-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.fh-unified #importar-custos { scroll-margin-top: 110px; }
+.fh-unified .fh-legacy-module .abc-summary > div { border: 1px solid var(--ui-line); background: var(--ui-surface); }
+.fh-unified .fh-marketplace-catalog { gap: 12px; }
+.fh-unified :is(.fh-support-summary, .fh-integration-intro) h2 { color: var(--ui-ink); }
+.fh-app.fh-unified.fh-liquid-glass .fh-orders-search input { color: var(--ui-ink); }
+.fh-unified .fh-buyer-card :is(strong, small, .fh-buyer-total) { color: var(--ui-ink); }
+.fh-unified .fh-buyer-workspace > .fh-card,
+.fh-unified .fh-support-grid > .fh-card { overflow-wrap: anywhere; }
+@media (max-width: 460px) {
+  .fh-unified .fh-purchase-summary { grid-template-columns: minmax(0, 1fr); }
+  .fh-unified .fh-buyer-card { flex-wrap: wrap; }
+}

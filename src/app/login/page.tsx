@@ -2,7 +2,6 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { ArrowRight, Check, Eye, EyeOff, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
-import LoginAnimatedDashboard from "@/components/login-animated-dashboard";
 import FluxHubLogo from "@/components/fluxhub-logo";
 
 const REMEMBER_EMAIL_KEY = "fluxhub.rememberedEmail";
@@ -60,8 +59,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="login-page">
-      <LoginAnimatedDashboard />
+    <main className="login-page fh-login-unified">
       <section className="login-card" aria-labelledby="login-heading">
         <div className="login-brand"><FluxHubLogo className="login-logo" /></div>
         <div className="login-copy">
@@ -69,12 +67,12 @@ export default function LoginPage() {
           <p>Gerencie suas vendas, produtos e integrações em um só lugar.</p>
         </div>
         <form onSubmit={submit} className="login-form">
-          <label htmlFor="login-email" className="sr-only">E-mail</label>
+          <label htmlFor="login-email" className="fh-login-label">E-mail</label>
           <div className="login-input-wrap">
             <Mail size={22} aria-hidden="true" />
             <input id="login-email" name="email" type="email" placeholder="Seu e-mail" autoComplete="username" required autoFocus value={email} onChange={(event) => setEmail(event.target.value)} disabled={busy} />
           </div>
-          <label htmlFor="login-password" className="sr-only">Senha</label>
+          <label htmlFor="login-password" className="fh-login-label">Senha</label>
           <div className="login-input-wrap login-password">
             <LockKeyhole size={22} aria-hidden="true" />
             <input id="login-password" name="password" type={visible ? "text" : "password"} placeholder="Sua senha" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} disabled={busy} />

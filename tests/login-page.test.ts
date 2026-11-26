@@ -18,24 +18,12 @@ test("login FluxHub oferece somente acesso autorizado, sem cadastro publico", ()
   assert.doesNotMatch(markup, /href="\/cadastro"|href="\/register"/);
 });
 
-test("fundo animado e ilustrativo nao expoe dados de vendedores nem controls acessiveis", () => {
+test("login aplica a proposta simples com rótulos visíveis e sem painel de demonstração", () => {
   const markup = renderToStaticMarkup(createElement(LoginPage));
-  assert.match(markup, /class="login-scene" aria-hidden="true"/);
-  assert.match(markup, /PRÉVIA ILUSTRATIVA/);
-  assert.match(markup, /scene-line-chart/);
-  assert.match(markup, /scene-bars/);
-  assert.match(markup, /Faturamento por período/);
-});
-
-test("animacoes respeitam movimento reduzido e paleta do login dispensa dourado", () => {
-  const css = readFileSync("src/app/globals.css", "utf8");
-  const marker = "/* FluxHub login SaaS";
-  assert.ok(css.includes(marker));
-  const loginStyles = css.slice(css.indexOf(marker));
-  assert.match(loginStyles, /prefers-reduced-motion:\s*reduce/);
-  assert.match(loginStyles, /login-dashboard-float/);
-  assert.match(loginStyles, /login-wave-travel/);
-  assert.doesNotMatch(loginStyles, /#ffd439|#ffcf31|#ffcc27|#ffdc52/i);
+  assert.match(markup, /fh-login-unified/);
+  assert.match(markup, /<label for="login-email" class="fh-login-label">E-mail<\/label>/);
+  assert.match(markup, /<label for="login-password" class="fh-login-label">Senha<\/label>/);
+  assert.doesNotMatch(markup, /login-scene|PRÉVIA ILUSTRATIVA/);
 });
 
 test("cadastro de usuarios permanece na area administrativa protegida", () => {

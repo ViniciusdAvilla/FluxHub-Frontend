@@ -86,7 +86,7 @@ export default function BuyerExplorer() {
 
   const shown = buyers.filter(b => !search.trim() ||
     String(b.buyer_id).includes(search.trim()));
-  return <>
+  return <div className="fh-buyer-workspace">
     <section className="fh-card">
       <div className="fh-card-head">
         <div><h2>Compradores com pedidos registrados</h2>
@@ -94,16 +94,17 @@ export default function BuyerExplorer() {
       </div>
       <label className="fh-orders-search" style={{maxWidth:440}}>
         <Search size={17}/>
-        <input aria-label="Buscar por ID do comprador" placeholder="Buscar por ID do comprador"
+        <input aria-label="Buscar por ID do comprador" placeholder="Buscar nesta página por ID"
           value={search} onChange={e=>setSearch(e.target.value)}/>
       </label>
       {error && <div className="fh-notice error" role="alert">{error}</div>}
       {loading && <p role="status">Carregando compradores...</p>}
       {!loading && buyers.length === 0 && <p>Nenhum comprador indexado.
         Sincronize os pedidos em Integrações para preencher esta seção.</p>}
+      {!loading && buyers.length > 0 && shown.length === 0 && <p role="status">Nenhum comprador encontrado nesta página.</p>}
       <div className="fh-buyers-grid">
         {shown.map(buyer => <button type="button" key={buyer.account_id+"-"+buyer.buyer_id}
-          className="fh-buyer-card" onClick={() => void selectBuyer(buyer)}>
+          className="fh-buyer-card" aria-pressed={selected?.account_id === buyer.account_id && selected.buyer_id === buyer.buyer_id} onClick={() => void selectBuyer(buyer)}>
           <span className="fh-buyer-icon"><Users size={20}/></span>
           <span><strong>Comprador #{buyer.buyer_id}</strong>
             <small>{buyer.orders_count} compra(s) registrada(s)</small></span>
@@ -118,7 +119,7 @@ export default function BuyerExplorer() {
           onClick={()=>setOffset(offset+50)}>Próxima</button>
       </div>
     </section>
-    {selected && <section className="fh-card" style={{marginTop:16}}>
+    {selected ? <section className="fh-card">
       <div className="fh-card-head"><div>
         <h2>Histórico do comprador #{selected.buyer_id}</h2>
         <p>{selected.orders_count} pedido(s) na conta autorizada.</p>
@@ -152,6 +153,9 @@ export default function BuyerExplorer() {
       </div>}
       <p className="fh-profit-hint"><ShoppingBag size={15}/> Valores são brutos, incluindo
         pedidos cancelados. <Link href="/pedidos">Abrir página de Pedidos</Link></p>
+    </section> : <section className="fh-card fh-buyer-placeholder">
+      <Users size={30} aria-hidden/><h2>Histórico de pedidos</h2>
+      <p>Selecione um comprador para ver os pedidos registrados.</p>
     </section>}
-  </>;
+  </div>;
 }
