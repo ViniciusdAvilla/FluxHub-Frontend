@@ -212,10 +212,12 @@
   display: grid;
   grid-template-columns: minmax(0, 460px);
   place-content: center;
+  min-height: 100dvh;
   padding: 20px;
   background: #edf3fc;
 }
 .fh-login-unified .login-card {
+  grid-column: 1;
   width: 100%;
   padding: clamp(23px, 4vw, 42px);
   border: 1px solid #d4deec;
