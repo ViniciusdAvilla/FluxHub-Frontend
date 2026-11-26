@@ -71,3 +71,24 @@
 .comparison dt { font-size: 13px; }
 .comparison dd { margin: 3px 0 0; }
 .comparison dd span { font-size: 13px; }
+
+.columnTrigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 2px;
+  border: 0;
+  border-radius: 4px;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+.columnTrigger svg { width: 13px; height: 13px; flex: none; }
+.columnTrigger:hover { text-decoration: underline; }
+.columnTrigger:focus-visible { outline: 2px solid #3179f5; outline-offset: 2px; }
+
+@media (min-width: 801px) { .mobileOrderDate { display: none; } }

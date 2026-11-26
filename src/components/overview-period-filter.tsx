@@ -5,12 +5,13 @@ import { ChevronDown } from "lucide-react";
 import { periodSearchParams, type ReportPeriod } from "@/lib/report-period";
 import ReportPeriodFilter from "./report-period-filter";
 
-export default function OverviewPeriodFilter({ period, today, accountId, accounts, allowAll }: {
+export default function OverviewPeriodFilter({ period, today, accountId, accounts, allowAll, triggerLabel }: {
   period: ReportPeriod;
   today: string;
   accountId: number | null;
   accounts: { account_id: number; nickname: string | null }[];
   allowAll?: boolean;
+  triggerLabel?: string;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -20,6 +21,10 @@ export default function OverviewPeriodFilter({ period, today, accountId, account
     if (account) params.set("account", account);
     router.push(pathname + "?" + params + window.location.hash, { scroll: false });
   }
+
+  const filter = <ReportPeriodFilter period={period} today={today} allowAll={allowAll}
+    triggerLabel={triggerLabel} onApply={value => navigate(value, accountId === null ? "" : String(accountId))}/>;
+  if (triggerLabel) return filter;
 
   return <div className="fh-glass-period-group">
     {accounts.length > 1 && <label className="fh-glass-period">
@@ -32,7 +37,6 @@ export default function OverviewPeriodFilter({ period, today, accountId, account
       </select>
       <ChevronDown size={15} aria-hidden />
     </label>}
-    <ReportPeriodFilter period={period} today={today} allowAll={allowAll}
-      onApply={value => navigate(value, accountId === null ? "" : String(accountId))}/>
+    {filter}
   </div>;
 }
