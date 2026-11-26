@@ -9,12 +9,11 @@ const shortDate = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "sho
 const fullDate = new Intl.DateTimeFormat("pt-BR", { dateStyle: "full", timeZone: "UTC" });
 const monthTitle = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" });
 
-export default function ReportPeriodFilter({ period, today, onApply, allowAll = false, triggerLabel }: {
+export default function ReportPeriodFilter({ period, today, onApply, allowAll = false }: {
   period: ReportPeriod;
   today: string;
   onApply: (value: ReportPeriod) => void;
   allowAll?: boolean;
-  triggerLabel?: string;
 }) {
   const [draft, setDraft] = useState(period);
   const [month, setMonth] = useState((period.start || today).slice(0, 7) + "-01");
@@ -54,8 +53,7 @@ export default function ReportPeriodFilter({ period, today, onApply, allowAll = 
   }
 
   return <>
-    <button ref={trigger} type="button" className={triggerLabel ? styles.columnTrigger : styles.trigger} aria-haspopup="dialog"
-      aria-label={triggerLabel ? triggerLabel + " — filtrar por período" : undefined}
+    <button ref={trigger} type="button" className={styles.trigger} aria-haspopup="dialog"
       onClick={event => {
         setDraft(period);
         setMonth((period.start || today).slice(0, 7) + "-01");
@@ -65,9 +63,9 @@ export default function ReportPeriodFilter({ period, today, onApply, allowAll = 
         dialog.current?.showModal();
       }}>
       <CalendarDays size={16} aria-hidden />
-      {triggerLabel ?? (period.preset === "all" ? "Todo o histórico salvo" :
-        `${shortDate.format(dateAtUtc(period.start))} – ${shortDate.format(dateAtUtc(period.end))} ${period.end.slice(0, 4)}`)}
-      {!triggerLabel && <ChevronDown size={16} aria-hidden />}
+      {period.preset === "all" ? "Todo o histórico salvo" :
+        `${shortDate.format(dateAtUtc(period.start))} – ${shortDate.format(dateAtUtc(period.end))} ${period.end.slice(0, 4)}`}
+      <ChevronDown size={16} aria-hidden />
     </button>
     <dialog ref={dialog} aria-labelledby={title} className={styles.dialog}
       onClose={() => trigger.current?.focus()}

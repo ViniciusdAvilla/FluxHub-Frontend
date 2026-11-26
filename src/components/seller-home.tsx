@@ -12,6 +12,7 @@ import ConversionFunnel from "./conversion-funnel";
 import { DailyBars, DonutStats, PerformanceChart } from "./modern-charts";
 import PeriodComparison from "./period-comparison";
 import { previousPeriod, type ReportPeriod } from "@/lib/report-period";
+import OverviewRankedProducts from "./overview-ranked-products";
 import OverviewPeriodFilter from "./overview-period-filter";
 
 function halfPeriodChange(values: number[]):number|null {
@@ -190,14 +191,15 @@ export default function SellerHome({ report, period, today }: { report: SellerRe
     </div>
     <Box title={Object.keys(salesByItem).length?"Produtos mais vendidos":"Produtos do catálogo"} subtitle="Vendas de pedidos pagos, custos cadastrados e Ads reportados" href="/produtos"
       action={<OverviewPeriodFilter period={period} today={today} accountId={accountId} accounts={[]}/>}>
-      <div className="fh-table-wrap"><table className="fh-table"><thead><tr><th>Produto</th><th>Preço</th><th>Custo de compra</th><th><OverviewPeriodFilter period={period} today={today} accountId={accountId} accounts={[]}
-        triggerLabel="Unid. vendidas no período"/></th><th><OverviewPeriodFilter period={period} today={today}
-        accountId={accountId} accounts={[]} triggerLabel="Ads no período"/></th><th>Estoque</th><th>Fabricante</th></tr></thead><tbody>
-        {topProducts.map(p=>{
+      <OverviewRankedProducts rows={topProducts.map(p=>{
           const c=costIndex.get(p.external_id);
           const units=salesByItem[p.external_id];
           const ad=adsByItem[p.external_id];
-          return <tr key={p.external_id}>
+          const manufacturer = c?.manufacturer || p.brand || null;
+          return { id: p.external_id, values: [
+            p.title, p.promotional_price, c && Number.isFinite(c.unit_cost) && c.unit_cost > 0 ? c.unit_cost : null,
+            units ?? (ordersComplete ? 0 : null), ad?.ad_spend ?? null, p.stock_qty, manufacturer,
+          ], content: <>
             <td className="fh-table-name"><strong>{p.title}</strong><small>{p.external_id} · {p.category}</small></td>
             <td>{money(p.promotional_price)}</td>
             <td>{c && Number.isFinite(c.unit_cost) && c.unit_cost>0 ? money(c.unit_cost) :
@@ -205,11 +207,9 @@ export default function SellerHome({ report, period, today }: { report: SellerRe
             <td title={!ordersComplete?"Dados parciais: a importação de pedidos ou de seus itens ainda está em andamento.":undefined}>{units!==undefined?`${number(units)}${ordersComplete?"":" *"}`:ordersComplete?"0":"Em apuração"}</td>
             <td title={ad?"Gasto publicitário presente em relatório importado.":"Sem relatório Product Ads importado para este anúncio."}>{ad?money(ad.ad_spend):"Sem relatório"}</td>
             <td>{number(p.stock_qty)}</td>
-            <td>{c?.manufacturer||p.brand||"Não informado"}</td>
-          </tr>;
-        })}
-        {!topProducts.length&&<tr><td colSpan={7} style={{padding:30,textAlign:"center"}}>Nenhum produto disponível no catálogo.</td></tr>}
-      </tbody></table></div>
+            <td>{manufacturer ?? "Não informado"}</td>
+          </> };
+        })}/>
       <p style={{fontSize:11,color:"#66758b",marginBottom:0}}>
         {catalogMetrics?(ordersComplete?
           "Vendas calculadas pelos itens dos pedidos pagos sincronizados.":

@@ -1,7 +1,6 @@
 "use client";
 
-import OverviewPeriodFilter from "./overview-period-filter";
-import periodStyles from "./report-period-filter.module.css";
+import SortHeading from "./sort-heading";
 import type { ReportPeriod } from "@/lib/report-period";
 
 import dynamic from "next/dynamic";
@@ -87,15 +86,12 @@ function orderPeriodParams(start: string, end: string, accountId: number | null)
   return params;
 }
 
-export default function OrderExplorer({ mode, period, accountId, today }: {
+export default function OrderExplorer({ mode, period, accountId }: {
   mode: Mode;
-  today: string;
   period: ReportPeriod;
   accountId: number | null;
 }) {
   const { start, end } = period;
-  const dateFilter = <OverviewPeriodFilter period={period} today={today} accountId={accountId}
-    accounts={[]} allowAll triggerLabel="Data"/>;
   const [page, setPage] = useState<Page | null>(null);
   const [status, setStatus] = useState("");
   const [search, setSearch] = useState("");
@@ -276,8 +272,9 @@ export default function OrderExplorer({ mode, period, accountId, today }: {
         </label>
       </div>
       <div className="fh-smart-order-toolbar">
-        <div className={mode === "sales" && page?.orders.length ? periodStyles.mobileOrderDate : undefined}>{dateFilter}</div>
         <span><SlidersHorizontal size={15} aria-hidden="true"/> Ordenar resultados</span>
+        {mode === "orders" && <SortHeading label="Data" direction={sortBy === "date" ? sortDir : undefined}
+          onClick={() => setOrderSort("date")}/>}
         <label>Coluna
           <select value={sortBy} aria-label="Ordenar pedidos por"
             onChange={event => setSortBy(event.target.value as "date" | "amount" | "status")}>
@@ -394,9 +391,8 @@ export default function OrderExplorer({ mode, period, accountId, today }: {
                 onClick={() => setOrderSort("status")}>Status<span aria-hidden="true">{sortBy === "status" ? (sortDir === "asc" ? " ↑" : " ↓") : " ↕"}</span></button>
             </th>
             <th aria-sort={sortBy === "date" ? (sortDir === "asc" ? "ascending" : "descending") : "none"}>
-              {dateFilter}
-              <button type="button" aria-label="Ordenar por data" className={"fh-smart-column " + (sortBy === "date" ? "is-active" : "")}
-                onClick={() => setOrderSort("date")}><span aria-hidden="true">{sortBy === "date" ? (sortDir === "asc" ? " ↑" : " ↓") : " ↕"}</span></button>
+              <button type="button" className={"fh-smart-column " + (sortBy === "date" ? "is-active" : "")}
+                onClick={() => setOrderSort("date")}>Data<span aria-hidden="true">{sortBy === "date" ? (sortDir === "asc" ? " ↑" : " ↓") : " ↕"}</span></button>
             </th>
             <th>Ações</th>
           </tr></thead>
