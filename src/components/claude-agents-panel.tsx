@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { useEffect, useMemo, useRef, useState } from "react";
+import ModernShell from "./modern-shell";
 import ClaudeQueryResults, { type QuerySection } from "./claude-query-results";
 import styles from "./claude-consultations.module.css";
 import McpConnectionCard from "@/components/mcp-connection-card";
 import {
-  BadgePercent, Boxes, ChartNoAxesCombined, CheckCircle2, CircleAlert,
-  Eye, EyeOff, LockKeyhole, Send, ShieldCheck, Sparkles, Target,
+  CheckCircle2, ChevronRight, CircleAlert, Eye, EyeOff, LockKeyhole, Search, ShieldCheck, Sparkles, X,
 } from "lucide-react";
 
 type Mode = "sales" | "pricing" | "inventory" | "strategy";
@@ -17,7 +16,7 @@ type Status = {
   can_manage: boolean;
   read_only: boolean;
 };
-type Turn = { role: "user" | "assistant"; content: string; sections?: QuerySection[] };
+type Consultation = { id: number; question: string; sections: QuerySection[]; message: string };
 type Busy = "test" | "save" | null;
 
 const models = [
@@ -26,11 +25,16 @@ const models = [
   { value: "claude-opus-4-6", label: "Claude Opus 4.6" },
   { value: "claude-haiku-4-5-20251001", label: "Claude Haiku 4.5" },
 ];
-const agents = [
-  { key: "sales" as const, name: "Análise de vendas", help: "Pedidos e faturamento pago", icon: ChartNoAxesCombined },
-  { key: "pricing" as const, name: "Precificação", help: "Preços e custos cadastrados", icon: BadgePercent },
-  { key: "inventory" as const, name: "Gestão de estoque", help: "Saldo e produtos esgotados", icon: Boxes },
-  { key: "strategy" as const, name: "Estratégia comercial", help: "Anúncios, Ads e sincronização", icon: Target },
+const agents: Record<Mode, string> = {
+  sales: "Análise de vendas",
+  pricing: "Precificação",
+  inventory: "Gestão de estoque",
+  strategy: "Estratégia comercial",
+};
+const shortcuts: { label: string; question: string; mode: Mode }[] = [
+  { label: "Faturamento", question: "Qual foi o faturamento bruto dos pedidos pagos no mês passado?", mode: "sales" },
+  { label: "Pedidos pagos", question: "Quantos pedidos pagos tive nos últimos 7 dias?", mode: "sales" },
+  { label: "Estoque baixo", question: "Quais produtos estão com estoque baixo?", mode: "inventory" },
 ];
 
 async function readJson(response: Response): Promise<Record<string, unknown>> {
@@ -42,7 +46,7 @@ function errorText(body: Record<string, unknown>, fallback: string) {
   return typeof body.error === "string" ? body.error : fallback;
 }
 
-export default function ClaudeAgentsPanel() {
+export default function ClaudeAgentsPanel({ isAdmin }: { isAdmin?: boolean }) {
   const [status, setStatus] = useState<Status | null>(null);
   const [active, setActive] = useState<Mode>("sales");
   const [model, setModel] = useState("claude-sonnet-5");
@@ -52,10 +56,18 @@ export default function ClaudeAgentsPanel() {
   const [configNotice, setConfigNotice] = useState("");
   const [configError, setConfigError] = useState("");
   const [draft, setDraft] = useState("");
-  const [messages, setMessages] = useState<Turn[]>([]);
-  const [chatBusy, setChatBusy] = useState(false);
-  const [chatError, setChatError] = useState("");
-  const conversationEnd = useRef<HTMLDivElement>(null);
+  const [consultations, setConsultations] = useState<Consultation[]>([]);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [pending, setPending] = useState(false);
+  const [queryError, setQueryError] = useState("");
+  const selected = consultations.find(item => item.id === selectedId);
+  const nextId = useRef(0);
+  const connection = useRef<HTMLDialogElement>(null);
+  const queryInput = useRef<HTMLInputElement>(null);
+  const action = useMemo(() => <button type="button" className={styles.configure}
+    aria-haspopup="dialog" onClick={() => connection.current?.showModal()}>
+    <Sparkles size={18} aria-hidden/> Configurar Claude
+  </button>, []);
 
   async function refreshStatus(signal?: AbortSignal) {
     const response = await fetch("/api/platform/agents/claude", {
@@ -76,10 +88,6 @@ export default function ClaudeAgentsPanel() {
     });
     return () => controller.abort();
   }, []);
-
-  useEffect(() => {
-    conversationEnd.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages, chatBusy]);
 
   async function configure(action: "test" | "save") {
     if (busy || !status?.can_manage) return;
@@ -109,83 +117,83 @@ export default function ClaudeAgentsPanel() {
     }
   }
 
-  async function sendMessage(input = draft) {
-    const question = input.trim();
-    if (!question || chatBusy || !status?.configured) return;
-    const prior = messages.filter(turn => turn.role === "user").slice(-8)
-      .map(({ role, content }) => ({ role, content }));
-    setDraft("");
-    setChatError("");
-    setMessages(current => [...current, { role: "user", content: question }]);
-    setChatBusy(true);
+  async function runConsultation() {
+    const question = draft.trim();
+    if (!question || pending || !status?.configured) return;
+    const previous = [...consultations].reverse().slice(-8)
+      .map(({ question }) => ({ role: "user", content: question }));
+    setQueryError("");
+    setPending(true);
     try {
       const response = await fetch("/api/platform/agents/claude", {
         method: "POST", cache: "no-store",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ agent: active, instruction: question, history: prior }),
+        body: JSON.stringify({ agent: active, instruction: question, history: previous }),
       });
       const body = await readJson(response);
-      if (!response.ok) throw new Error(errorText(body, "Não foi possível analisar os indicadores."));
+      if (!response.ok) throw new Error(errorText(body, "Não foi possível consultar o FluxHub."));
       if (body.verified !== true || !Array.isArray(body.sections)) {
         throw new Error("Consulta verificada indisponível. Atualize o backend do FluxHub.");
       }
-      const sections = body.sections as QuerySection[];
-      const message = typeof body.message === "string" ? body.message : "";
-      setMessages(current => [...current, { role: "assistant", content: message, sections }]);
+      const result = {
+        id: ++nextId.current, question,
+        sections: body.sections as QuerySection[],
+        message: typeof body.message === "string" ? body.message : "",
+      };
+      setConsultations(current => [result, ...current].slice(0, 20));
+      setSelectedId(result.id);
     } catch (error) {
-      setChatError(error instanceof Error ? error.message : "Falha na consulta.");
+      setSelectedId(null);
+      setQueryError(error instanceof Error ? error.message : "Falha na consulta.");
     } finally {
-      setChatBusy(false);
+      setPending(false);
     }
   }
 
-  return <div className={styles.workspace}>
+  return <ModernShell title="Agentes de IA" isAdmin={isAdmin} action={action}>
+    <div className={styles.workspace}>
+      <form className={styles.search} onSubmit={event => { event.preventDefault(); void runConsultation(); }}>
+        <Search size={22} aria-hidden/>
+        <input ref={queryInput} type="text" aria-label="Pergunte sobre sua operação"
+          maxLength={1200} placeholder="Pergunte sobre sua operação"
+          value={draft} onChange={event => setDraft(event.target.value)} disabled={pending}/>
+        <button type="submit" className={styles.submit} disabled={pending || !status?.configured || !draft.trim()}>
+          {pending ? "Consultando…" : "Consultar"}
+        </button>
+      </form>
+      <div className={styles.prompts} role="group" aria-label="Consultas rápidas">
+        {shortcuts.map(({ label, question, mode }) => <button type="button" key={label} disabled={pending}
+          onClick={() => { setDraft(question); setActive(mode); queryInput.current?.focus(); }}>{label}</button>)}
+      </div>
 
+      <section aria-label="Resultado da consulta" aria-busy={pending} aria-live="polite" className={styles.answer}>
+        {pending ? <p className={styles.empty} role="status">Consultando o FluxHub…</p>
+          : queryError ? <p className={styles.empty} role="alert">{queryError}</p>
+          : selected?.sections.length ? <ClaudeQueryResults key={selected.id} sections={selected.sections}/>
+          : <div className={styles.empty} role="status">
+            {selected?.message || (status?.configured ? "Faça uma consulta para ver o resultado."
+              : configError || (status ? "Configure o Claude para começar." : "Verificando a conexão com o Claude…"))}
+          </div>}
+      </section>
 
-    <section className={"fh-card fh-claude-chat " + styles.chat} aria-label="Assistente Claude">
-      <div className="fh-claude-chat-header">
-        <div className="fh-claude-chat-title"><span className="fh-claude-symbol small">
-          <Sparkles size={25}/></span><h2>Consultas do FluxHub</h2></div>
-        <span className="fh-claude-chat-badge">{status?.configured ? "Somente leitura" : "Aguardando conexão"}</span>
-      </div>
-      <div className="fh-claude-chat-scroll" role="log" aria-label="Conversa com Claude" aria-live="polite">
-        {messages.length === 0 ? <div className={styles.empty}>
-          <h3>O que você quer consultar?</h3>
-          <p>As respostas exibem apenas resultados consultados no banco da sua conta.</p>
-          <div className={styles.prompts}>{[
-            "Quantos anúncios tenho no FluxHub?",
-            "Quantos pedidos pagos tive nos últimos 7 dias?",
-            "Quais produtos estão com estoque baixo?",
-          ].map(question => <button type="button" key={question} disabled={!status?.configured}
-            onClick={() => void sendMessage(question)}>{question}</button>)}</div>
-        </div> : messages.map((turn, index) => turn.sections?.length
-          ? <ClaudeQueryResults key={index} sections={turn.sections}/>
-          : <div key={index} className={"fh-claude-bubble " + turn.role}>{turn.content}</div>)}
-        {chatBusy && <p className="fh-claude-typing" role="status">Consultando o FluxHub…</p>}
-        {chatError && <div className="fh-claude-alert" role="alert"><CircleAlert size={16}/>{chatError}</div>}
-        <div ref={conversationEnd}/>
-      </div>
-      <div className="fh-claude-chat-compose">
-        <label className="fh-sr-only" htmlFor="claude-chat-input">Pergunte algo à sua IA</label>
-        <textarea id="claude-chat-input" rows={2} maxLength={1200} value={draft}
-          onChange={event => setDraft(event.target.value)}
-          onKeyDown={event => {
-            if (event.key === "Enter" && !event.shiftKey) {
-              event.preventDefault(); void sendMessage();
-            }
-          }}
-          placeholder={status?.configured ? "Digite uma pergunta sobre sua operação…" : "Conecte Claude para começar..."}
-          disabled={!status?.configured || chatBusy}/>
-        <button type="button" className="fh-claude-send" onClick={() => void sendMessage()}
-          disabled={!status?.configured || chatBusy || !draft.trim()}
-          aria-label="Enviar pergunta" title="Enviar pergunta"><Send size={19}/></button>
-      </div>
-      <p className="fh-claude-chat-safety"><ShieldCheck size={15}/>
-        O FluxHub exibe os resultados do banco. Claude seleciona as consultas.</p>
-    </section>
-    <aside className={styles.controls}>
-      <details className={styles.setting} open={!status?.configured || undefined}>
-        <summary>Conexão Claude</summary>
+      <section className={styles.recent} aria-labelledby="claude-recent">
+        <h2 id="claude-recent">Consultas recentes</h2>
+        {consultations.length ? <ul>
+          {consultations.map(item => <li key={item.id}>
+            <button type="button" aria-pressed={item.id === selectedId} disabled={pending}
+              onClick={() => { setSelectedId(item.id); setQueryError(""); setDraft(item.question); }}>
+              <span>{item.question}</span><ChevronRight size={17} aria-hidden/>
+            </button>
+          </li>)}
+        </ul> : <p className={styles.historyEmpty}>As consultas desta sessão aparecerão aqui.</p>}
+      </section>
+
+      <dialog ref={connection} className={styles.dialog} aria-labelledby="configure-claude-heading"
+        onClose={() => { setShowKey(false); setApiKey(""); }}>
+        <div className={styles.dialogHeading}>
+          <h2 id="configure-claude-heading">Configurar Claude</h2>
+          <button type="button" aria-label="Fechar configurações" onClick={() => connection.current?.close()}><X size={21}/></button>
+        </div>
       <section className="fh-card fh-claude-connection" aria-label="Conectar Claude">
         <div className="fh-claude-card-title">
           <span className="fh-claude-symbol"><Sparkles size={29}/></span>
@@ -242,29 +250,17 @@ export default function ClaudeAgentsPanel() {
         <p className="fh-claude-footer-note"><ShieldCheck size={18}/> A chave nunca aparece no navegador após salvar.</p>
       </section>
 
-      </details>
-      <details className={styles.setting}>
-        <summary>Conector MCP externo</summary>
-        <McpConnectionCard/>
-      </details>
-
-      <section className="fh-claude-available" aria-labelledby="claude-agents-heading">
-        <h2 id="claude-agents-heading">Agentes disponíveis</h2>
-        <div className={"fh-claude-agent-grid " + styles.agents}>
-          {agents.map(agent => {
-            const Icon = agent.icon;
-            return <button key={agent.key} type="button"
-              className={"fh-claude-agent " + (active === agent.key ? "is-active" : "")}
-              aria-pressed={active === agent.key}
-              onClick={() => { if (!chatBusy) { setActive(agent.key); setMessages([]); setChatError(""); } }}>
-              <span className={"fh-claude-agent-icon " + agent.key}><Icon size={22}/></span>
-              <span className="fh-claude-agent-copy"><strong>{agent.name}</strong><small>{agent.help}</small></span>
-              <span className="fh-claude-agent-chevron" aria-hidden="true">›</span>
-            </button>;
-          })}
-        </div>
-      </section>
-      <Link className={styles.queue} href="/fila-de-decisoes">Abrir Fila de decisões →</Link>
-    </aside>
-  </div>;
+        <label className={styles.agentOption}>Agente padrão
+          <select className="fh-claude-model" value={active} disabled={pending}
+            onChange={event => setActive(event.target.value as Mode)}>
+            {Object.entries(agents).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </select>
+        </label>
+        <details className={styles.setting}>
+          <summary>Conector MCP externo</summary>
+          <McpConnectionCard/>
+        </details>
+      </dialog>
+    </div>
+  </ModernShell>;
 }

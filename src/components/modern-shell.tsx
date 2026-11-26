@@ -42,9 +42,7 @@ const modules = [
   { label: "Atendimento", href: "/mensagens", icon: MessagesSquare, paths: ["/mensagens"], tabs: [
     { label: "Mensagens e sugestões de IA", href: "/mensagens" },
   ] },
-  { label: "Agentes Claude", href: "/agentes-claude", icon: Bot, paths: ["/agentes-claude"], tabs: [
-    { label: "Agentes inteligentes", href: "/agentes-claude" },
-  ] },
+  { label: "Agentes de IA", href: "/agentes-claude", icon: Bot, paths: ["/agentes-claude"], tabs: [] },
   { label: "Configurações", href: "/dados", icon: Settings2, paths: ["/dados", "/integracoes"], tabs: [
     { label: "Central de dados", href: "/dados" },
     { label: "Integrações", href: "/integracoes" },
@@ -64,7 +62,6 @@ const descriptions: Record<string,string> = {
   "/financeiro": "Acompanhe custos, receita e rentabilidade da loja.",
   "/mensagens": "Converse com seus clientes e revise sugestões de IA.",
   "/dados": "Gerencie dados e conexões da sua operação.",
-  "/agentes-claude": "Análises inteligentes sob demanda, baseadas nos seus indicadores.",
 };
 
 type ShellProps = {
@@ -159,6 +156,7 @@ function ShellView({
   }, []);
   const activeModule = modules.find(item => item.paths.some(p => p === "/" ? path === "/" : path === p || path.startsWith(p + "/"))) ?? modules[0];
   const activeRoot = activeModule.href;
+  const isAiPage = path === "/agentes-claude";
   const sellerTitle = path === "/" || path === "/vendas"
     ? activeModule.label : title || activeModule.tabs.find(tab => tab.href === path)?.label || activeModule.label;
   const currentTab = activeModule.tabs.find(t => t.href === path + (path === "/" ? hash : "")) ??
@@ -166,7 +164,7 @@ function ShellView({
 
   return <div data-theme={theme} onKeyDown={event => {
     if (mobileOpen && event.key === "Escape") closeMenu();
-  }} className={`fh-app fh-unified fh-liquid-glass fh-theme-${theme}${path === "/" ? " fh-expo-glass-controls fh-overview-design" : ""}`}>
+  }} className={`fh-app fh-unified fh-liquid-glass fh-theme-${theme}${path === "/" ? " fh-expo-glass-controls fh-overview-design" : ""}${isAiPage ? " fh-ai-page" : ""}`}>
     <a href="#fluxhub-content" className="fh-skip-link">Ir para o conteúdo</a>
     <aside id="fluxhub-navigation" className={`fh-sidebar ${mobileOpen ? "fh-open" : ""}`}>
       <div className="fh-logo">
@@ -205,14 +203,14 @@ function ShellView({
         <button ref={menuToggle} className="fh-mobile-toggle" onClick={() => setMobileOpen(true)} aria-label="Abrir menu" aria-controls="fluxhub-navigation" aria-expanded={mobileOpen}><Menu size={23}/></button>
         <div className="fh-heading">
           <h1>{adminMode ? title : sellerTitle}</h1>
-          {path !== "/" && <p>{adminMode ? eyebrow || "Gestão da plataforma" : descriptions[activeRoot] || "Gestão integrada da sua operação no Mercado Livre."}</p>}
+          {path !== "/" && !isAiPage && <p>{adminMode ? eyebrow || "Gestão da plataforma" : descriptions[activeRoot] || "Gestão integrada da sua operação no Mercado Livre."}</p>}
         </div>
         <div className="fh-top-actions">{action}
-          <Link href="/integracoes" title="Integrações" aria-label="Integrações" className="fh-top-icon"><Bell size={18}/></Link>
+          {!isAiPage && <><Link href="/integracoes" title="Integrações" aria-label="Integrações" className="fh-top-icon"><Bell size={18}/></Link>
           <Link href={adminMode ? "/admin" : "/integracoes"} className="fh-account-control"
             title={adminMode ? "Administrador Master" : "Conta Mercado Livre"}>
             {adminMode ? <span className="fh-admin-account"><span className="fh-avatar"><Users size={16}/></span><span>Administrador Master</span></span> : <MercadoLivreIdentity variant="header"/>}
-          </Link>
+          </Link></>}
         </div>
       </header>
       {adminMode ? <nav className="fh-subnav" aria-label="Área administrativa">
