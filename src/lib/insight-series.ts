@@ -1,3 +1,4 @@
+import { replenishment } from "./analytics";
 import type { AbcRow, ProductRow } from "./types";
 
 export type InsightMeasure = "count" | "stock" | "sales" | "revenue" | "profit";
@@ -30,13 +31,14 @@ export function groupedInsights(
 export function topReplenishment(
   rows: ProductRow[],
   coverageDays: number,
+  salesDays = 30,
 ): InsightPoint[] {
   if (!Number.isFinite(coverageDays) || coverageDays <= 0) return [];
   return rows.flatMap(row => {
     if (typeof row.stock !== "number" || row.stock < 0 ||
         typeof row.sales !== "number" || row.sales <= 0) return [];
-    const quantity = Math.max(0, Math.ceil(row.sales / 30 * coverageDays - row.stock));
-    return quantity > 0 ? [{ label: row.title, value: quantity }] : [];
+    const { quantity } = replenishment(row, coverageDays, salesDays);
+    return quantity !== null && quantity > 0 ? [{ label: row.title, value: quantity }] : [];
   }).sort((a,b) => b.value - a.value).slice(0, 7);
 }
 

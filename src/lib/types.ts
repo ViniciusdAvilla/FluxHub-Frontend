@@ -59,6 +59,7 @@ export type CatalogPaidSales = {
 };
 
 export type Snapshot = {
+  periodSales?: { current: number | null; previous: number | null };
   products: Product[];
   catalogSales?: Pick<CatalogPaidSales, "paid_orders" | "enriched_paid_orders" | "orders_complete"> | null;
   sales?: {

@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
-import type { ReportPeriod } from "@/lib/report-period";
+import { periodSearchParams, type ReportPeriod } from "@/lib/report-period";
 import ReportPeriodFilter from "./report-period-filter";
 
 export default function OverviewPeriodFilter({ period, today, accountId, accounts, allowAll }: {
@@ -16,12 +16,7 @@ export default function OverviewPeriodFilter({ period, today, accountId, account
   const pathname = usePathname();
 
   function navigate(value: ReportPeriod, account: string) {
-    const params = new URLSearchParams({ period: value.preset });
-    if (value.preset === "custom") {
-      params.set("start_date", value.start);
-      params.set("end_date", value.end);
-    }
-    if (value.compare) params.set("compare", "1");
+    const params = periodSearchParams(value);
     if (account) params.set("account", account);
     router.push(pathname + "?" + params + window.location.hash, { scroll: false });
   }
