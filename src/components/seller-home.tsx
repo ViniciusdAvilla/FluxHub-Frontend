@@ -190,7 +190,9 @@ export default function SellerHome({ report, period, today }: { report: SellerRe
     </div>
     <Box title={Object.keys(salesByItem).length?"Produtos mais vendidos":"Produtos do catálogo"} subtitle="Vendas de pedidos pagos, custos cadastrados e Ads reportados" href="/produtos"
       action={<OverviewPeriodFilter period={period} today={today} accountId={accountId} accounts={[]}/>}>
-      <div className="fh-table-wrap"><table className="fh-table"><thead><tr><th>Produto</th><th>Preço</th><th>Custo de compra</th><th>Unid. vendidas no período</th><th>Ads no período</th><th>Estoque</th><th>Fabricante</th></tr></thead><tbody>
+      <div className="fh-table-wrap"><table className="fh-table"><thead><tr><th>Produto</th><th>Preço</th><th>Custo de compra</th><th><OverviewPeriodFilter period={period} today={today} accountId={accountId} accounts={[]}
+        triggerLabel="Unid. vendidas no período"/></th><th><OverviewPeriodFilter period={period} today={today}
+        accountId={accountId} accounts={[]} triggerLabel="Ads no período"/></th><th>Estoque</th><th>Fabricante</th></tr></thead><tbody>
         {topProducts.map(p=>{
           const c=costIndex.get(p.external_id);
           const units=salesByItem[p.external_id];

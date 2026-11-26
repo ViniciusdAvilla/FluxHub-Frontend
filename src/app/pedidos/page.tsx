@@ -29,7 +29,7 @@ export default async function OrdersPage({ searchParams }: { searchParams: Promi
       { label: "Pedidos", current: report.orderStatus?.total_orders ?? null,
         previous: report.previousOrderStatus?.total_orders ?? null, format: "number" },
     ]}/>}
-    <OrderExplorer mode="orders" period={period} accountId={report.accountId}/>
+    <OrderExplorer mode="orders" period={period} today={today} accountId={report.accountId}/>
     <div className="fh-insight-grid" style={{marginTop:18}}>
       <section className="fh-card">
         <div className="fh-card-head"><h2>Valor dos pedidos por dia</h2></div>
