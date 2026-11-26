@@ -9,11 +9,12 @@ const shortDate = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "sho
 const fullDate = new Intl.DateTimeFormat("pt-BR", { dateStyle: "full", timeZone: "UTC" });
 const monthTitle = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" });
 
-export default function ReportPeriodFilter({ period, today, onApply, allowAll = false }: {
+export default function ReportPeriodFilter({ period, today, onApply, allowAll = false, allowCompare = true }: {
   period: ReportPeriod;
   today: string;
   onApply: (value: ReportPeriod) => void;
   allowAll?: boolean;
+  allowCompare?: boolean;
 }) {
   const [draft, setDraft] = useState(period);
   const [month, setMonth] = useState((period.start || today).slice(0, 7) + "-01");
@@ -112,8 +113,8 @@ export default function ReportPeriodFilter({ period, today, onApply, allowAll = 
           </div>
         </div>
         <div className={styles.footer}>
-          <label><input type="checkbox" checked={draft.compare} disabled={draft.preset === "all"}
-            onChange={event => setDraft({ ...draft, compare: event.target.checked })}/> Comparar com período anterior</label>
+          {allowCompare && <label><input type="checkbox" checked={draft.compare} disabled={draft.preset === "all"}
+            onChange={event => setDraft({ ...draft, compare: event.target.checked })}/> Comparar com período anterior</label>}
           <button type="button" onClick={() => { setDraft(resolvePeriod("30", today)); setMonth(today.slice(0, 7) + "-01"); setSelectingEnd(false); }}>Limpar</button>
           <button type="button" className={styles.apply} disabled={!valid}
             onClick={() => { onApply(draft); dialog.current?.close(); }}>Aplicar filtros</button>

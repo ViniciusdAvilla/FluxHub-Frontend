@@ -691,14 +691,14 @@ function DataExplorer({
   );
 }
 
-export default function PlatformPage({ initial, view, isAdmin = false, dateFilter }: { initial: Snapshot; dateFilter?: { period: ReportPeriod; today: string }; view: View; syncAccounts?: { accountId: number; auto: boolean }[]; isAdmin?: boolean }) {
+export default function PlatformPage({ initial, view, isAdmin = false, dateFilter, initialProduct = "", initialMargin = 20 }: { initial: Snapshot; initialProduct?: string; initialMargin?: number; dateFilter?: { period: ReportPeriod; today: string }; view: View; syncAccounts?: { accountId: number; auto: boolean }[]; isAdmin?: boolean }) {
   const router = useRouter();
   const [refreshing, startRefresh] = useTransition();
   const [snapshot, setSnapshot] = useState(initial);
   useEffect(() => { setSnapshot(initial); }, [initial]);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(initialProduct);
   const deferredQuery = useDeferredValue(query);
   const [category, setCategory] = useState("");
   const [manufacturer, setManufacturer] = useState("");
@@ -706,7 +706,7 @@ export default function PlatformPage({ initial, view, isAdmin = false, dateFilte
   const [advanced, setAdvanced] = useState(defaultAdvancedProductFilters);
   const [inspected, setInspected] = useState<ProductRow | null>(null);
   const [pricingItem, setPricingItem] = useState<ProductRow | null>(null);
-  const [desiredMargin, setDesiredMargin] = useState(20);
+  const [desiredMargin, setDesiredMargin] = useState(initialMargin);
   const [coverageDays, setCoverageDays] = useState(30);
 
   const salesDays = dateFilter ? periodLength(dateFilter.period) : 30;
@@ -716,14 +716,15 @@ export default function PlatformPage({ initial, view, isAdmin = false, dateFilte
   const filtered = useMemo(() => {
     const term = normalizeCatalogSearch(deferredQuery.trim());
     const matches = rows.filter(row => {
-      return matchesCatalogSearch(row, term) &&
+      return (initialProduct && deferredQuery === initialProduct
+        ? row.id === initialProduct : matchesCatalogSearch(row, term)) &&
         (!category || row.category === category) &&
         (!manufacturer || row.brand === manufacturer || (manufacturer === "__missing" && row.brand === "Sem marca")) &&
         (!stockTone || row.stockTone === stockTone);
     });
     return sortCatalogProducts(filterCatalogProducts(matches, advanced),
       advanced.sortKey, advanced.sortDirection);
-  }, [rows, deferredQuery, category, manufacturer, stockTone, advanced]);
+  }, [rows, deferredQuery, initialProduct, category, manufacturer, stockTone, advanced]);
   const setSort = (key: ProductSortKey) => setAdvanced(current => ({
     ...current, sortKey: key, quick: "",
     sortDirection: key === current.sortKey

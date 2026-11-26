@@ -19,6 +19,7 @@ function fromBackend(row: BackendCost): Finance {
     supplier: row.manufacturer || "Sem fabricante",
     unitCost: row.unit_cost,
     feePercent: row.marketplace_fee_percent ?? 0,
+    feeConfigured: row.marketplace_fee_percent != null,
     taxPercent: row.tax_percent,
     shippingCost: row.shipping_cost,
     otherCost: row.other_cost,

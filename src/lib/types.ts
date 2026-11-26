@@ -21,6 +21,7 @@ export type Finance = {
   supplier: string;
   unitCost: number;
   feePercent: number;
+  feeConfigured?: boolean;
   taxPercent: number;
   shippingCost: number;
   otherCost: number;

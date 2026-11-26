@@ -6,7 +6,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
 import MercadoLivreIdentity from "./mercado-livre-identity";
 import {
   Activity, BadgeDollarSign, Bell, Boxes, ChartNoAxesCombined,
-  CircleHelp, ClipboardList, LayoutDashboard, Link2, LogOut, Menu,
+  CircleHelp, ClipboardList, LayoutDashboard, ListChecks, Link2, LogOut, Menu,
   Package, Settings2, ShieldCheck, ShoppingCart, Users, X, Zap,
   MessagesSquare, Bot, Moon, Sun,
 } from "lucide-react";
@@ -17,6 +17,7 @@ const modules = [
     { label: "Desempenho", href: "/#desempenho" },
     { label: "Alertas", href: "/#alertas" },
   ] },
+  { label: "Fila de decisões", href: "/fila-de-decisoes", icon: ListChecks, paths: ["/fila-de-decisoes"], tabs: [] },
   { label: "Vendas e pedidos", href: "/vendas", icon: ShoppingCart, paths: ["/vendas", "/pedidos", "/clientes"], tabs: [
     { label: "Resumo de vendas", href: "/vendas" },
     { label: "Pedidos", href: "/pedidos" },
@@ -55,6 +56,7 @@ const adminLinks = [
 ];
 const descriptions: Record<string,string> = {
   "/": "Tudo o que acontece na sua loja, em um só lugar.",
+  "/fila-de-decisoes": "Ações sugeridas para sua operação.",
   "/vendas": "Acompanhe resultados comerciais e pedidos da sua operação.",
   "/produtos": "Gerencie seu catálogo e acompanhe o desempenho da sua loja.",
   "/fabricantes": "Organize fornecedores, compras e reposição.",
@@ -201,7 +203,7 @@ function ShellView({
       </header>
       {adminMode ? <nav className="fh-subnav" aria-label="Área administrativa">
         {adminLinks.map(item=><Link key={item.href} href={item.href} className={path===item.href?"fh-tab-active":""} aria-current={path===item.href?"page":undefined}>{item.label}</Link>)}
-      </nav> : <nav className="fh-subnav" aria-label={`Abas de ${activeModule.label}`}>
+      </nav> : activeModule.tabs.length > 0 && <nav className="fh-subnav" aria-label={`Abas de ${activeModule.label}`}>
         {activeModule.tabs.map(tab=><Link key={tab.href} href={path === "/" && tab.href.startsWith("/#") ? tab.href.slice(1) : tab.href}
           aria-current={currentTab.href===tab.href?"page":undefined}
           className={currentTab.href===tab.href?"fh-tab-active":""}
