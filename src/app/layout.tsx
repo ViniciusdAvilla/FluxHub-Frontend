@@ -4,6 +4,7 @@ import "./modern.css";
 import "./dark-theme.css";
 import "./route-loading.css";
 import "./polished-glass.css";
+import "./overview.css";
 import { PersistentDashboardFrame } from "@/components/modern-shell";
 
 export const metadata: Metadata = {

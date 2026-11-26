@@ -150,7 +150,7 @@ function ShellView({
   const currentTab = activeModule.tabs.find(t => t.href === path + (path === "/" ? hash : "")) ??
     activeModule.tabs.find(t => t.href === path) ?? activeModule.tabs[0];
 
-  return <div data-theme={theme} className={`fh-app fh-liquid-glass fh-theme-${theme}${path === "/" ? " fh-expo-glass-controls" : ""}`}>
+  return <div data-theme={theme} className={`fh-app fh-liquid-glass fh-theme-${theme}${path === "/" ? " fh-expo-glass-controls fh-overview-design" : ""}`}>
     <div className="fh-glass-atmosphere" aria-hidden="true"><i/><i/><i/></div>
     <aside className={`fh-sidebar ${mobileOpen ? "fh-open" : ""}`}>
       <div className="fh-logo">
@@ -189,7 +189,7 @@ function ShellView({
         <button className="fh-mobile-toggle" onClick={() => setMobileOpen(true)} aria-label="Abrir menu"><Menu size={23}/></button>
         <div className="fh-heading">
           <h1>{adminMode ? title : sellerTitle}</h1>
-          <p>{adminMode ? eyebrow || "Gestão da plataforma" : descriptions[activeRoot] || "Gestão integrada da sua operação no Mercado Livre."}</p>
+          {path !== "/" && <p>{adminMode ? eyebrow || "Gestão da plataforma" : descriptions[activeRoot] || "Gestão integrada da sua operação no Mercado Livre."}</p>}
         </div>
         <div className="fh-top-actions">{action}
           <Link href="/integracoes" title="Integrações" aria-label="Integrações" className="fh-top-icon"><Bell size={18}/></Link>
