@@ -267,3 +267,15 @@
   .fh-unified .fh-purchase-summary { grid-template-columns: minmax(0, 1fr); }
   .fh-unified .fh-buyer-card { flex-wrap: wrap; }
 }
+
+.fh-app.fh-unified.fh-liquid-glass.fh-ai-page .fh-topbar {
+  background: var(--ui-bg);
+  border-bottom: 0;
+}
+.fh-app.fh-unified.fh-liquid-glass.fh-ai-page .fh-heading h1 {
+  font-size: clamp(25px, 3vw, 43px);
+}
+.fh-app.fh-unified.fh-liquid-glass.fh-ai-page .fh-main { padding-top: 6px; }
+@media (max-width: 880px) {
+  .fh-app.fh-unified.fh-liquid-glass.fh-ai-page .fh-top-actions { width: auto; margin-inline-start: auto; }
+}
