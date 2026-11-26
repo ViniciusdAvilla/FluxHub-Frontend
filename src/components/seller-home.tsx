@@ -11,34 +11,22 @@ import ModernShell from "./modern-shell";
 import ConversionFunnel from "./conversion-funnel";
 import { DailyBars, DonutStats, PerformanceChart } from "./modern-charts";
 import PeriodComparison from "./period-comparison";
-import { previousPeriod, type ReportPeriod } from "@/lib/report-period";
+import { periodSearchParams, previousPeriod, type ReportPeriod } from "@/lib/report-period";
 import OverviewRankedProducts from "./overview-ranked-products";
 import OverviewPeriodFilter from "./overview-period-filter";
 
-function halfPeriodChange(values: number[]):number|null {
-  if(values.length<4) return null;
-  const cut=Math.floor(values.length/2);
-  const previous=values.slice(0,cut).reduce((a,b)=>a+b,0);
-  const current=values.slice(-cut).reduce((a,b)=>a+b,0);
-  return previous>0 ? (current-previous)/previous*100 : null;
-}
-function Sparkline({values,color}:{values:number[];color:string}) {
-  if(values.length<2) return null;
-  const max=Math.max(...values),min=Math.min(...values),range=Math.max(max-min,1);
-  const path=values.map((value,i)=>`${i===0?"M":"L"} ${(i/(values.length-1)*74).toFixed(1)} ${(25-(value-min)/range*21).toFixed(1)}`).join(" ");
-  return <svg className="fh-sparkline" viewBox="0 0 74 29" role="img" aria-label="Tendência no período">
-    <path d={path} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>;
-}
-function Stat({title,value,help,color,icon:Icon,spark,change}:{title:string;value:string;help:string;color:"blue"|"green"|"purple"|"orange"|"rose";icon:typeof ShoppingCart;spark?:number[];change?:number|null}) {
+const listingColors: Record<string, string> = {
+  active: "#009e8b", paused: "#2463eb", under_review: "#d88908",
+  inactive: "#71809b", closed: "#7952cc", deleted: "#ad3650",
+};
+
+function Stat({ title, value, help, color, icon: Icon }: {
+  title: string; value: string; help: string; color: "blue" | "green" | "purple"; icon: typeof ShoppingCart;
+}) {
   return <article className={`fh-kpi ${color}`}>
     <div className="fh-kpi-top"><div className="fh-kpi-icon"><Icon size={18}/></div><span className="fh-kpi-label">{title}</span></div>
     <strong className="fh-kpi-value">{value}</strong>
-    {spark&&<Sparkline values={spark} color={color==="purple"?"#8358ff":"#277aff"}/>}
-    <span className="fh-kpi-foot">
-      {change!==null&&change!==undefined&&<span className={`fh-kpi-trend ${change<0?"down":""}`}>{change>0?"↗":change<0?"↘":"→"} {change>0?"+":""}{change.toFixed(1).replace(".",",")}%</span>}
-      <span className="fh-kpi-note">{change!==null&&change!==undefined?"vs. metade anterior":help}</span>
-    </span>
+    <span className="fh-kpi-foot"><span className="fh-kpi-note">{help}</span></span>
   </article>;
 }
 function Box({ title, subtitle, children, href, action }: {
@@ -68,6 +56,8 @@ export default function SellerHome({ report, period, today }: { report: SellerRe
   const margin=profit!==null&&ads?.attributed_revenue&&ads.attributed_revenue>0?profit/ads.attributed_revenue*100:null;
   const paidOrders=report.paidRevenue?.paid_order_count??null;
   const avgTicket=revenue!==null&&paidOrders&&paidOrders>0?revenue/paidOrders:null;
+  const orderQuery = periodSearchParams(period);
+  if (accountId !== null) orderQuery.set("account", String(accountId));
   const canceled=timeline.length?timeline.reduce((a,p)=>a+p.cancelled_orders,0):null;
   const categories=new Map<string,number>();
   for(const p of products) categories.set(p.category||"Sem categoria",(categories.get(p.category||"Sem categoria")||0)+1);
@@ -87,18 +77,14 @@ export default function SellerHome({ report, period, today }: { report: SellerRe
   const statusItems=Object.entries(report.orderStatus?.by_status||{}).map(([name,value],i)=>({
     name:orderStatusLabel(name),value,color:["#20c58b","#488bfa","#ffbd46","#f2737a","#9878f6"][i%5]
   }));
-  const orderedTimeline=[...timeline].sort((a,b)=>a.date.localeCompare(b.date));
-  const orderSeries=orderedTimeline.map(p=>p.orders);
-  const visitSeries=orderedTimeline.map(p=>p.visits??0);
-  const conversionSeries=orderedTimeline.map(p=>p.visits&&p.visits>0?p.orders/p.visits*100:0);
   return <ModernShell title="Visão geral" eyebrow="Resumo geral" isAdmin={Boolean(report.user?.is_admin)}
     action={<OverviewPeriodFilter period={period} today={today} accountId={accountId} accounts={accounts}/>}>
     {report.failedSources.length>0&&<div className="fh-notice error" role="status">Algumas consultas não responderam: {report.failedSources.join(", ")}. Verifique se o FastAPI está online e autenticado.</div>}
     <div className="fh-kpis fh-overview-kpis" id="resumo">
       <Stat color="blue" icon={BadgeDollarSign} title="Faturamento bruto" value={money(revenue)} help={report.paidRevenue?.partial_data?"Dados parciais: histórico de pedidos em sincronização":"Pedidos pagos no período selecionado"}/>
-      <Stat color="purple" icon={ShoppingCart} title="Pedidos" value={number(totalOrders)} help="Pedidos registrados no período" spark={orderSeries} change={halfPeriodChange(orderSeries)}/>
-      <Stat color="blue" icon={Eye} title="Visitas" value={number(visits)} help="Visitas informadas pelo Mercado Livre" spark={visitSeries} change={halfPeriodChange(visitSeries)}/>
-      <Stat color="purple" icon={TrendingUp} title="Conversão" value={visits!==null&&visits>0&&totalOrders!==null?percent(totalOrders/visits*100):"—"} help="Pedidos ÷ visitas disponíveis" spark={conversionSeries} change={halfPeriodChange(conversionSeries)}/>
+      <Stat color="purple" icon={ShoppingCart} title="Pedidos" value={number(totalOrders)} help="Pedidos registrados no período"/>
+      <Stat color="blue" icon={Eye} title="Visitas" value={number(visits)} help="Visitas informadas pelo Mercado Livre"/>
+      <Stat color="purple" icon={TrendingUp} title="Conversão" value={visits!==null&&visits>0&&totalOrders!==null?percent(totalOrders/visits*100):"—"} help="Pedidos ÷ visitas disponíveis"/>
     </div>
     {report.comparison && <PeriodComparison period={previousPeriod(period)} metrics={[
       { label: "Faturamento bruto", current: revenue, previous: report.comparison.revenue, format: "money" },
@@ -107,9 +93,9 @@ export default function SellerHome({ report, period, today }: { report: SellerRe
     <div className="fh-hero-grid fh-overview-charts" id="desempenho">
       <Box title="Evolução das vendas"><PerformanceChart points={timeline}/></Box>
       <Box title="Situação da loja">
-        <DonutStats items={Object.entries(report.listing?.by_status||{}).map(([name,value],i)=>({
+        <DonutStats items={Object.entries(report.listing?.by_status||{}).map(([name,value])=>({
           name:listingStatusLabel(name),
-          value,color:["#347cff","#96a3c4","#ffad31","#9775f9"][i%4],
+          value,color:listingColors[name] ?? "#71809b",
         }))} label="anúncios"/>
         <Link className="fh-status-more" href="/anuncios">Ver todos os anúncios <ArrowRight size={14}/></Link>
       </Box>
@@ -140,8 +126,8 @@ export default function SellerHome({ report, period, today }: { report: SellerRe
       </Box>
       <Box title="Alertas importantes">
         <div className="fh-alert-list">
-          <Link href="/estoque" className="fh-overview-alert"><span className="fh-overview-alert-icon"><Boxes size={22}/></span><span><strong>{number(products.filter(p=>p.stock_qty===0).length)} produtos sem estoque</strong><small>Revise o estoque para evitar interrupções nos anúncios.</small></span><ArrowRight size={16}/></Link>
-          <Link href="/pedidos" className="fh-overview-alert"><span className="fh-overview-alert-icon"><CircleAlert size={22}/></span><span><strong>{number(canceled)} cancelamentos registrados</strong><small>Acompanhe os pedidos do período selecionado.</small></span><ArrowRight size={16}/></Link>
+          <Link href="/estoque" className="fh-overview-alert"><span className="fh-overview-alert-icon"><Boxes size={22}/></span><span><strong>{number(products.filter(p=>p.stock_qty===0).length)} produtos sem estoque</strong></span><span className="fh-overview-alert-action">Revisar estoque <ArrowRight size={16}/></span></Link>
+          <Link href={`/pedidos?${orderQuery}`} className="fh-overview-alert"><span className="fh-overview-alert-icon"><CircleAlert size={22}/></span><span><strong>{number(canceled)} cancelamentos registrados</strong></span><span className="fh-overview-alert-action">Ver pedidos <ArrowRight size={16}/></span></Link>
         </div>
       </Box>
     </div>
