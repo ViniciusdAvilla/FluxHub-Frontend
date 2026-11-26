@@ -41,6 +41,11 @@ export async function POST(request: Request) {
       return Response.json({ error: "Modo ou instrução inválidos." }, { status: 422 });
     const result = await backendMutation("/api/v1/agents/claude/run",
       "POST", { agent: data.agent, instruction: data.instruction, history: data.history ?? [] }, 60000);
+    if (!result || typeof result !== "object" || !("verified" in result) || result.verified !== true ||
+        !("sections" in result) || !Array.isArray(result.sections)) {
+      return Response.json({ error: "Consulta verificada indisponível. Atualize o backend do FluxHub." },
+        { status: 503, headers: { "Cache-Control": "private, no-store" } });
+    }
     return Response.json(result, { headers: { "Cache-Control": "private, no-store" } });
   } catch (error) {
     return Response.json({ error: error instanceof BackendHttpError

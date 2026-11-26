@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import ClaudeQueryResults, { type QuerySection } from "./claude-query-results";
+import styles from "./claude-consultations.module.css";
 import McpConnectionCard from "@/components/mcp-connection-card";
 import {
   BadgePercent, Boxes, ChartNoAxesCombined, CheckCircle2, CircleAlert,
@@ -14,12 +17,7 @@ type Status = {
   can_manage: boolean;
   read_only: boolean;
 };
-type AgentResult = {
-  analysis: string;
-  model: string;
-  context: { products_in_catalog: number; paid_orders_30_days: number };
-};
-type Turn = { role: "user" | "assistant"; content: string };
+type Turn = { role: "user" | "assistant"; content: string; sections?: QuerySection[] };
 type Busy = "test" | "save" | null;
 
 const models = [
@@ -29,10 +27,10 @@ const models = [
   { value: "claude-haiku-4-5-20251001", label: "Claude Haiku 4.5" },
 ];
 const agents = [
-  { key: "sales" as const, name: "Análise de vendas", help: "Tendências e oportunidades", icon: ChartNoAxesCombined },
-  { key: "pricing" as const, name: "Precificação", help: "Margens e lucro líquido", icon: BadgePercent },
-  { key: "inventory" as const, name: "Gestão de estoque", help: "Reposição inteligente", icon: Boxes },
-  { key: "strategy" as const, name: "Estratégia comercial", help: "Planos e recomendações", icon: Target },
+  { key: "sales" as const, name: "Análise de vendas", help: "Pedidos e faturamento pago", icon: ChartNoAxesCombined },
+  { key: "pricing" as const, name: "Precificação", help: "Preços e custos cadastrados", icon: BadgePercent },
+  { key: "inventory" as const, name: "Gestão de estoque", help: "Saldo e produtos esgotados", icon: Boxes },
+  { key: "strategy" as const, name: "Estratégia comercial", help: "Anúncios, Ads e sincronização", icon: Target },
 ];
 
 async function readJson(response: Response): Promise<Record<string, unknown>> {
@@ -55,7 +53,6 @@ export default function ClaudeAgentsPanel() {
   const [configError, setConfigError] = useState("");
   const [draft, setDraft] = useState("");
   const [messages, setMessages] = useState<Turn[]>([]);
-  const [answerDetails, setAnswerDetails] = useState<AgentResult | null>(null);
   const [chatBusy, setChatBusy] = useState(false);
   const [chatError, setChatError] = useState("");
   const conversationEnd = useRef<HTMLDivElement>(null);
@@ -112,13 +109,13 @@ export default function ClaudeAgentsPanel() {
     }
   }
 
-  async function sendMessage() {
-    const question = draft.trim();
+  async function sendMessage(input = draft) {
+    const question = input.trim();
     if (!question || chatBusy || !status?.configured) return;
-    const prior = messages.slice(-8);
+    const prior = messages.filter(turn => turn.role === "user").slice(-8)
+      .map(({ role, content }) => ({ role, content }));
     setDraft("");
     setChatError("");
-    setAnswerDetails(null);
     setMessages(current => [...current, { role: "user", content: question }]);
     setChatBusy(true);
     try {
@@ -129,10 +126,12 @@ export default function ClaudeAgentsPanel() {
       });
       const body = await readJson(response);
       if (!response.ok) throw new Error(errorText(body, "Não foi possível analisar os indicadores."));
-      const analysis = typeof body.analysis === "string" ? body.analysis : "";
-      if (!analysis) throw new Error("O assistente retornou uma resposta vazia.");
-      setMessages(current => [...current, { role: "assistant", content: analysis }]);
-      setAnswerDetails(body as unknown as AgentResult);
+      if (body.verified !== true || !Array.isArray(body.sections)) {
+        throw new Error("Consulta verificada indisponível. Atualize o backend do FluxHub.");
+      }
+      const sections = body.sections as QuerySection[];
+      const message = typeof body.message === "string" ? body.message : "";
+      setMessages(current => [...current, { role: "assistant", content: message, sections }]);
     } catch (error) {
       setChatError(error instanceof Error ? error.message : "Falha na consulta.");
     } finally {
@@ -140,8 +139,53 @@ export default function ClaudeAgentsPanel() {
     }
   }
 
-  return <div className="fh-claude-layout fh-claude-workspace">
-    <div className="fh-claude-left">
+  return <div className={styles.workspace}>
+
+
+    <section className={"fh-card fh-claude-chat " + styles.chat} aria-label="Assistente Claude">
+      <div className="fh-claude-chat-header">
+        <div className="fh-claude-chat-title"><span className="fh-claude-symbol small">
+          <Sparkles size={25}/></span><h2>Consultas do FluxHub</h2></div>
+        <span className="fh-claude-chat-badge">{status?.configured ? "Somente leitura" : "Aguardando conexão"}</span>
+      </div>
+      <div className="fh-claude-chat-scroll" role="log" aria-label="Conversa com Claude" aria-live="polite">
+        {messages.length === 0 ? <div className={styles.empty}>
+          <h3>O que você quer consultar?</h3>
+          <p>As respostas exibem apenas resultados consultados no banco da sua conta.</p>
+          <div className={styles.prompts}>{[
+            "Quantos anúncios tenho no FluxHub?",
+            "Quantos pedidos pagos tive nos últimos 7 dias?",
+            "Quais produtos estão com estoque baixo?",
+          ].map(question => <button type="button" key={question} disabled={!status?.configured}
+            onClick={() => void sendMessage(question)}>{question}</button>)}</div>
+        </div> : messages.map((turn, index) => turn.sections?.length
+          ? <ClaudeQueryResults key={index} sections={turn.sections}/>
+          : <div key={index} className={"fh-claude-bubble " + turn.role}>{turn.content}</div>)}
+        {chatBusy && <p className="fh-claude-typing" role="status">Consultando o FluxHub…</p>}
+        {chatError && <div className="fh-claude-alert" role="alert"><CircleAlert size={16}/>{chatError}</div>}
+        <div ref={conversationEnd}/>
+      </div>
+      <div className="fh-claude-chat-compose">
+        <label className="fh-sr-only" htmlFor="claude-chat-input">Pergunte algo à sua IA</label>
+        <textarea id="claude-chat-input" rows={2} maxLength={1200} value={draft}
+          onChange={event => setDraft(event.target.value)}
+          onKeyDown={event => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault(); void sendMessage();
+            }
+          }}
+          placeholder={status?.configured ? "Digite uma pergunta sobre sua operação…" : "Conecte Claude para começar..."}
+          disabled={!status?.configured || chatBusy}/>
+        <button type="button" className="fh-claude-send" onClick={() => void sendMessage()}
+          disabled={!status?.configured || chatBusy || !draft.trim()}
+          aria-label="Enviar pergunta" title="Enviar pergunta"><Send size={19}/></button>
+      </div>
+      <p className="fh-claude-chat-safety"><ShieldCheck size={15}/>
+        O FluxHub exibe os resultados do banco. Claude seleciona as consultas.</p>
+    </section>
+    <aside className={styles.controls}>
+      <details className={styles.setting} open={!status?.configured || undefined}>
+        <summary>Conexão Claude</summary>
       <section className="fh-card fh-claude-connection" aria-label="Conectar Claude">
         <div className="fh-claude-card-title">
           <span className="fh-claude-symbol"><Sparkles size={29}/></span>
@@ -198,17 +242,21 @@ export default function ClaudeAgentsPanel() {
         <p className="fh-claude-footer-note"><ShieldCheck size={18}/> A chave nunca aparece no navegador após salvar.</p>
       </section>
 
-      <McpConnectionCard/>
+      </details>
+      <details className={styles.setting}>
+        <summary>Conector MCP externo</summary>
+        <McpConnectionCard/>
+      </details>
 
       <section className="fh-claude-available" aria-labelledby="claude-agents-heading">
         <h2 id="claude-agents-heading">Agentes disponíveis</h2>
-        <div className="fh-claude-agent-grid">
+        <div className={"fh-claude-agent-grid " + styles.agents}>
           {agents.map(agent => {
             const Icon = agent.icon;
             return <button key={agent.key} type="button"
               className={"fh-claude-agent " + (active === agent.key ? "is-active" : "")}
               aria-pressed={active === agent.key}
-              onClick={() => { if (!chatBusy) { setActive(agent.key); setMessages([]); setChatError(""); setAnswerDetails(null); } }}>
+              onClick={() => { if (!chatBusy) { setActive(agent.key); setMessages([]); setChatError(""); } }}>
               <span className={"fh-claude-agent-icon " + agent.key}><Icon size={22}/></span>
               <span className="fh-claude-agent-copy"><strong>{agent.name}</strong><small>{agent.help}</small></span>
               <span className="fh-claude-agent-chevron" aria-hidden="true">›</span>
@@ -216,56 +264,7 @@ export default function ClaudeAgentsPanel() {
           })}
         </div>
       </section>
-    </div>
-
-    <section className="fh-card fh-claude-chat" aria-label="Assistente Claude">
-      <div className="fh-claude-chat-header">
-        <div className="fh-claude-chat-title"><span className="fh-claude-symbol small">
-          <Sparkles size={25}/></span><h2>Assistente Claude</h2></div>
-        <span className="fh-claude-chat-badge">{status?.configured ? "Disponível" : "Prévia"}</span>
-      </div>
-      <div className="fh-claude-chat-scroll" role="log" aria-label="Conversa com Claude" aria-live="polite">
-        {messages.length === 0 ? <div className="fh-claude-chat-example">
-          <div className="fh-claude-bubble user">Quais produtos precisam de atenção esta semana?</div>
-          <div className="fh-claude-example-answer">
-            <span className="fh-claude-symbol mini"><Sparkles size={19}/></span>
-            <div className="fh-claude-bubble assistant">
-              <p>Encontrei oportunidades para melhorar a operação:</p>
-              <ul>
-                <li>Revisar anúncios com baixa conversão</li>
-                <li>Priorizar produtos com maior margem</li>
-                <li>Identificar rupturas de estoque</li>
-              </ul>
-            </div>
-          </div>
-          <span className="fh-claude-example-label">Exemplo ilustrativo · Não representa dados reais</span>
-        </div> : messages.map((turn, index) =>
-          <div key={index} className={"fh-claude-bubble " + turn.role}>{turn.content}</div>)}
-        {chatBusy && <p className="fh-claude-typing" role="status">Claude está analisando seus indicadores...</p>}
-        {chatError && <div className="fh-claude-alert" role="alert"><CircleAlert size={16}/>{chatError}</div>}
-        {answerDetails && !chatBusy && <p className="fh-claude-chat-meta">
-          Modelo: {answerDetails.model} · {answerDetails.context.products_in_catalog.toLocaleString("pt-BR")} produtos ·
-          {" "}{answerDetails.context.paid_orders_30_days.toLocaleString("pt-BR")} pedidos pagos nos últimos 30 dias
-        </p>}
-        <div ref={conversationEnd}/>
-      </div>
-      <div className="fh-claude-chat-compose">
-        <label className="fh-sr-only" htmlFor="claude-chat-input">Pergunte algo à sua IA</label>
-        <textarea id="claude-chat-input" rows={2} maxLength={1200} value={draft}
-          onChange={event => setDraft(event.target.value)}
-          onKeyDown={event => {
-            if (event.key === "Enter" && !event.shiftKey) {
-              event.preventDefault(); void sendMessage();
-            }
-          }}
-          placeholder={status?.configured ? "Pergunte algo à sua IA..." : "Conecte Claude para começar..."}
-          disabled={!status?.configured || chatBusy}/>
-        <button type="button" className="fh-claude-send" onClick={() => void sendMessage()}
-          disabled={!status?.configured || chatBusy || !draft.trim()}
-          aria-label="Enviar pergunta" title="Enviar pergunta"><Send size={19}/></button>
-      </div>
-      <p className="fh-claude-chat-safety"><ShieldCheck size={15}/>
-        Apenas indicadores consolidados são enviados. Nenhuma ação na sua conta é executada automaticamente.</p>
-    </section>
+      <Link className={styles.queue} href="/fila-de-decisoes">Abrir Fila de decisões →</Link>
+    </aside>
   </div>;
 }
