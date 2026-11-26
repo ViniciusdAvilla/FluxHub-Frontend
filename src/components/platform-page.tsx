@@ -52,6 +52,7 @@ import type {
   Tone,
 } from "@/lib/types";
 import { CategoryChart, ManufacturerChart, RevenueChart } from "./charts";
+import SortHeading from "./sort-heading";
 import ModernShell from "./modern-shell";
 import OverviewPeriodFilter from "./overview-period-filter";
 import PeriodComparison from "./period-comparison";
@@ -205,18 +206,16 @@ function Section({
 }
 
 function SortableColumn({
-  label, field, selected, direction, onSelect, filter,
+  label, field, selected, direction, onSelect,
 }: {
   label: string; field: ProductSortKey; selected: ProductSortKey;
-  filter?: ReactNode;
   direction: ProductSortDirection; onSelect: (field: ProductSortKey) => void;
 }) {
   return <th aria-sort={selected === field ? (direction === "asc" ? "ascending" : "descending") : "none"}>
-    {filter}
     <button type="button" className={"fh-smart-column " + (selected === field ? "is-active" : "")}
       onClick={() => onSelect(field)}
       aria-label={"Ordenar " + label + (selected === field ? (direction === "asc" ? " decrescente" : " crescente") : "")}>
-      {!filter && label}<span aria-hidden="true">{selected === field ? (direction === "asc" ? " ↑" : " ↓") : " ↕"}</span>
+      {label}<span aria-hidden="true">{selected === field ? (direction === "asc" ? " ↑" : " ↓") : " ↕"}</span>
     </button>
   </th>;
 }
@@ -400,7 +399,7 @@ function ProductTable({
   );
 }
 
-function PurchasePlanTable({ rows, coverageDays, salesDays, periodFilter }: { rows: ProductRow[]; coverageDays: number; salesDays: number; periodFilter?: ReactNode }) {
+function PurchasePlanTable({ rows, coverageDays, salesDays }: { rows: ProductRow[]; coverageDays: number; salesDays: number }) {
   const [page, setPage] = useState(0);
   const [sortKey, setSortKey] = useState<ProductSortKey>("stockDays");
   const [sortDirection, setSortDirection] = useState<ProductSortDirection>("asc");
@@ -421,7 +420,7 @@ function PurchasePlanTable({ rows, coverageDays, salesDays, periodFilter }: { ro
           <SortableColumn label="Produto" field="title" selected={sortKey} direction={sortDirection} onSelect={sort}/>
           <SortableColumn label="Fabricante" field="brand" selected={sortKey} direction={sortDirection} onSelect={sort}/>
           <SortableColumn label="Saldo" field="stock" selected={sortKey} direction={sortDirection} onSelect={sort}/>
-          <SortableColumn label="Vendas no período" filter={periodFilter} field="sales" selected={sortKey} direction={sortDirection} onSelect={sort}/>
+          <SortableColumn label="Vendas no período" field="sales" selected={sortKey} direction={sortDirection} onSelect={sort}/>
           <SortableColumn label="Cobertura" field="stockDays" selected={sortKey} direction={sortDirection} onSelect={sort}/>
           <th>Comprar</th><th>Investimento</th><th>Prioridade</th>
         </tr></thead>
@@ -710,10 +709,6 @@ export default function PlatformPage({ initial, view, isAdmin = false, dateFilte
   const [desiredMargin, setDesiredMargin] = useState(20);
   const [coverageDays, setCoverageDays] = useState(30);
 
-  function columnPeriod(label: string) {
-    return dateFilter && <OverviewPeriodFilter {...dateFilter} accountId={null} accounts={[]} triggerLabel={label}/>;
-  }
-
   const salesDays = dateFilter ? periodLength(dateFilter.period) : 30;
   const rows = useMemo(() => enrichProducts(snapshot.products, snapshot.finance, salesDays), [snapshot.products, snapshot.finance, salesDays]);
   const categories = useMemo(() => [...new Set(rows.map((row) => row.category))].sort((a, b) => a.localeCompare(b, "pt-BR")), [rows]);
@@ -744,6 +739,17 @@ export default function PlatformPage({ initial, view, isAdmin = false, dateFilte
       : `${number(snapshot.sales.paid_order_count)} pedidos pagos em 30 dias`;
   const abc = useMemo(() => classifyAbc(filtered), [filtered]);
   const abcThreshold = useMemo(() => highVolumeThreshold(abc), [abc]);
+  const [manufacturerSalesSort, setManufacturerSalesSort] = useState<"asc" | "desc">();
+  const [abcRevenueSort, setAbcRevenueSort] = useState<"asc" | "desc">();
+  const [chartSalesSort, setChartSalesSort] = useState<"asc" | "desc">();
+  const manufacturerPerformance = manufacturerSalesSort
+    ? [...summary.manufacturers].sort((a, b) => manufacturerSalesSort === "desc" ? b.sales - a.sales : a.sales - b.sales)
+    : summary.manufacturers;
+  const rankedAbc = abcRevenueSort === "asc"
+    ? [...abc].sort((a, b) => a.revenue === null ? (b.revenue === null ? 0 : 1)
+      : b.revenue === null ? -1 : a.revenue - b.revenue)
+    : abc;
+
 
   async function refresh() {
     if (dateFilter) {
@@ -904,8 +910,11 @@ export default function PlatformPage({ initial, view, isAdmin = false, dateFilte
                 <Section title="Produtos por categoria" subtitle="Quantidade de itens da operação para análise.">
                   <RankedBarChart values={groupedInsights(filtered, "category", "count")}/>
                 </Section>
-                <Section title={columnPeriod("Vendas por fabricante") ?? "Vendas por fabricante"} subtitle="Unidades vendidas no período selecionado.">
-                  <RankedBarChart values={groupedInsights(filtered, "brand", "sales")}/>
+                <Section title={<SortHeading label="Vendas por fabricante" direction={chartSalesSort}
+                  onClick={() => setChartSalesSort(value => value === "desc" ? "asc" : "desc")}/>}
+                  subtitle="Unidades vendidas no período selecionado.">
+                  <RankedBarChart values={groupedInsights(filtered, "brand", "sales")
+                    .sort((a, b) => chartSalesSort === "asc" ? a.value - b.value : b.value - a.value)}/>
                 </Section>
               </div>
               <RaioXPanel products={filtered}/>
@@ -975,8 +984,11 @@ export default function PlatformPage({ initial, view, isAdmin = false, dateFilte
                   <RankedBarChart values={groupedInsights(filtered, "brand", "profit")} unit="money"/>
                 </Section>
               </div>
-              <Section title="Performance por fabricante" subtitle="Ordenado pelo lucro estimado; o fabricante vem de brand/manufacturer e é enriquecido pela rota by-brands quando disponível.">
-                {summary.manufacturers.length ? <div className="table-wrap"><table><thead><tr><th>Fabricante</th><th>Produtos</th><th>{columnPeriod("Vendidos") ?? "Vendidos"}</th><th>Custo de compra</th><th>Lucro</th><th>Margem</th></tr></thead><tbody>{summary.manufacturers.map((item) => <tr key={item.name}><td><strong>{item.name}</strong></td><td>{number(item.count)}</td><td>{number(item.sales)}</td><td>{money(item.purchaseCost)}</td><td className={`text-${marginTone(item.margin)}`}>{money(item.profit)}</td><td><Status tone={marginTone(item.margin)}>{percent(item.margin)}</Status></td></tr>)}</tbody></table></div> : <Empty title="Sem performance por fabricante" text="Os fabricantes já podem ser filtrados, mas é necessário cadastrar custos para calcular lucro e margem." />}
+              <Section title="Performance por fabricante" subtitle="Por padrão, ordenado pelo lucro estimado.">
+                {summary.manufacturers.length ? <div className="table-wrap"><table><thead><tr><th>Fabricante</th><th>Produtos</th><th aria-sort={manufacturerSalesSort === "desc" ? "descending" : manufacturerSalesSort === "asc" ? "ascending" : undefined}>
+                  <SortHeading label="Vendidos" direction={manufacturerSalesSort}
+                    onClick={() => setManufacturerSalesSort(value => value === "desc" ? "asc" : "desc")}/>
+                </th><th>Custo de compra</th><th>Lucro</th><th>Margem</th></tr></thead><tbody>{manufacturerPerformance.map((item) => <tr key={item.name}><td><strong>{item.name}</strong></td><td>{number(item.count)}</td><td>{number(item.sales)}</td><td>{money(item.purchaseCost)}</td><td className={`text-${marginTone(item.margin)}`}>{money(item.profit)}</td><td><Status tone={marginTone(item.margin)}>{percent(item.margin)}</Status></td></tr>)}</tbody></table></div> : <Empty title="Sem performance por fabricante" text="Os fabricantes já podem ser filtrados, mas é necessário cadastrar custos para calcular lucro e margem." />}
               </Section>
             </>
           )}
@@ -1011,7 +1023,7 @@ export default function PlatformPage({ initial, view, isAdmin = false, dateFilte
                 </Section>
               </div>
               <Section title="Plano de compras" subtitle="A sugestão usa o estoque atual e a média diária de vendas do período.">
-                <PurchasePlanTable rows={filtered} coverageDays={coverageDays} salesDays={salesDays} periodFilter={columnPeriod("Vendas no período")}/>
+                <PurchasePlanTable rows={filtered} coverageDays={coverageDays} salesDays={salesDays}/>
               </Section>
             </>
           )}
@@ -1028,7 +1040,10 @@ export default function PlatformPage({ initial, view, isAdmin = false, dateFilte
                 </Section>
               </div>
               <Section title="Classificação ABC" subtitle="Classes por participação da receita; metas de margem A 10%, B 15%, C 20% são orientativas e não substituem lucro líquido fiscal.">
-                <PagedTableRows items={abc} render={(pagedRows) => <div className="table-wrap"><table><thead><tr><th>Classe</th><th>Produto</th><th>{columnPeriod("Receita") ?? "Receita"}</th><th>Participação</th><th>Acumulado</th><th>Margem estimada</th><th>Meta da classe</th><th>Estratégia</th></tr></thead><tbody>{pagedRows.map((row) => <tr key={row.id}><td>{row.abcClass ? <span className={`abc-badge ${row.abcClass.toLowerCase()}`}>{row.abcClass}</span> : "—"}</td><td><strong>{row.title}</strong><small className="cell-sub">{row.id}</small></td><td>{money(row.revenue)}</td><td>{percent(row.revenueShare)}</td><td>{percent(row.cumulativeShare)}</td><td className={`text-${marginTone(row.margin)}`}>{percent(row.margin)}</td>
+                <PagedTableRows items={rankedAbc} render={(pagedRows) => <div className="table-wrap"><table><thead><tr><th>Classe</th><th>Produto</th><th aria-sort={abcRevenueSort === "asc" ? "ascending" : "descending"}>
+                  <SortHeading label="Receita" direction={abcRevenueSort}
+                    onClick={() => setAbcRevenueSort(value => value === "desc" ? "asc" : "desc")}/>
+                </th><th>Participação</th><th>Acumulado</th><th>Margem estimada</th><th>Meta da classe</th><th>Estratégia</th></tr></thead><tbody>{pagedRows.map((row) => <tr key={row.id}><td>{row.abcClass ? <span className={`abc-badge ${row.abcClass.toLowerCase()}`}>{row.abcClass}</span> : "—"}</td><td><strong>{row.title}</strong><small className="cell-sub">{row.id}</small></td><td>{money(row.revenue)}</td><td>{percent(row.revenueShare)}</td><td>{percent(row.cumulativeShare)}</td><td className={`text-${marginTone(row.margin)}`}>{percent(row.margin)}</td>
                   <td>{abcStrategy(row, abcThreshold).target === null ? "—" : abcStrategy(row, abcThreshold).target + "%"}</td>
                   <td>{abcStrategy(row, abcThreshold).attraction
                     ? <span className="fh-abc-attraction">Boi de Piranha</span>

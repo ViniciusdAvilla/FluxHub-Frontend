@@ -32,7 +32,7 @@ export default async function SalesPage({ searchParams }: { searchParams: Promis
       { label: "Pedidos", current: report.orderStatus?.total_orders ?? null,
         previous: report.previousOrderStatus?.total_orders ?? null, format: "number" },
     ]}/>}
-    <OrderExplorer mode="sales" period={period} today={today} accountId={report.accountId}/>
+    <OrderExplorer mode="sales" period={period} accountId={report.accountId}/>
     <div className="fh-hero-grid" style={{marginTop:18}}>
       <section className="fh-card">
         <div className="fh-card-head"><h2>Histórico sincronizado</h2></div>
