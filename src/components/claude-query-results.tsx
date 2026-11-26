@@ -1,3 +1,5 @@
+import ClaudeSalesPriority from "./claude-sales-priority";
+import type { SalesPriority } from "@/lib/sales-priority";
 import { listingStatusLabel } from "@/lib/order-status";
 import styles from "./claude-consultations.module.css";
 
@@ -93,6 +95,9 @@ function resultStatus(result: Record<string, unknown>) {
 
 export default function ClaudeQueryResults({ sections }: { sections: QuerySection[] }) {
   return <div className={styles.results}>{sections.map(({ query, result }, index) => {
+    if (query === "prioridade_vendas") {
+      return <ClaudeSalesPriority key={index} result={result as unknown as SalesPriority}/>;
+    }
     const primary = primaryFields.find(key => Object.hasOwn(result, key));
     const status = resultStatus(result);
     const title = status ? `Anúncios ${status.toLocaleLowerCase("pt-BR")}`

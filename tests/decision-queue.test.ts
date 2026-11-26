@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { buildDecisionQueue } from "../src/lib/decision-queue";
+import { isSalesPriorityQuestion, selectSalesPriority } from "../src/lib/sales-priority";
 import type { Snapshot } from "../src/lib/types";
 
 function snapshot(complete: boolean, feeConfigured = true): Snapshot {
@@ -41,4 +42,31 @@ test("margem abaixo da meta tem prioridade sobre reposição imediata", () => {
   assert.equal(item.kind, "margin");
   assert.equal(item.target, 10);
   assert.equal(item.quantity, null);
+});
+
+const window = { start: "2026-10-28", end: "2026-11-26", days: 30 };
+
+test("pergunta sobre alavancar as vendas aciona a recomendação, contagem continua consulta direta", () => {
+  assert.equal(isSalesPriorityQuestion("Qual é a minha prioridade nesse momento para alavancar as vendas?"), true);
+  assert.equal(isSalesPriorityQuestion("Quantas vendas fiz ontem?"), false);
+});
+
+test("a prioridade de reposição exige status ativo e mostra os números calculados", () => {
+  const result = selectSalesPriority(snapshot(true), window, new Map([["123:MLB12345", "active"]]));
+  assert.equal(result.destination, "purchases");
+  assert.equal(result.product?.units, 30);
+  assert.equal(result.product?.coverage, 4);
+  assert.equal(result.product?.quantity, 26);
+
+  const unverified = selectSalesPriority(snapshot(true), window, new Map([["999:MLB12345", "active"]]));
+  assert.equal(unverified.destination, "listings");
+  assert.equal(unverified.status, undefined);
+});
+
+test("prioridade aponta revisão de margem ou falha de sincronização conforme a evidência", () => {
+  const source = snapshot(true);
+  source.finance[0].unitCost = 70;
+  const statuses = new Map([["123:MLB12345", "active"]]);
+  assert.equal(selectSalesPriority(source, window, statuses).destination, "pricing");
+  assert.equal(selectSalesPriority(snapshot(false), window, statuses).destination, "integrations");
 });
