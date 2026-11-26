@@ -5,12 +5,13 @@ import { ChevronDown } from "lucide-react";
 import { periodSearchParams, type ReportPeriod } from "@/lib/report-period";
 import ReportPeriodFilter from "./report-period-filter";
 
-export default function OverviewPeriodFilter({ period, today, accountId, accounts, allowAll }: {
+export default function OverviewPeriodFilter({ period, today, accountId, accounts, allowAll, allowCompare }: {
   period: ReportPeriod;
   today: string;
   accountId: number | null;
   accounts: { account_id: number; nickname: string | null }[];
   allowAll?: boolean;
+  allowCompare?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -32,7 +33,7 @@ export default function OverviewPeriodFilter({ period, today, accountId, account
       </select>
       <ChevronDown size={15} aria-hidden />
     </label>}
-    <ReportPeriodFilter period={period} today={today} allowAll={allowAll}
+    <ReportPeriodFilter period={period} today={today} allowAll={allowAll} allowCompare={allowCompare}
       onApply={value => navigate(value, accountId === null ? "" : String(accountId))}/>
   </div>;
 }
