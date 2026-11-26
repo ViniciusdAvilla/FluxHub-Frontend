@@ -1,9 +1,11 @@
 "use client";
 
+import type { ReportPeriod } from "@/lib/report-period";
+
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { CalendarDays, ChevronLeft, ChevronRight, ClipboardList, Search,
+import { ChevronLeft, ChevronRight, ClipboardList, Search,
   ShieldCheck, SlidersHorizontal, Wallet, X } from "lucide-react";
 import type { PricingSeed } from "./pricing-calculator";
 import { orderStatusLabel } from "@/lib/order-status";
@@ -73,15 +75,26 @@ const statusTabs = [
   { code: "payment_in_process", label: "Processando" },
 ];
 
-export default function OrderExplorer({
-  mode, accounts = [],
-}: { mode: Mode; accounts?: {account_id: number; nickname: string | null}[] }) {
+function orderPeriodParams(start: string, end: string, accountId: number | null) {
+  const params = new URLSearchParams();
+  if (start && end) {
+    params.set("start_date", start);
+    params.set("end_date", end);
+  }
+  if (accountId !== null) params.set("accountId", String(accountId));
+  return params;
+}
+
+export default function OrderExplorer({ mode, period, accountId }: {
+  mode: Mode;
+  period: ReportPeriod;
+  accountId: number | null;
+}) {
+  const { start, end } = period;
   const [page, setPage] = useState<Page | null>(null);
   const [status, setStatus] = useState("");
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
-  const [days, setDays] = useState("30");
-  const [accountId, setAccountId] = useState("");
   const [minAmount, setMinAmount] = useState("");
   const [maxAmount, setMaxAmount] = useState("");
   const [sortBy, setSortBy] = useState<"date" | "amount" | "status">("date");
@@ -107,12 +120,12 @@ export default function OrderExplorer({
     const timer = setTimeout(() => setDebounced(search.trim()), 350);
     return () => clearTimeout(timer);
   }, [search]);
-  useEffect(() => { setOffset(0); }, [status, days, debounced, accountId, minAmount, maxAmount, sortBy, sortDir]);
+  useEffect(() => { setOffset(0); }, [status, start, end, debounced, accountId, minAmount, maxAmount, sortBy, sortDir]);
   useEffect(() => {
     const controller = new AbortController();
-    const q = new URLSearchParams({ action: "orders", days, status,
+    const q = new URLSearchParams({ action: "orders", status,
       search: debounced, offset: String(offset), sort_by: sortBy, sort_dir: sortDir });
-    if (accountId) q.set("accountId", accountId);
+    orderPeriodParams(start, end, accountId).forEach((value, key) => q.set(key, value));
     if (minAmount) q.set("min_amount", minAmount);
     if (maxAmount) q.set("max_amount", maxAmount);
     setLoading(true); setError("");
@@ -130,7 +143,7 @@ export default function OrderExplorer({
         }
       }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [days, status, debounced, offset, accountId, minAmount, maxAmount, sortBy, sortDir]);
+  }, [start, end, status, debounced, offset, accountId, minAmount, maxAmount, sortBy, sortDir]);
 
   const openFinancial = useCallback(async (order: Order) => {
     const request = ++financialRequest.current;
@@ -247,8 +260,7 @@ export default function OrderExplorer({
         <div><h2>{mode === "sales" ? "Produtos vendidos" : "Todos os pedidos"}</h2>
           <p>Foto e nome do produto em destaque. Clique para precificar e apurar lucro.</p>
         </div>
-        <a className="fh-control" href={"/api/platform/export?report=orders&days=" + days +
-          (accountId ? "&accountId=" + accountId : "")}>
+        <a className="fh-control" href={"/api/platform/export?report=orders&" + orderPeriodParams(start, end, accountId)}>
           Exportar Excel
         </a>
       </div>
@@ -257,21 +269,6 @@ export default function OrderExplorer({
           <Search size={18}/><input value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Pesquisar produto, SKU ou pedido" aria-label="Pesquisar produto, SKU ou pedido"/>
         </label>
-        <label className="fh-orders-period"><CalendarDays size={16}/>
-          <select aria-label="Período" value={days} onChange={e => setDays(e.target.value)}>
-            <option value="7">7 dias</option><option value="30">30 dias</option>
-            <option value="90">90 dias</option><option value="365">365 dias</option>
-            <option value="all">Todo o histórico salvo</option>
-          </select>
-        </label>
-        {accounts.length > 1 && <label className="fh-orders-period">
-          <select aria-label="Conta do Mercado Livre" value={accountId}
-            onChange={event => setAccountId(event.target.value)}>
-            <option value="">Todas as contas</option>
-            {accounts.map(account => <option key={account.account_id}
-              value={String(account.account_id)}>{account.nickname || account.account_id}</option>)}
-          </select>
-        </label>}
       </div>
       <div className="fh-smart-order-toolbar">
         <span><SlidersHorizontal size={15} aria-hidden="true"/> Ordenar resultados</span>

@@ -19,7 +19,7 @@ test("tabela distingue vendas parciais, custos pendentes e Ads sem relatório", 
   assert.ok(!home.includes(">Importar custo</Link>"));
   assert.ok(home.includes("Custos de compra cadastrados"));
   assert.ok(home.includes("Sem relatório"));
-  const table = home.split("Unid. vendidas (30 dias)")[1] ?? "";
+  const table = home.split("Unid. vendidas no período")[1] ?? "";
   assert.ok(!table.includes("p.sales_30d"));
 });
 

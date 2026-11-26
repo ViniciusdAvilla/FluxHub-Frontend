@@ -13,7 +13,7 @@ test("pedidos e vendas não carregam o catálogo completo para exibir gráficos"
   assert.ok(!overview.includes("/api/v1/orders/"));
   for (const route of ["vendas", "pedidos"]) {
     const page = readFileSync(`src/app/${route}/page.tsx`, "utf8");
-    assert.ok(page.includes("getOrdersOverview(30)"), route);
+    assert.ok(page.includes("getOrdersOverview(period, validAccount(query.account)"), route);
     assert.ok(page.includes("orderStatusLabel("), route);
     assert.ok(!page.includes("getSellerReport("), route);
   }
