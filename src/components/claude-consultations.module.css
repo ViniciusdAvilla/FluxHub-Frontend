@@ -147,3 +147,18 @@
   .search { grid-template-columns: auto minmax(0, 1fr); gap: 8px; padding: 8px; }
   .submit { grid-column: 1 / -1; }
 }
+
+.priorityProduct { margin: 0 0 8px; }
+.priorityReason { margin: 0 0 18px; color: var(--ui-muted, #4b5d79); }
+.priorityAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 8px 15px;
+  border-radius: 8px;
+  background: #1653ce;
+  font-weight: 750;
+}
+.workspace a.priorityAction { color: #fff; }
+.priorityAction:hover { background: #1044af; }

@@ -32,6 +32,7 @@ const agents: Record<Mode, string> = {
   strategy: "Estratégia comercial",
 };
 const shortcuts: { label: string; question: string; mode: Mode }[] = [
+  { label: "Prioridade de vendas", question: "Qual é a minha prioridade agora para alavancar as vendas?", mode: "strategy" },
   { label: "Faturamento", question: "Qual foi o faturamento bruto dos pedidos pagos no mês passado?", mode: "sales" },
   { label: "Pedidos pagos", question: "Quantos pedidos pagos tive nos últimos 7 dias?", mode: "sales" },
   { label: "Estoque baixo", question: "Quais produtos estão com estoque baixo?", mode: "inventory" },

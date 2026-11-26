@@ -1,4 +1,6 @@
 import { backendMutation, backendRequest, BackendHttpError } from "@/lib/backend-transport";
+import { getSalesPriority } from "@/lib/sales-priority-data";
+import { isSalesPriorityQuestion } from "@/lib/sales-priority";
 import { isTrustedRequestOrigin } from "@/lib/request-security";
 
 export const runtime = "nodejs";
@@ -39,6 +41,9 @@ export async function POST(request: Request) {
               !(turn as { content: string }).content.length ||
               (turn as { content: string }).content.length > 6000))))
       return Response.json({ error: "Modo ou instrução inválidos." }, { status: 422 });
+    if (isSalesPriorityQuestion(data.instruction)) {
+      return Response.json(await getSalesPriority(), { headers: { "Cache-Control": "private, no-store" } });
+    }
     const result = await backendMutation("/api/v1/agents/claude/run",
       "POST", { agent: data.agent, instruction: data.instruction, history: data.history ?? [] }, 60000);
     if (!result || typeof result !== "object" || !("verified" in result) || result.verified !== true ||
