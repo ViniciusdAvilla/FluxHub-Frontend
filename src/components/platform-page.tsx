@@ -94,7 +94,7 @@ const titles: Record<View, { eyebrow: string; title: string; text: string }> = {
   },
   products: {
     eyebrow: "CATÁLOGO",
-    title: "Produtos",
+    title: "Produtos e anúncios",
     text: "Ficha operacional, desempenho e dados disponíveis por item.",
   },
   raiox: {
@@ -104,27 +104,27 @@ const titles: Record<View, { eyebrow: string; title: string; text: string }> = {
   },
   inventory: {
     eyebrow: "ESTOQUE",
-    title: "Saúde do estoque",
+    title: "Controle de estoque",
     text: "Saldo, giro, cobertura e itens que precisam de ação.",
   },
   finance: {
     eyebrow: "FINANCEIRO",
-    title: "Rentabilidade",
+    title: "Financeiro",
     text: "Custos, receita estimada, lucro e margem por produto.",
   },
   manufacturers: {
     eyebrow: "FABRICANTES",
-    title: "Performance por fabricante",
+    title: "Fornecedores e fabricantes",
     text: "Compare resultado, volume e rentabilidade dos produtos por fabricante.",
   },
   pricing: {
     eyebrow: "PRECIFICAÇÃO",
-    title: "Preço ideal",
+    title: "Precificação",
     text: "Simule preço e margem sem perder de vista os custos reais cadastrados.",
   },
   replenishment: {
     eyebrow: "COMPRAS",
-    title: "Planejador de reposição",
+    title: "Compras e reposição",
     text: "Transforme venda e saldo em uma sugestão objetiva de compra.",
   },
   abc: {
@@ -741,15 +741,41 @@ export default function PlatformPage({ initial, view, isAdmin = false, dateFilte
   const abc = useMemo(() => classifyAbc(filtered), [filtered]);
   const abcThreshold = useMemo(() => highVolumeThreshold(abc), [abc]);
   const [manufacturerSalesSort, setManufacturerSalesSort] = useState<"asc" | "desc">();
-  const [abcRevenueSort, setAbcRevenueSort] = useState<"asc" | "desc">();
+  const [abcSort, setAbcSort] = useState<{ field: "revenue" | "margin"; direction: "asc" | "desc" }>(
+    { field: "revenue", direction: "desc" },
+  );
+  const [abcClass, setAbcClass] = useState("");
   const [chartSalesSort, setChartSalesSort] = useState<"asc" | "desc">();
   const manufacturerPerformance = manufacturerSalesSort
     ? [...summary.manufacturers].sort((a, b) => manufacturerSalesSort === "desc" ? b.sales - a.sales : a.sales - b.sales)
     : summary.manufacturers;
-  const rankedAbc = abcRevenueSort === "asc"
-    ? [...abc].sort((a, b) => a.revenue === null ? (b.revenue === null ? 0 : 1)
-      : b.revenue === null ? -1 : a.revenue - b.revenue)
-    : abc;
+  const rankedAbc = useMemo(() => {
+    const selection = abc.filter(row => !abcClass || row.abcClass === abcClass);
+    return selection.sort((left, right) => {
+      const a = left[abcSort.field], b = right[abcSort.field];
+      if (a === null) return b === null ? 0 : 1;
+      if (b === null) return -1;
+      return abcSort.direction === "asc" ? a - b : b - a;
+    });
+  }, [abc, abcClass, abcSort]);
+  const purchaseSummary = useMemo(() => {
+    if (view !== "replenishment") return null;
+    let quantity = 0, investment = 0, withoutCost = 0, measurable = 0;
+    for (const row of filtered) {
+      const plan = replenishment(row, coverageDays, salesDays);
+      if (plan.quantity === null) continue;
+      measurable++;
+      if (plan.quantity === 0) continue;
+      quantity += plan.quantity;
+      if (row.finance && row.finance.unitCost > 0) investment += plan.quantity * row.finance.unitCost;
+      else withoutCost++;
+    }
+    return measurable ? { quantity, investment, withoutCost } : null;
+  }, [view, filtered, coverageDays, salesDays]);
+
+  function sortAbc(field: "revenue" | "margin") {
+    setAbcSort(current => ({ field, direction: current.field === field && current.direction === "desc" ? "asc" : "desc" }));
+  }
 
 
   async function refresh() {
@@ -878,7 +904,7 @@ export default function PlatformPage({ initial, view, isAdmin = false, dateFilte
                 <div><Status tone="warning">Atenção</Status><strong>{summary.warning}</strong><span>baixo giro/cobertura</span></div>
                 <div><Status tone="good">Bom</Status><strong>{summary.healthy}</strong><span>estoque saudável</span></div>
               </div>
-              <Section title="Produtos em destaque" subtitle="Ordenados pela maior receita estimada." action={<Link className="button primary" href="/precificacao"><UploadCloud size={15} /> Importar custos em massa</Link>}>
+              <Section title="Produtos em destaque" subtitle="Ordenados pela maior receita estimada." action={<Link className="button primary" href="/precificacao#importar-custos"><UploadCloud size={15} /> Importar custos em massa</Link>}>
                 {filtered.length ? <ProductTable rows={[...filtered].sort((a, b) => (b.revenue ?? -1) - (a.revenue ?? -1)).slice(0, 8)} onInspect={setInspected} onPrice={setPricingItem} sortKey={advanced.sortKey} sortDirection={advanced.sortDirection} onSort={setSort} /> : <Empty title="Nenhum produto encontrado" text="Ajuste os filtros para visualizar o catálogo." />}
               </Section>
             </>
@@ -898,7 +924,7 @@ export default function PlatformPage({ initial, view, isAdmin = false, dateFilte
                 <button className="button" type="button" disabled={busy} onClick={synchronizeSales}>
                   <RefreshCw size={15} /> {busy ? "Aguarde..." : "Sincronizar vendas"}
                 </button>
-                <Link className="button primary" href="/precificacao"><UploadCloud size={15} /> Importar custos em massa</Link>
+                <Link className="button primary" href="/precificacao#importar-custos"><UploadCloud size={15} /> Importar custos em massa</Link>
               </div>}>
               {filtered.length ? <ProductTable rows={filtered} onInspect={setInspected} onPrice={setPricingItem} sortKey={advanced.sortKey} sortDirection={advanced.sortDirection} onSort={setSort} /> : <Empty title="Nenhum produto encontrado" text="Ajuste os filtros para visualizar o catálogo." />}
               </Section>
@@ -907,6 +933,7 @@ export default function PlatformPage({ initial, view, isAdmin = false, dateFilte
 
           {view === "raiox" && (
             <>
+              <RaioXPanel products={filtered}/>
               <div className="fh-insight-grid">
                 <Section title="Produtos por categoria" subtitle="Quantidade de itens da operação para análise.">
                   <RankedBarChart values={groupedInsights(filtered, "category", "count")}/>
@@ -918,7 +945,6 @@ export default function PlatformPage({ initial, view, isAdmin = false, dateFilte
                     .sort((a, b) => chartSalesSort === "asc" ? a.value - b.value : b.value - a.value)}/>
                 </Section>
               </div>
-              <RaioXPanel products={filtered}/>
             </>
           )}
 
@@ -939,7 +965,10 @@ export default function PlatformPage({ initial, view, isAdmin = false, dateFilte
                 </Section>
               </div>
               <Section title="Controle de estoque" subtitle="Cobertura calculada a partir das vendas informadas nos últimos 30 dias.">
-                <PagedTableRows items={filtered} render={(pagedRows) => <div className="table-wrap"><table><thead><tr><th>Produto</th><th>Saldo</th><th>Vendas 30d</th><th>Cobertura</th><th>Situação</th></tr></thead><tbody>{pagedRows.map((row) => <tr key={row.id}><td><strong>{row.title}</strong><small className="cell-sub">{row.id}</small></td><td>{number(row.stock)}</td><td>{number(row.sales)}</td><td>{row.stockDays === null ? "—" : `${Math.round(row.stockDays)} dias`}</td><td><Status tone={row.stockTone}>{row.stockLabel}</Status></td></tr>)}</tbody></table></div>}/>
+                <PagedTableRows items={filtered} render={(pagedRows) => <div className="table-wrap"><table><thead><tr><SortableColumn label="Produto" field="title" selected={advanced.sortKey} direction={advanced.sortDirection} onSelect={setSort}/>
+                  <SortableColumn label="Saldo" field="stock" selected={advanced.sortKey} direction={advanced.sortDirection} onSelect={setSort}/>
+                  <SortableColumn label="Vendas 30d" field="sales" selected={advanced.sortKey} direction={advanced.sortDirection} onSelect={setSort}/>
+                  <SortableColumn label="Cobertura" field="stockDays" selected={advanced.sortKey} direction={advanced.sortDirection} onSelect={setSort}/><th>Situação</th></tr></thead><tbody>{pagedRows.map((row) => <tr key={row.id}><td><strong>{row.title}</strong><small className="cell-sub">{row.id}</small></td><td>{number(row.stock)}</td><td>{number(row.sales)}</td><td>{row.stockDays === null ? "—" : `${Math.round(row.stockDays)} dias`}</td><td><Status tone={row.stockTone}>{row.stockLabel}</Status></td></tr>)}</tbody></table></div>}/>
               </Section>
             </>
           )}
@@ -963,7 +992,7 @@ export default function PlatformPage({ initial, view, isAdmin = false, dateFilte
               <Section title="Receita e lucro por categoria" subtitle="Comparativo dos resultados disponíveis no catálogo filtrado.">
                 <FinanceCategoryChart rows={filtered} />
               </Section>
-              <Section title="Resultado por produto" subtitle="Vermelho = prejuízo, amarelo = margem abaixo de 15%, verde = margem a partir de 15%." action={<Link className="button primary" href="/precificacao"><UploadCloud size={15} /> Importar custos em massa</Link>}>
+              <Section title="Resultado por produto" subtitle="Vermelho = prejuízo, amarelo = margem abaixo de 15%, verde = margem a partir de 15%." action={<Link className="button primary" href="/precificacao#importar-custos"><UploadCloud size={15} /> Importar custos em massa</Link>}>
                 <ProductTable rows={filtered} onInspect={setInspected} onPrice={setPricingItem} sortKey={advanced.sortKey} sortDirection={advanced.sortDirection} onSort={setSort} />
               </Section>
             </>
@@ -996,7 +1025,6 @@ export default function PlatformPage({ initial, view, isAdmin = false, dateFilte
 
           {view === "pricing" && (
             <>
-              <CostImportPanel />
               <div className="tool-control"><div><span className="eyebrow">META DE MARGEM</span><strong>{desiredMargin}%</strong><p>Preço mínimo estimado para alcançar a margem desejada.</p></div><input aria-label="Margem desejada" type="range" min="1" max="50" value={desiredMargin} onChange={(event) => setDesiredMargin(Number(event.target.value))} /></div>
               <div className="fh-insight-grid">
                 <Section title="Maiores ajustes de preço" subtitle="Diferença positiva até a margem desejada. Somente produtos com custos cadastrados.">
@@ -1009,12 +1037,20 @@ export default function PlatformPage({ initial, view, isAdmin = false, dateFilte
               <Section title="Simulador de preço" subtitle="Considera custo, comissão, imposto, frete e outras despesas cadastradas.">
                 <PagedTableRows items={filtered} render={(pagedRows) => <div className="table-wrap"><table><thead><tr><th>Produto</th><th>Preço atual</th><th>Margem atual</th><th>Preço para meta</th><th>Diferença</th><th>Situação</th></tr></thead><tbody>{pagedRows.map((row) => { const target = idealPrice(row.finance, desiredMargin); const diff = target !== null && row.price !== null ? target - row.price : null; const projection = projectedAtPrice(row.finance, row.price); return <tr key={row.id}><td><strong>{row.title}</strong><small className="cell-sub">{row.brand !== "Sem marca" ? row.brand : "Sem fabricante"}</small></td><td>{money(row.price)}</td><td className={`text-${marginTone(projection.margin)}`}>{percent(projection.margin)}</td><td><strong>{money(target)}</strong></td><td className={diff !== null && diff > 0 ? "text-warning" : "text-good"}>{diff === null ? "—" : `${diff > 0 ? "+" : ""}${money(diff)}`}</td><td>{target === null || row.price === null ? <Status tone="neutral">Sem base</Status> : row.price >= target ? <Status tone="good">Meta atendida</Status> : <Status tone="warning">Revisar preço</Status>}</td></tr>; })}</tbody></table></div>}/>
               </Section>
+              <div id="importar-custos"><CostImportPanel /></div>
             </>
           )}
 
           {view === "replenishment" && (
             <>
               <div className="tool-control"><div><span className="eyebrow">COBERTURA ALVO</span><strong>{coverageDays} dias</strong><p>Quantidade sugerida para recompor o estoque até a cobertura definida.</p></div><input aria-label="Cobertura alvo" type="range" min="7" max="90" step="1" value={coverageDays} onChange={(event) => setCoverageDays(Number(event.target.value))} /></div>
+              <div className="metric-grid fh-purchase-summary">
+                <Metric label="Quantidade a comprar" value={number(purchaseSummary?.quantity ?? null)}
+                  note="Unidades com reposição calculável" icon={ShoppingCart}/>
+                <Metric label="Investimento estimado" value={money(purchaseSummary && !purchaseSummary.withoutCost
+                  ? purchaseSummary.investment : null)} note={purchaseSummary?.withoutCost
+                  ? `${purchaseSummary.withoutCost} produto(s) sem custo de compra` : "Valores dos custos cadastrados"} icon={Coins}/>
+              </div>
               <div className="fh-insight-grid">
                 <Section title="Itens prioritários para reposição" subtitle="Quantidade sugerida com base na meta de cobertura e vendas do período selecionado.">
                   <RankedBarChart values={topReplenishment(filtered, coverageDays, salesDays)} empty="Sem necessidade de reposição calculável para os dados e período selecionados."/>
@@ -1040,18 +1076,25 @@ export default function PlatformPage({ initial, view, isAdmin = false, dateFilte
                   <RankedBarChart values={groupedInsights(filtered, "category", "count")}/>
                 </Section>
               </div>
-              <Section title="Classificação ABC" subtitle="Classes por participação da receita; metas de margem A 10%, B 15%, C 20% são orientativas e não substituem lucro líquido fiscal.">
-                <PagedTableRows items={rankedAbc} render={(pagedRows) => <div className="table-wrap"><table><thead><tr><th>Classe</th><th>Produto</th><th aria-sort={abcRevenueSort === "asc" ? "ascending" : "descending"}>
-                  <SortHeading label="Receita" direction={abcRevenueSort}
-                    onClick={() => setAbcRevenueSort(value => value === "desc" ? "asc" : "desc")}/>
-                </th><th>Participação</th><th>Acumulado</th><th>Margem estimada</th><th>Meta da classe</th><th>Estratégia</th></tr></thead><tbody>{pagedRows.map((row) => <tr key={row.id}><td>{row.abcClass ? <span className={`abc-badge ${row.abcClass.toLowerCase()}`}>{row.abcClass}</span> : "—"}</td><td><strong>{row.title}</strong><small className="cell-sub">{row.id}</small></td><td>{money(row.revenue)}</td><td>{percent(row.revenueShare)}</td><td>{percent(row.cumulativeShare)}</td><td className={`text-${marginTone(row.margin)}`}>{percent(row.margin)}</td>
+              <Section title="Classificação ABC" subtitle="Classes por receita estimada. As metas de margem são A 10%, B 15% e C 20%."
+                action={<label className="fh-abc-filters">Classe
+                  <select className="fh-control" value={abcClass} onChange={event => setAbcClass(event.target.value)}>
+                    <option value="">Todas</option><option value="A">A</option><option value="B">B</option><option value="C">C</option>
+                  </select>
+                </label>}>
+                {rankedAbc.length ? <PagedTableRows items={rankedAbc} render={(pagedRows) => <div className="table-wrap"><table><thead><tr><th>Classe</th><th>Produto</th><th aria-sort={abcSort.field === "revenue" ? (abcSort.direction === "asc" ? "ascending" : "descending") : undefined}>
+                  <SortHeading label="Receita" direction={abcSort.field === "revenue" ? abcSort.direction : undefined} onClick={() => sortAbc("revenue")}/>
+                </th><th>Participação</th><th>Acumulado</th><th aria-sort={abcSort.field === "margin" ? (abcSort.direction === "asc" ? "ascending" : "descending") : undefined}>
+                  <SortHeading label="Margem estimada" direction={abcSort.field === "margin" ? abcSort.direction : undefined} onClick={() => sortAbc("margin")}/>
+                </th><th>Meta da classe</th><th>Estratégia</th></tr></thead><tbody>{pagedRows.map((row) => <tr key={row.id}><td>{row.abcClass ? <span className={`abc-badge ${row.abcClass.toLowerCase()}`}>{row.abcClass}</span> : "—"}</td><td><strong>{row.title}</strong><small className="cell-sub">{row.id}</small></td><td>{money(row.revenue)}</td><td>{percent(row.revenueShare)}</td><td>{percent(row.cumulativeShare)}</td><td className={`text-${marginTone(row.margin)}`}>{percent(row.margin)}</td>
                   <td>{abcStrategy(row, abcThreshold).target === null ? "—" : abcStrategy(row, abcThreshold).target + "%"}</td>
                   <td>{abcStrategy(row, abcThreshold).attraction
                     ? <span className="fh-abc-attraction">Boi de Piranha</span>
                     : abcStrategy(row, abcThreshold).state === "loss" ? "Prejuízo"
                     : abcStrategy(row, abcThreshold).state === "below-target" ? "Abaixo da meta"
                     : abcStrategy(row, abcThreshold).state === "healthy" ? "Meta atingida"
-                    : "Sem base"}</td></tr>)}</tbody></table></div>}/>
+                    : "Sem base"}</td></tr>)}</tbody></table></div>}/> :
+                  <Empty title="Nenhum produto nesta seleção" text="Escolha outra classe ou ajuste os filtros."/>}
               </Section>
             </>
           )}
@@ -1105,7 +1148,7 @@ export default function PlatformPage({ initial, view, isAdmin = false, dateFilte
             <div className="drawer-head"><div><span className="eyebrow">FICHA DO PRODUTO</span><h2>{inspected.title}</h2><p>{inspected.id}</p></div><button className="icon-button" onClick={() => setInspected(null)} aria-label="Fechar ficha"><X size={19} /></button></div>
             <div className="detail-grid"><div><span>Fabricante</span><strong>{inspected.brand}</strong></div><div><span>Categoria</span><strong>{inspected.category}</strong></div><div><span>Preço</span><strong>{money(inspected.price)}</strong></div><div><span>Desconto</span><strong>{percent(inspected.discount)}</strong></div><div><span>Avaliação</span><strong>{inspected.rating?.toLocaleString("pt-BR", { maximumFractionDigits: 2 }) ?? "—"}</strong></div><div><span>Condição</span><strong>{inspected.condition ?? "—"}</strong></div><div><span>Frete grátis</span><strong>{inspected.freeShipping === null ? "—" : inspected.freeShipping ? "Sim" : "Não"}</strong></div><div><span>Custos cadastrados</span><strong>{inspected.finance ? "Sim" : "Não"}</strong></div></div>
             {rawEntries(inspected).length > 0 && <><h3 className="drawer-section-title">Outros campos recebidos</h3><dl className="raw-fields">{rawEntries(inspected).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{displayValue(value)}</dd></div>)}</dl></>}
-            <Link className="button primary full" href="/precificacao" onClick={() => setInspected(null)}><UploadCloud size={16} /> Importar custos em massa</Link>
+            <Link className="button primary full" href="/precificacao#importar-custos" onClick={() => setInspected(null)}><UploadCloud size={16} /> Importar custos em massa</Link>
           </aside>
         </div>
       )}

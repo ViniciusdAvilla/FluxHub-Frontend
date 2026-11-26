@@ -14,7 +14,7 @@ test("navegação preserva o shell e skeleton tardio só ocupa o conteúdo", () 
   assert.match(shell, /export function PersistentDashboardFrame/);
   assert.match(shell, /const PageChromeContext = createContext/);
   assert.match(shell, /if \(register\) return <>{children}<\/>/);
-  assert.match(shell, /<aside className=\{\`fh-sidebar/);
+  assert.match(shell, /<aside id="fluxhub-navigation" className=\{\`fh-sidebar/);
   assert.match(shell, /modules\.map\(/);
   assert.match(shell, /className="fh-subnav"/);
   assert.match(layout, /<PersistentDashboardFrame>{children}<\/PersistentDashboardFrame>/);
@@ -46,7 +46,7 @@ test("página Produtos usa o mesmo ModernShell sem tela de espera própria", () 
 test("login continua separado do dashboard operacional", () => {
   const login = readFileSync("src/app/login/page.tsx", "utf8");
   const shell = readFileSync("src/components/modern-shell.tsx", "utf8");
-  assert.match(login, /className="login-page"/);
+  assert.match(login, /className="login-page fh-login-unified"/);
   assert.match(shell, /pathname === "\/login"/);
   assert.doesNotMatch(login, /AppSidebar/);
 });

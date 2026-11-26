@@ -38,7 +38,7 @@ test("cadastro de custos fica centralizado na precificação, sem edição por l
   assert.ok(!products.includes("Editar custos de"));
   assert.ok(!products.includes("Cadastrar custos</button>"));
   assert.ok(!products.includes("fh-smart-edit"));
-  assert.ok(products.includes('href="/precificacao"'));
+  assert.ok(products.includes('href="/precificacao#importar-custos"'));
   assert.ok(panel.includes("Importação de custos em massa"));
   for (const extension of [".csv", ".xlsx", ".xls", ".docx", ".pdf", ".txt"]) {
     assert.ok(panel.includes(extension), extension);

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import MercadoLivreIdentity from "./mercado-livre-identity";
 import {
   Activity, BadgeDollarSign, Bell, Boxes, ChartNoAxesCombined,
@@ -36,7 +36,7 @@ const modules = [
     { label: "Curva ABC", href: "/curva-abc" },
     { label: "Raio-X de anúncios", href: "/raio-x" },
   ] },
-  { label: "Financeiro", href: "/financeiro", icon: BadgeDollarSign, paths: ["/financeiro"], tabs: [
+  { label: "Financeiro", href: "/financeiro", icon: BadgeDollarSign, paths: ["/financeiro", "/precificacao"], tabs: [
     { label: "Resumo financeiro", href: "/financeiro" },
   ] },
   { label: "Atendimento", href: "/mensagens", icon: MessagesSquare, paths: ["/mensagens"], tabs: [
@@ -123,6 +123,17 @@ function ShellView({
 }: ShellProps) {
   const path = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const menuToggle = useRef<HTMLButtonElement>(null);
+  const menuClose = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (mobileOpen) menuClose.current?.focus();
+  }, [mobileOpen]);
+
+  function closeMenu() {
+    setMobileOpen(false);
+    menuToggle.current?.focus();
+  }
   const [hash, setHash] = useState("");
   const [theme, setTheme] = useState<"light" | "dark">("light");
   useEffect(() => {
@@ -148,17 +159,20 @@ function ShellView({
   }, []);
   const activeModule = modules.find(item => item.paths.some(p => p === "/" ? path === "/" : path === p || path.startsWith(p + "/"))) ?? modules[0];
   const activeRoot = activeModule.href;
-  const sellerTitle = activeModule.label;
+  const sellerTitle = path === "/" || path === "/vendas"
+    ? activeModule.label : title || activeModule.tabs.find(tab => tab.href === path)?.label || activeModule.label;
   const currentTab = activeModule.tabs.find(t => t.href === path + (path === "/" ? hash : "")) ??
     activeModule.tabs.find(t => t.href === path) ?? activeModule.tabs[0];
 
-  return <div data-theme={theme} className={`fh-app fh-liquid-glass fh-theme-${theme}${path === "/" ? " fh-expo-glass-controls fh-overview-design" : ""}`}>
-    <div className="fh-glass-atmosphere" aria-hidden="true"><i/><i/><i/></div>
-    <aside className={`fh-sidebar ${mobileOpen ? "fh-open" : ""}`}>
+  return <div data-theme={theme} onKeyDown={event => {
+    if (mobileOpen && event.key === "Escape") closeMenu();
+  }} className={`fh-app fh-unified fh-liquid-glass fh-theme-${theme}${path === "/" ? " fh-expo-glass-controls fh-overview-design" : ""}`}>
+    <a href="#fluxhub-content" className="fh-skip-link">Ir para o conteúdo</a>
+    <aside id="fluxhub-navigation" className={`fh-sidebar ${mobileOpen ? "fh-open" : ""}`}>
       <div className="fh-logo">
         <span className="fh-logo-mark fh-logo-bars" aria-hidden="true"><i/><i/><i/></span>
         <strong>Flux<span>Hub</span></strong>
-        <button className="fh-mobile-close" onClick={() => setMobileOpen(false)} aria-label="Fechar menu"><X size={18}/></button>
+        <button ref={menuClose} className="fh-mobile-close" onClick={closeMenu} aria-label="Fechar menu"><X size={18}/></button>
       </div>
       <nav className="fh-nav" aria-label={adminMode ? "Navegação administrativa" : "Navegação principal"}>
         {adminMode ? adminLinks.map(({href,label,icon:Icon})=>
@@ -185,10 +199,10 @@ function ShellView({
         <form method="post" action="/api/auth/logout"><button className="fh-signout" type="submit"><LogOut size={16}/> Sair da conta</button></form>
       </div>
     </aside>
-    {mobileOpen && <button className="fh-overlay" aria-label="Fechar menu" onClick={() => setMobileOpen(false)}/>}
+    {mobileOpen && <button className="fh-overlay" aria-label="Fechar menu" onClick={closeMenu}/>}
     <div className="fh-content">
       <header className="fh-topbar">
-        <button className="fh-mobile-toggle" onClick={() => setMobileOpen(true)} aria-label="Abrir menu"><Menu size={23}/></button>
+        <button ref={menuToggle} className="fh-mobile-toggle" onClick={() => setMobileOpen(true)} aria-label="Abrir menu" aria-controls="fluxhub-navigation" aria-expanded={mobileOpen}><Menu size={23}/></button>
         <div className="fh-heading">
           <h1>{adminMode ? title : sellerTitle}</h1>
           {path !== "/" && <p>{adminMode ? eyebrow || "Gestão da plataforma" : descriptions[activeRoot] || "Gestão integrada da sua operação no Mercado Livre."}</p>}
@@ -211,7 +225,7 @@ function ShellView({
           {tab.label}
         </Link>)}
       </nav>}
-      <main className="fh-main">{children}</main>
+      <main className="fh-main" id="fluxhub-content" tabIndex={-1}>{children}</main>
     </div>
   </div>;
 }

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Bot, CheckCheck, CircleAlert, Clock3, Inbox, LoaderCircle,
-  MessageCircle, RefreshCw, Send, ShieldCheck, Sparkles } from "lucide-react";
+  MessageCircle, RefreshCw, Search, Send, ShieldCheck, Sparkles } from "lucide-react";
 
 type Kind = "questions" | "messages";
 type Account = {accountId: number; nickname: string};
@@ -23,6 +23,7 @@ export default function SupportCenter({accounts}: {accounts: Account[]}) {
   const [accountId,setAccountId] = useState(accounts[0]?.accountId ?? 0);
   const requestVersion = useRef(0);
   const [kind,setKind] = useState<Kind>("messages");
+  const [search,setSearch] = useState("");
   const [threads,setThreads] = useState<Thread[]>([]);
   const [active,setActive] = useState<string | null>(null);
   const [detail,setDetail] = useState<Detail | null>(null);
@@ -38,7 +39,7 @@ export default function SupportCenter({accounts}: {accounts: Account[]}) {
     if (!accountId) return;
     const abort = new AbortController();
     const version = ++requestVersion.current;
-    setLoading(true); setThreads([]); setActive(null); setDetail(null);
+    setLoading(true); setThreads([]); setSearch(""); setActive(null); setDetail(null);
     setDraft(""); setError(""); setNotice("");
     const query = new URLSearchParams({account_id:String(accountId), kind});
     loadJson(`/api/platform/support?${query}`, abort.signal)
@@ -98,6 +99,9 @@ export default function SupportCenter({accounts}: {accounts: Account[]}) {
       setError(e instanceof Error ? e.message : "Não foi possível concluir.");
     } finally {setBusy(null);}
   }
+  const searchTerm = search.trim().toLocaleLowerCase("pt-BR");
+  const visibleThreads = threads.filter(thread =>
+    `${thread.title} ${thread.reference} ${thread.preview}`.toLocaleLowerCase("pt-BR").includes(searchTerm));
   const limit = kind === "messages" ? 350 : 2000;
   return <div className="fh-support">
     <section className="fh-support-summary fh-card">
@@ -137,11 +141,16 @@ export default function SupportCenter({accounts}: {accounts: Account[]}) {
       <div className="fh-support-grid">
         <aside className="fh-card fh-support-threads" aria-label="Lista de conversas">
           <header><strong>{kind==="messages"?"Mensagens e pedidos recentes":"Perguntas recebidas"}</strong>
-            <span>{threads.length} encontrados</span></header>
+            <span>{visibleThreads.length} encontrados</span></header>
+          <label className="fh-orders-search fh-thread-search">
+            <Search size={16} aria-hidden/>
+            <input aria-label="Buscar conversa" placeholder="Buscar conversa" value={search}
+              onChange={event => setSearch(event.target.value)}/>
+          </label>
           {loading ? <div className="fh-support-loader"><LoaderCircle className="fh-spin" size={22}/> Consultando Mercado Livre...</div>:
-            threads.length===0?<div className="fh-support-no-data">Nenhuma conversa encontrada nessa consulta.</div>:
+            visibleThreads.length===0?<div className="fh-support-no-data">Nenhuma conversa encontrada.</div>:
             <div className="fh-support-thread-list">
-              {threads.map(thread=><button key={thread.reference} type="button"
+              {visibleThreads.map(thread=><button key={thread.reference} type="button"
                 className={"fh-support-thread "+(active===thread.reference?"active":"")}
                 aria-pressed={active===thread.reference} onClick={()=>void selectThread(thread.reference)}>
                 <span className="fh-support-thread-top"><strong>{thread.title}</strong>
