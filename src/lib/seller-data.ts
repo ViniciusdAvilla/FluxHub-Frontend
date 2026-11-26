@@ -100,6 +100,8 @@ export async function getOrdersOverview(period: ReportPeriod, requestedAccount: 
   return {
     user,
     accounts, accountId, previousOrderStatus,
+    revenue: revenue?.gross_paid_order_amount ?? null,
+    previousRevenue: previousRevenue?.gross_paid_order_amount ?? null,
     timeline: Array.isArray(timeline?.data) ? timeline.data : [],
     orderStatus,
   };
